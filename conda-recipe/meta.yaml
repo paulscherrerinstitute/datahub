@@ -1,0 +1,30 @@
+package:
+  name: data_api
+  version: "{{ load_setup_py_data().version }}"
+
+source:
+  path: ../
+
+build:
+  entry_points:
+    - main = datahub.main:main
+  noarch: python
+
+requirements:
+  build:
+    - python
+  run:
+    - python
+    - requests
+    - pandas
+    - h5py
+    - bitshuffle
+    - pytz
+    - numpy
+    - pyepics
+    - bsread
+
+
+about:
+  home: https://github.com/paulscherrerinstitute/datahub
+  license: GPLv3
