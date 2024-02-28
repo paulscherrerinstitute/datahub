@@ -40,6 +40,7 @@ KNOWN_SOURCES = {
     "camera": Camera,
     "databuffer": DataBuffer,
     "retrieval": Retrieval,
-    "dispatcher": Dispatcher
+    "dispatcher": Dispatcher,
+    "daqbuf": Daqbuf
     }
 from datahub.main import run_json

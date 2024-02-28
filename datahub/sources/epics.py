@@ -72,8 +72,9 @@ class Epics(Source):
         response = requests.get(api_base_address + "/records", params=parameters)
         response.raise_for_status()
         ret = response.json()
-        if facility:
-            ret = [record["name"] for record in ret]
-        else:
-            ret = [f"{record['name']} [{record['facility']}]" for record in ret]
+        if not self.verbose:
+            if facility:
+                ret = [record["name"] for record in ret]
+            else:
+                ret = [f"{record['name']} [{record['facility']}]" for record in ret]
         return ret

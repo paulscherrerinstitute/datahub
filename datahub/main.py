@@ -20,6 +20,7 @@ def run_json(task):
         decompress = task.get("decompress", False)
         compression = task.get("compression", Compression.GZIP)
         search = task.get("search", None)
+        verbose  = task.get("verbose", False)
         query_id = task.get("id", False)
         time_type = task.get("time", "nano")
         if compression == "lz4":
@@ -101,6 +102,8 @@ def run_json(task):
         for name, source in KNOWN_SOURCES.items():
             constructor = eval("get_source_constructor(" + source.__name__ + ", '" + name + "')")
             exec('if ' + name + ' is not None: add_source(' + name + ', ' + constructor + ')')
+        for source in sources:
+            source.verbose = verbose
 
         if search is not None:
             if search == []:
@@ -162,6 +165,7 @@ def parse_args():
     parser.add_argument("-d", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
     parser.add_argument("-l", "--path", help="Path to data in the file", required=False)
     parser.add_argument("-r", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
+    parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
 
     for name, source in KNOWN_SOURCES.items():
         meta = eval("Source.get_source_meta(" + source.__name__ + ")")
@@ -203,6 +207,8 @@ def main():
                 task["compression"] = args.compression
             if args.search is not None:
                 task["search"] = args.search
+            if args.verbose is not None:
+                task["verbose"] = args.verbose
 
             for source in KNOWN_SOURCES.keys():
                 source_str = eval("args." + source)

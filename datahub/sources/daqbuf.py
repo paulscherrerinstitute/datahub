@@ -20,7 +20,7 @@ class Daqbuf(Source):
     def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, path=None, delay=1.0, cbor=True, parallel=False, **kwargs):
         if url is None:
             raise RuntimeError("Invalid URL")
-        Source.__init__(self, url=url, backend=backend, query_path="/events",  search_path="/channels", path=path,
+        Source.__init__(self, url=url, backend=backend, query_path="/events",  search_path="/search/channel", path=path,
                         known_backends=KNOWN_BACKENDS, **kwargs)
         self.delay = delay
         self.cbor = cbor
@@ -154,19 +154,16 @@ class Daqbuf(Source):
             self.close_channels()
 
     def search(self, regex):
+        "https://data-api.psi.ch/api/4/search/channel?backend=sf-databuffer&nameRegex=DBPM.*Q1$"
         cfg = {
-            "regex": regex,
-            "ordering": "asc",
-            "reload": "true"
+            "nameRegex": regex
         }
         if self.backend is not None:
             cfg["backends"] = [self.backend]
-        response = requests.post(self.search_url, json=cfg)
+        response = requests.get(self.search_url, params=cfg)
         ret = response.json()
-        try:
-            if self.backend and ret[0]['backend'] == self.backend:
-                return ret[0]['channels']
-        except:
-            pass
+
+        if not self.verbose:
+            ret = [d["name"] for d in ret.get("channels", [])]
         return ret
 

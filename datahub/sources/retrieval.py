@@ -283,7 +283,6 @@ class Retrieval(Source):
     def search(self, regex):
         res = requests.get(self.search_url, {"regex": regex})
         res.raise_for_status()
-        for channel in res.json():
-            print(channel)
-        return 0
+        ret = res.json()
+        return ret
 

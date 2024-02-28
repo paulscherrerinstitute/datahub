@@ -108,10 +108,11 @@ class DataBuffer(Source):
             cfg["backends"] = [self.backend]
         response = requests.post(self.search_url, json=cfg)
         ret = response.json()
-        try:
-            if self.backend and ret[0]['backend'] == self.backend:
-                return ret[0]['channels']
-        except:
-            pass
+        if not self.verbose:
+            try:
+                if self.backend and ret[0]['backend'] == self.backend:
+                    return ret[0]['channels']
+            except:
+                pass
         return ret
 
