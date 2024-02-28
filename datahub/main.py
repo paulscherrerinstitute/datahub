@@ -19,8 +19,9 @@ def run_json(task):
         path = task.get("path", None)
         decompress = task.get("decompress", False)
         compression = task.get("compression", Compression.GZIP)
+        parallel = task.get("parallel", None)
         search = task.get("search", None)
-        verbose  = task.get("verbose", False)
+        verbose  = task.get("verbose", None)
         query_id = task.get("id", False)
         time_type = task.get("time", "nano")
         if compression == "lz4":
@@ -103,7 +104,10 @@ def run_json(task):
             constructor = eval("get_source_constructor(" + source.__name__ + ", '" + name + "')")
             exec('if ' + name + ' is not None: add_source(' + name + ', ' + constructor + ')')
         for source in sources:
-            source.verbose = verbose
+            if verbose is not None:
+                source.verbose = verbose
+            if parallel is not None:
+                source.parallel = parallel
 
         if search is not None:
             if search == []:
@@ -163,6 +167,7 @@ def parse_args():
     parser.add_argument("-i", "--id", action='store_true', help="Query by id, and not time", required=False)
     parser.add_argument("-c", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-d", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
+    parser.add_argument("-a", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
     parser.add_argument("-l", "--path", help="Path to data in the file", required=False)
     parser.add_argument("-r", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
     parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
@@ -205,6 +210,8 @@ def main():
                 task["decompress"] = bool(args.decompress)
             if args.compression:
                 task["compression"] = args.compression
+            if args.parallel:
+                task["parallel"] = args.parallel
             if args.search is not None:
                 task["search"] = args.search
             if args.verbose is not None:

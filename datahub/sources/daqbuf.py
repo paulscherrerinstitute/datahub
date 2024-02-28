@@ -152,7 +152,6 @@ class Daqbuf(Source):
             self.close_channels()
 
     def search(self, regex):
-        "https://data-api.psi.ch/api/4/search/channel?backend=sf-databuffer&nameRegex=DBPM.*Q1$"
         cfg = {
             "nameRegex": regex
         }

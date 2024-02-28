@@ -43,7 +43,8 @@ class Source():
         self.processing_thread=None
         self.aborted = False
         self.running = False
-        self.verbose = True
+        self.verbose = False
+        self.parallel = False
         self.auto_decompress = auto_decompress
         Source.instances.add(self)
 
