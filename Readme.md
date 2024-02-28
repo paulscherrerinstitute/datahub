@@ -11,9 +11,9 @@ Install via Anaconda/Miniconda:
 conda install -c paulscherrerinstitute -c conda-forge  datahub
 ```
 
-# Usage from commandline
+# Usage from command line
 
-On the command line data can be retrieved to a as follow:
+On the command line data can be retrieved as follow:
 
 ```bash
 datahub --file <FILE_NAME> --start <START> --end <END> --<SERVICE> <option_1> <value_1> ... <option_n> <value_n> 

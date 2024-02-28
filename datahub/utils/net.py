@@ -21,6 +21,8 @@ def get_host_port_from_stream_address(stream_address):
     return source_host, int(source_port)
 
 def create_http_conn(up):
+    if type(up) == str:
+        up = urllib.parse.urlparse(up)
     if up.scheme == "https":
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
         ctx.check_hostname = False
@@ -36,7 +38,7 @@ def create_http_conn(up):
     return conn
 
 
-def http_req(method, url):
+def http_req(method, url, conn=None):
     headers = {
         "X-PythonDataAPIPackageVersion": datahub.version(),
         "X-PythonDataAPIModule": __name__,
@@ -44,27 +46,32 @@ def http_req(method, url):
         "X-PythonVersionInfo": str(sys.version_info),
     }
     up = urllib.parse.urlparse(url)
-    conn = create_http_conn(up)
+    if conn is None:
+        conn = create_http_conn(up)
     conn.request(method, up.path, None, headers)
     #return conn.getresponse()
     return conn
 
 
-def http_data_query(query, url):
-    method = "POST"
-    body = json.dumps(query)
+def http_data_query(query, url, method = "POST", content_type="application/json", accept="application/octet-stream", conn=None):
     headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/octet-stream",
+        "Content-Type": content_type,
+        "Accept": accept,
         "X-PythonDataAPIPackageVersion": datahub.version(),
         "X-PythonDataAPIModule": __name__,
         "X-PythonVersion": re.sub(r"[\t\n]", " ", str(sys.version)),
         "X-PythonVersionInfo": str(sys.version_info),
     }
     up = urllib.parse.urlparse(url)
-    conn = create_http_conn(up)
-    conn.request(method, up.path, body, headers)
-    #return conn.getresponse()
+    if conn is None:
+        conn = create_http_conn(up)
+    if method == "GET":
+        params = urllib.parse.urlencode(query)
+        url = f'{url}?{params}'
+        conn.request("GET", url, headers=headers)
+    else:
+        body = json.dumps(query)
+        conn.request(method, up.path, body, headers)
     return conn
 
 def get_json(url):

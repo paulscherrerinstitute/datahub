@@ -37,8 +37,7 @@ class Table(Consumer):
             values = self.data[key]
             if values is not None and (len(values) > 0):
                 df = pd.DataFrame(self.data[key])
-                if drop:
-                    df = df.drop(columns=[drop])
+                df = df.drop(columns=[drop])
                 df = df.set_index(index)
 
                 if dataframe is None:

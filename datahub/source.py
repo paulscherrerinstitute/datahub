@@ -42,6 +42,7 @@ class Source():
         self.query_id = self.user_id = None
         self.processing_thread=None
         self.aborted = False
+        self.running = False
         self.auto_decompress = auto_decompress
         Source.instances.add(self)
 
@@ -153,11 +154,17 @@ class Source():
             self.do_run(query)
 
     def join(self, timeout=None):
-        if self.is_running():
+        if self.is_thread_running():
             self.processing_thread.join(timeout)
 
+    def is_thread_running(self):
+        return self.processing_thread and  self.processing_thread.is_alive()
+
     def is_running(self):
-        return self.processing_thread and   self.processing_thread.is_alive()
+        return self.running
+
+    def is_aborted(self):
+        return self.aborted
 
     def is_in_processing_thread(self):
         return self.processing_thread == current_thread()
@@ -167,6 +174,7 @@ class Source():
         self.aborted = True
 
     def do_run(self, query):
+        self.running = True
         self.on_start()
         try:
             exc = None
@@ -176,6 +184,7 @@ class Source():
             raise
         finally:
             self.on_stop(exc)
+            self.running = False
 
     def add_listener(self, listener):
         self.listeners.append(listener)
@@ -228,7 +237,7 @@ class Source():
         self.channel_info = {}
 
     def close(self):
-        if self.is_running():
+        if self.is_thread_running():
             if not self.is_in_processing_thread():
                 self.abort()
                 self.join()

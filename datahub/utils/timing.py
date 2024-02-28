@@ -16,7 +16,9 @@ PULSE_ID_INTERVAL = 0.01
 PULSE_ID_INTERVAL_DEC = len(str(PULSE_ID_INTERVAL).split('.')[1]) if '.' in str(PULSE_ID_INTERVAL) else 0
 
 def create_timestamp(sec, nano=0):
-    return int(sec * 1000000000 + nano)
+    #Doing in 2 steps, because if multiply by 10e9 that there will rounding error that will change the final timestamp
+    micros = int(sec * 1000000)
+    return (micros * 1000) + nano
 
 def convert_timestamp(timestamp, type="nano"):
     if type == "str":

@@ -21,6 +21,7 @@ from datahub.sources.camserver import Pipeline
 from datahub.sources.camserver import Camera
 from datahub.sources.databuffer import DataBuffer
 from datahub.sources.dispatcher import Dispatcher
+from datahub.sources.daqbuf import Daqbuf
 from datahub.consumer import Consumer
 from datahub.consumers.h5 import HDF5Writer
 from datahub.consumers.txt import TextWriter
@@ -32,13 +33,13 @@ def cleanup():
     Consumer.cleanup()
 
 
-KNOWN_SOURCES  = {
-    "epics":Epics,
-    "bsread":Bsread,
-    "pipeline":Pipeline,
-    "camera":Camera,
-    "databuffer":DataBuffer,
-    "retrieval":Retrieval,
-    "dispatcher":Dispatcher
+KNOWN_SOURCES = {
+    "epics": Epics,
+    "bsread": Bsread,
+    "pipeline": Pipeline,
+    "camera": Camera,
+    "databuffer": DataBuffer,
+    "retrieval": Retrieval,
+    "dispatcher": Dispatcher
     }
 from datahub.main import run_json
