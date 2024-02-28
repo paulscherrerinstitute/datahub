@@ -1,6 +1,4 @@
-import requests
 from datahub import *
-import os
 import io
 from threading import Thread
 try:

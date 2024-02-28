@@ -16,14 +16,17 @@ requirements:
   run:
     - python
     - requests
-    - pandas
     - h5py
-    - bitshuffle
-    - pytz
     - numpy
-    - pyepics
-    - bsread
 
+#Optional requirements
+#Q   - pyepics
+#    - bsread
+#    - pytz
+#    - pandas
+#    - bitshuffle
+#    - dateutil
+#    - cbor2
 
 about:
   home: https://github.com/paulscherrerinstitute/datahub

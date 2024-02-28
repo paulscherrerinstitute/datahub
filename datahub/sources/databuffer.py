@@ -1,7 +1,4 @@
-import requests
-from datetime import datetime, timedelta
 from datahub import *
-import os
 
 _logger = logging.getLogger(__name__)
 

@@ -1,13 +1,19 @@
-import bsread
+try:
+    import bsread
+except:
+    bsread = None
+
 from datahub import *
 
 _logger = logging.getLogger(__name__)
 
 class Bsread(Source):
-    DEFAULT_URL = bsread.DEFAULT_DISPATCHER_URL
+    DEFAULT_URL = None if bsread is None else bsread.DEFAULT_DISPATCHER_URL
 
     def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, **kwargs):
         Source.__init__(self, url=url, path=path, **kwargs)
+        if bsread is None:
+            raise ("BSREAD library not available")
         self.mode = mode
         self.context = 0
 

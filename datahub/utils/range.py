@@ -1,5 +1,3 @@
-import logging
-from datetime import datetime
 from datahub.utils.timing import *
 
 _logger = logging.getLogger(__name__)

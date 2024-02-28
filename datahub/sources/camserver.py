@@ -1,6 +1,4 @@
 from datahub import *
-import requests
-import os
 
 TIMEOUT = None
 

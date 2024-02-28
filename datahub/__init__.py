@@ -1,4 +1,6 @@
 from pkg_resources import resource_stream
+import requests
+import os
 
 def version():
     with resource_stream(__name__, "package_version.txt") as res:

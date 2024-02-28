@@ -1,7 +1,5 @@
 from datahub import *
 import io
-import os
-import requests
 
 _logger = logging.getLogger(__name__)
 

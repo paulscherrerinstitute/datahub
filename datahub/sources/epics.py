@@ -1,8 +1,9 @@
-import epics
-import time
-import os
+try:
+    import epics
+except:
+    epics = None
+
 from datahub import *
-import requests
 
 GENERATE_ID = False
 
@@ -10,6 +11,8 @@ _logger = logging.getLogger(__name__)
 
 class Channel:
     def __init__(self, name, source):
+        if epics is None:
+            raise ("EPICS library not available")
         self.name = name
         self.channel = epics.PV(name, auto_monitor=True)
         self.id = 0
