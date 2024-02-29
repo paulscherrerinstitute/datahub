@@ -18,6 +18,7 @@ from datahub.utils.range import QueryRange
 from datahub.source import Source
 from datahub.sources.retrieval import Retrieval
 from datahub.sources.bsread import Bsread
+from datahub.sources.array10 import Array10
 from datahub.sources.epics import Epics
 from datahub.sources.camserver import Pipeline
 from datahub.sources.camserver import Camera
@@ -43,6 +44,7 @@ KNOWN_SOURCES = {
     "databuffer": DataBuffer,
     "retrieval": Retrieval,
     "dispatcher": Dispatcher,
-    "daqbuf": Daqbuf
+    "daqbuf": Daqbuf,
+    "array10": Array10
     }
 from datahub.main import run_json
