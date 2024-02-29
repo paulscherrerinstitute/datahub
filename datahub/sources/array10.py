@@ -28,6 +28,9 @@ class Array10(Source):
                 if self.range.has_started():
                     pulse_id, array = data
                     name = channel if channel else (self.source if self.source else "Array10")
+                    if not self.reshape:
+                        if self.pid == 0:
+                            self.receive_channel(name + "_shape", self.shape, None, None)
                     self.receive_channel(name, array, None, pulse_id if GENERATE_ID else None, check_changes=True)
         finally:
             self.close_channels()
@@ -69,7 +72,7 @@ class Array10(Source):
             if data is not None:
                 array = numpy.frombuffer(data, dtype=self.dtype)
                 if self.reshape:
-                    array=array.reshape(self.shape)
+                    array = array.reshape(self.shape)
                 self.pid = self.pid + 1
                 return self.pid, array
         except Exception as e:
