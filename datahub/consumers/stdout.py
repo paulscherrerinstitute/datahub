@@ -74,7 +74,7 @@ class StdoutWriter(Consumer):
 
         print(self.align.format(
             str(name),
-            str(timestamp),
+            str(timesttimestampamp),
             str(pulse_id),
             value
         ))
