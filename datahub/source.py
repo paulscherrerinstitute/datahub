@@ -77,11 +77,11 @@ class Source():
             return str(self.path)
         return self.get_id()
 
-    def on_channel_header(self, name, typ, byteOrder, shape, channel_compression, has_id=True):
-        self.channel_info[name] = [typ, byteOrder, shape, channel_compression, has_id]
+    def on_channel_header(self, name, typ, byteOrder, shape, channel_compression, metadata={}):
+        self.channel_info[name] = [typ, byteOrder, shape, channel_compression, metadata]
         for listener in self.listeners:
             try:
-                listener.on_channel_header(self, name, typ, byteOrder, shape, None if (self.auto_decompress) else channel_compression, has_id)
+                listener.on_channel_header(self, name, typ, byteOrder, shape, None if (self.auto_decompress) else channel_compression, metadata)
             except Exception as e:
                 _logger.exception("Error creating channel on listener %s: %s" % (str(listener), str((name, typ, byteOrder, shape, channel_compression))))
 
@@ -93,7 +93,7 @@ class Source():
         timestamp = convert_timestamp(timestamp, self.time_type)
 
         if self.auto_decompress:
-            [typ, byteOrder, shape, channel_compression, has_id] = self.channel_info[name]
+            [typ, byteOrder, shape, channel_compression, metadata] = self.channel_info[name]
             if channel_compression:
                 value = decompress(value, name, channel_compression, shape, typ, byteOrder)
         for listener in self.listeners:
@@ -200,7 +200,7 @@ class Source():
         self.listeners.clear()
 
     #Utility methods to manage automatically calling on_channel_header on the first stream value
-    def receive_channel(self, channel_name, value, timestamp, id, check_changes=False, check_types=False):
+    def receive_channel(self, channel_name, value, timestamp, id, check_changes=False, check_types=False, metadata={}):
         existing = channel_name in self.channel_formats
         if check_types:
             if type(value) == int:
@@ -223,11 +223,14 @@ class Source():
                 return
 
             if fmt != self.channel_formats.get(channel_name, None):
+                if metadata is None:
+                    metadata = {}
+                metadata["has_id"] = id is not None
                 if existing:
                     self.on_channel_completed(channel_name)
                     _logger.warning("Channel %s changed type from %s to %s." % (str(channel_name), str(self.channel_formats.get(channel_name)), str(fmt)))
                     del self.channel_formats[channel_name]
-                self.on_channel_header(channel_name, typ, Endianness.LITTLE, shape, None, id is not None)
+                self.on_channel_header(channel_name, typ, Endianness.LITTLE, shape, None, metadata)
                 self.channel_formats[channel_name] = fmt
 
         self.on_channel_record(channel_name, timestamp, id, value)

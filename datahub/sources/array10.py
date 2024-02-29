@@ -28,10 +28,8 @@ class Array10(Source):
                 if self.range.has_started():
                     pulse_id, array = data
                     name = channel if channel else (self.source if self.source else "Array10")
-                    if not self.reshape:
-                        if self.pid == 0:
-                            self.receive_channel(name + "_shape", self.shape, None, None, check_types=True)
-                    self.receive_channel(name, array, None, pulse_id if GENERATE_ID else None, check_changes=True)
+                    metadata = {"width": self.shape[1], "height": self.shape[1]} if self.reshape else {}
+                    self.receive_channel(name, array, None, pulse_id if GENERATE_ID else None, check_changes=True, metadata=metadata)
         finally:
             self.close_channels()
             self.disconnect()

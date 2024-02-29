@@ -51,8 +51,9 @@ class HDF5Writer(Consumer):
                 break
         return name
 
-    def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, has_id):
+    def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         prefix, channel = self.get_path(source), self.get_group(source, name)
+        has_id = metadata.get("has_id", True)
         if source.time_type == "str":
             ts_ds = Dataset(prefix, channel, "timestamp", self.file, dtype="str", dataset_compression=self.metadata_compression)
         elif source.time_type == "sec":
@@ -78,14 +79,14 @@ class HDF5Writer(Consumer):
             self.file[f"{prefix}"].attrs["id"] = str(source.get_id())
             for key in source.query.keys():
                 self.file[f"{prefix}"].attrs[key] = str(source.query[key])
-
         self.datasets[source][name] = [ts_ds, id_ds, val_ds]
         self.file[f"{prefix}/{channel}"].attrs["name"] = str(name)
         self.file[f"{prefix}/{channel}"].attrs["type"] = str(type)
         self.file[f"{prefix}/{channel}"].attrs["byteOrder"] = str(byteOrder)
         self.file[f"{prefix}/{channel}"].attrs["shape"] = str(shape)
         self.file[f"{prefix}/{channel}"].attrs["compression"] = str(channel_compression)
-
+        for key in metadata.keys():
+            self.file[f"{prefix}/{channel}"].attrs[key] = metadata[key]
 
     def on_channel_record(self, source, name, timestamp, pulse_id, value):
         [ts_ds, id_ds, val_ds] = self.datasets[source][name]

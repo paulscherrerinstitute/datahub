@@ -27,7 +27,7 @@ class TextWriter(Consumer):
     def get_path(self, source, name):
         return f"{self.folder}/{name}"
 
-    def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, has_id):
+    def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         if len(shape)<2:
             filename = self.get_path(source, name)
             self.files[source][name] = open(filename, 'a')

@@ -51,7 +51,7 @@ class StdoutWriter(Consumer):
         msg = self.center(f"Finished {source.get_desc()} at {now}")
         print(f"{self.color_sources}{msg}{TextColors.RESET}")
 
-    def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, has_id):
+    def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         #print (f"{self.color_names}\t+{name} - {typ} {byteOrder} {shape} {channel_compression}{TextColors.RESET}")
         pass
 

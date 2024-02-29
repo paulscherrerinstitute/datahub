@@ -8,7 +8,7 @@ class Consumer:
     def on_start(self, source):
         pass
 
-    def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, has_id):
+    def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         pass
 
     def on_channel_record(self, source, name, timestamp, pulse_id, value):
