@@ -8,7 +8,7 @@ from datahub import *
 _logger = logging.getLogger(__name__)
 
 class Bsread(Source):
-    DEFAULT_URL = None if bsread is None else bsread.DEFAULT_DISPATCHER_URL
+    DEFAULT_URL = os.environ.get("BSREAD_DEFAULT_URL", None if (bsread is None) else bsread.DEFAULT_DISPATCHER_URL)
 
     def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, **kwargs):
         Source.__init__(self, url=url, path=path, **kwargs)
@@ -18,7 +18,7 @@ class Bsread(Source):
         self.context = 0
 
     def run(self, query):
-        mode = bsread.PULL if self.mode  == "PULL" else bsread.SUB
+        mode = bsread.PULL if self.mode == "PULL" else bsread.SUB
         receive_timeout = query.get("receive_timeout", 3000)
         channels = query.get("channels", None)
         if self.url == bsread.DEFAULT_DISPATCHER_URL:

@@ -2,11 +2,12 @@ import zmq
 
 from datahub import *
 
+GENERATE_ID = False
 _logger = logging.getLogger(__name__)
 
 class Array10(Source):
-
-    def __init__(self, url, mode="SUB", path=None, reshape=False, **kwargs):
+    DEFAULT_URL = os.environ.get("ARRAY10_DEFAULT_URL", None)
+    def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, reshape=False, **kwargs):
         Source.__init__(self, url=url, path=path, **kwargs)
         self.context = 0
         self.mode = mode
@@ -27,7 +28,7 @@ class Array10(Source):
                 if self.range.has_started():
                     pulse_id, array = data
                     name = channel if channel else (self.source if self.source else "Array10")
-                    self.receive_channel(name, array, None, pulse_id, check_changes=True)
+                    self.receive_channel(name, array, None, pulse_id if GENERATE_ID else None, check_changes=True)
         finally:
             self.close_channels()
             self.disconnect()
