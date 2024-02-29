@@ -30,7 +30,7 @@ class Array10(Source):
                     name = channel if channel else (self.source if self.source else "Array10")
                     if not self.reshape:
                         if self.pid == 0:
-                            self.receive_channel(name + "_shape", self.shape, None, None)
+                            self.receive_channel(name + "_shape", self.shape, None, None, check_types=True)
                     self.receive_channel(name, array, None, pulse_id if GENERATE_ID else None, check_changes=True)
         finally:
             self.close_channels()
