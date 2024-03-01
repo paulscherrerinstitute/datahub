@@ -25,7 +25,7 @@ class BsreadTest(unittest.TestCase):
         with Bsread(url="tcp://localhost:9999", mode="PULL", time_type="str") as source:
             listener = Listener()
             source.add_listener(listener)
-            source.req( ["UInt8Scalar", "Float32Scalar"], 0.0, 0.2)
+            source.req(["UInt8Scalar", "Float32Scalar"], 0.0, 0.2)
 
 if __name__ == '__main__':
     unittest.main()
