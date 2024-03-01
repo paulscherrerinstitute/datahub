@@ -15,8 +15,6 @@ query = {
     "end": end
 }
 
-subsampling = None # 1.0 #100
-
 class BsreadTest(unittest.TestCase):
     def setUp(self):
         self.source = Bsread(url=url, mode=mode, time_type="str")
@@ -27,14 +25,14 @@ class BsreadTest(unittest.TestCase):
 
     def test_listeners(self):
         hdf5 = HDF5Writer(filename, default_compression=Compression.GZIP)
-        stdout = StdoutWriter()
+        stdout = Stdout()
         table = Table()
         #self.source.set_id("bsread")
         self.source.add_listener(hdf5)
         self.source.add_listener(stdout)
         self.source.add_listener(table)
-        self.source.request(query, subsampling=subsampling)
-        self.source.req(channels, start, end, receive_timeout=5000, subsampling=subsampling)
+        self.source.request(query)
+        self.source.req(channels, start, end, receive_timeout=5000)
         dataframe = table.as_dataframe()
         print(dataframe.columns)
         if channels:

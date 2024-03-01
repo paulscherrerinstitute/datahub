@@ -47,7 +47,7 @@ def run_json(task):
             else:
                 raise Exception ("Invalid format: " + format)
         if prnt:
-            consumers.append(StdoutWriter())
+            consumers.append(Stdout())
         sources = []
 
         #If does nt have query arg, construct based on channels arg and start/end

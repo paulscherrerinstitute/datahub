@@ -30,7 +30,7 @@ class CamserverTest(unittest.TestCase):
 
     def test_bsread(self):
         hdf5 = HDF5Writer(filename)
-        #stdout = StdoutWriter()
+        #stdout = Stdout()
         table = Table()
         self.source.add_listener(hdf5)
         #self.source.add_listener(stdout)

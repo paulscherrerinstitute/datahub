@@ -86,7 +86,7 @@ query = {
 }
 
 with DataBuffer(backend="sf-databuffer") as source:
-    stdout = StdoutWriter()
+    stdout = Stdout()
     table = Table()
     source.add_listener(table)
     source.request(query)
@@ -106,7 +106,7 @@ query = {
 }
 
 with Retrieval(url="http://sf-daq-5.psi.ch:8380/api/1", backend="sf-imagebuffer") as source:
-    stdout = StdoutWriter()
+    stdout = Stdout()
     table = Table()
     source.add_listener(table)
     source.request(query)

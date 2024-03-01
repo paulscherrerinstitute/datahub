@@ -24,7 +24,7 @@ class EpicsTest(unittest.TestCase):
 
     def test_listeners(self):
         hdf5 = HDF5Writer(filename)
-        stdout = StdoutWriter()
+        stdout = Stdout()
         table = Table()
         #self.source.set_id("bsread")
         self.source.add_listener(hdf5)

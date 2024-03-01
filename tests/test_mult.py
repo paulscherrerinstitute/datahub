@@ -22,7 +22,7 @@ class EpicsTest(unittest.TestCase):
 
     def test_listeners(self):
         hdf5 = HDF5Writer(filename)
-        stdout = StdoutWriter()
+        stdout = Stdout()
         table = Table()
         self.epics.add_listener(hdf5)
         self.epics.add_listener(stdout)

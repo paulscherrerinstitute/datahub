@@ -14,7 +14,7 @@ class TextColors:
     MAGENTA = "\033[95m"
     CYAN = "\033[96m"
 
-class StdoutWriter(Consumer):
+class Stdout(Consumer):
     def __init__(self,  **kwargs):
         Consumer.__init__(self, **kwargs)
         self.align = "{:<32} {:<24} {:<12} {:<40}"
