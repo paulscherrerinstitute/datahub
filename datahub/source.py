@@ -90,18 +90,18 @@ class Source():
 
 
     def on_channel_record(self, name, timestamp, pulse_id, value):
-        if self.downsample or self.modulo:
+        if self.downsample:
             now = time.time()
             last_timestamp, last_index = self.last_rec_info[name]
             self.last_rec_info[name][1] = last_index + 1
-            # downsample is divider
+            # interval is divider
             if self.modulo:
                 if last_index % self.modulo != 0:
                     return
-            #Dubsampling is min interval
-            if self.downsample:
+            #Downsampling is interval
+            if self.interval:
                 timespan = now - last_timestamp
-                if timespan < self.downsample:
+                if timespan < self.interval:
                     return
             self.last_rec_info[name][0] = now
 
@@ -171,13 +171,13 @@ class Source():
             except:
                 raise RuntimeError("Invalid modulo: ", self.modulo)
 
-        self.downsample = self.query.get("downsample", None)
-        if type(self.downsample) is str:
+        self.interval = self.query.get("interval", None)
+        if type(self.interval) is str:
             try:
-                self.downsample = float(self.downsample)
+                self.interval = float(self.interval)
             except:
-                raise RuntimeError("Invalid downsample: ", self.downsample)
-
+                raise RuntimeError("Invalid interval: ", self.interval)
+        self.downsample = self.interval or self.modulo
         self.query_index = Source.query_index.get(self.type, -1) + 1
         Source.query_index[self.type]=self.query_index
         self.query_id = f"{self.type}_{self.query_index}"

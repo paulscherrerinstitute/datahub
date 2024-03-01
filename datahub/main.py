@@ -20,7 +20,7 @@ def run_json(task):
         decompress = task.get("decompress", False)
         compression = task.get("compression", Compression.GZIP)
         parallel = task.get("parallel", None)
-        downsample = task.get("downsample", None)
+        interval = task.get("interval", None)
         modulo = task.get("modulo", None)
         search = task.get("search", None)
         verbose  = task.get("verbose", None)
@@ -52,7 +52,7 @@ def run_json(task):
 
         #If does nt have query arg, construct based on channels arg and start/end
         def get_query(source):
-            nonlocal start, end, downsample, modulo
+            nonlocal start, end, interval, modulo
             query = source.get("query", None)
             if query is None:
                 channels = source.pop("channels", [])
@@ -66,9 +66,12 @@ def run_json(task):
                 query["start"] = start
             if "end" not in query:
                 query["end"] = end
-            if "start" not in query:
-            downsample = task.get("downsample", None)
-            modulo = task.get("modulo", None)
+            if "interval" not in query:
+                if interval:
+                    query["interval"] = interval
+            if "modulo" not in query:
+                if modulo:
+                    query["modulo"] = modulo
 
             if query_id:
                 if query["start"]:
@@ -166,7 +169,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--')
     parser.add_argument("-j", "--json", help="Complete query defined as JSON", required=False)
     parser.add_argument("-f", "--file", help="Save data to file", required=False)
-    parser.add_argument("-o", "--format", help="File format: h5 (default) or txt", required=False)
+    parser.add_argument("-fmt", "--format", help="File format: h5 (default) or txt", required=False)
     parser.add_argument("-p", "--print", action='store_true', help="Print data to stdout", required=False)
     parser.add_argument("-t", "--time", help="Time type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
@@ -174,11 +177,11 @@ def parse_args():
     parser.add_argument("-i", "--id", action='store_true', help="Query by id, and not time", required=False)
     parser.add_argument("-c", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-d", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
-    parser.add_argument("-a", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
-    parser.add_argument("-l", "--path", help="Path to data in the file", required=False)
-    parser.add_argument("-r", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
-    parser.add_argument("-d", "--downsample", help="Minimum interval between samples in seconds", required=False)
-    parser.add_argument("-m", "--modulo", help="Modulo of the samples", required=False)
+    parser.add_argument("-pl", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
+    parser.add_argument("-pt", "--path", help="Path to data in the file", required=False)
+    parser.add_argument("-sr", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
+    parser.add_argument("-di", "--interval", help="Downsampling interval between samples in seconds", required=False)
+    parser.add_argument("-dm", "--modulo", help="Downsampling modulo of the samples", required=False)
     parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
 
     for name, source in KNOWN_SOURCES.items():
@@ -221,8 +224,8 @@ def main():
                 task["compression"] = args.compression
             if args.parallel:
                 task["parallel"] = args.parallel
-            if args.downsample:
-                task["downsample"] = args.downsample
+            if args.interval:
+                task["interval"] = args.interval
             if args.modulo:
                 task["modulo"] = args.modulo
             if args.search is not None:
