@@ -17,7 +17,6 @@ class TextColors:
 class StdoutWriter(Consumer):
     def __init__(self,  **kwargs):
         Consumer.__init__(self, **kwargs)
-        self.time_as_string = True
         self.align = "{:<32} {:<24} {:<12} {:<40}"
         self.columns = ("Name", "Timestamp", "ID", "Value")
         self.color_header = TextColors.CYAN
@@ -69,8 +68,6 @@ class StdoutWriter(Consumer):
             value = f"{str(value.dtype)}{str(value.shape)} {val_str}"
         else:
             value = str(value)
-        #if self.time_as_string:
-        #   timestamp = print_timestamp(timestamp, False)
 
         print(self.align.format(
             str(name),

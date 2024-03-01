@@ -2,7 +2,6 @@ class Consumer:
     instances = set()
 
     def __init__(self, **kwargs):
-        time_as_string = kwargs.get("time_as_string", False)
         Consumer.instances.add(self)
 
     def on_start(self, source):
