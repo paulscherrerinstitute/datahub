@@ -20,6 +20,8 @@ def run_json(task):
         decompress = task.get("decompress", False)
         compression = task.get("compression", Compression.GZIP)
         parallel = task.get("parallel", None)
+        downsample = task.get("downsample", None)
+        modulo = task.get("modulo", None)
         search = task.get("search", None)
         verbose  = task.get("verbose", None)
         query_id = task.get("id", False)
@@ -50,7 +52,7 @@ def run_json(task):
 
         #If does nt have query arg, construct based on channels arg and start/end
         def get_query(source):
-            nonlocal start, end
+            nonlocal start, end, downsample, modulo
             query = source.get("query", None)
             if query is None:
                 channels = source.pop("channels", [])
@@ -59,10 +61,15 @@ def run_json(task):
                     channels = [s.lstrip("'\"").rstrip("'\"") for s in channels]
                 query = {"channels": channels}
                 query.update(source)
+                print (query)
             if "start" not in query:
                 query["start"] = start
             if "end" not in query:
                 query["end"] = end
+            if "start" not in query:
+            downsample = task.get("downsample", None)
+            modulo = task.get("modulo", None)
+
             if query_id:
                 if query["start"]:
                     query["start"]=int(query["start"])
@@ -159,7 +166,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--')
     parser.add_argument("-j", "--json", help="Complete query defined as JSON", required=False)
     parser.add_argument("-f", "--file", help="Save data to file", required=False)
-    parser.add_argument("-m", "--format", help="File format: h5 (default) or txt", required=False)
+    parser.add_argument("-o", "--format", help="File format: h5 (default) or txt", required=False)
     parser.add_argument("-p", "--print", action='store_true', help="Print data to stdout", required=False)
     parser.add_argument("-t", "--time", help="Time type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
@@ -170,6 +177,8 @@ def parse_args():
     parser.add_argument("-a", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
     parser.add_argument("-l", "--path", help="Path to data in the file", required=False)
     parser.add_argument("-r", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
+    parser.add_argument("-d", "--downsample", help="Minimum interval between samples in seconds", required=False)
+    parser.add_argument("-m", "--modulo", help="Modulo of the samples", required=False)
     parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
 
     for name, source in KNOWN_SOURCES.items():
@@ -212,6 +221,10 @@ def main():
                 task["compression"] = args.compression
             if args.parallel:
                 task["parallel"] = args.parallel
+            if args.downsample:
+                task["downsample"] = args.downsample
+            if args.modulo:
+                task["modulo"] = args.modulo
             if args.search is not None:
                 task["search"] = args.search
             if args.verbose is not None:

@@ -10,7 +10,7 @@ class Source():
     instances = set()
 
     def __init__(self, url=None, backend=None, query_path=None, search_path=None, auto_decompress=False, path=None,
-                 known_backends=[], time_type="nano", **kwargs):
+                 known_backends=[], time_type="nano",  **kwargs):
         self.url = url
         if query_path is not None:
             if not url.endswith(query_path):
@@ -23,6 +23,7 @@ class Source():
 
         self.channel_formats = {}
         self.channel_info = {}
+        self.last_rec_info = {}
         self.listeners = []
         if type(backend) == str:
             if backend.lower() in ["none", "null"]:
@@ -79,6 +80,8 @@ class Source():
 
     def on_channel_header(self, name, typ, byteOrder, shape, channel_compression, metadata={}):
         self.channel_info[name] = [typ, byteOrder, shape, channel_compression, metadata]
+        self.last_rec_info[name] = [0.0, 0] #timestamp, index
+
         for listener in self.listeners:
             try:
                 listener.on_channel_header(self, name, typ, byteOrder, shape, None if (self.auto_decompress) else channel_compression, metadata)
@@ -87,6 +90,21 @@ class Source():
 
 
     def on_channel_record(self, name, timestamp, pulse_id, value):
+        if self.downsample or self.modulo:
+            now = time.time()
+            last_timestamp, last_index = self.last_rec_info[name]
+            self.last_rec_info[name][1] = last_index + 1
+            # downsample is divider
+            if self.modulo:
+                if last_index % self.modulo != 0:
+                    return
+            #Dubsampling is min interval
+            if self.downsample:
+                timespan = now - last_timestamp
+                if timespan < self.downsample:
+                    return
+            self.last_rec_info[name][0] = now
+
         if timestamp is None:
             timestamp = create_timestamp(time.time())
 
@@ -108,10 +126,13 @@ class Source():
                 listener.on_channel_completed( self, name)
             except Exception as e:
                 _logger.exception("Error completing channel on listener %s: %s" % (str(listener), str(name)))
-        try:
-            del self.channel_info[name]
-        except:
-            pass
+        for d in (self.channel_info, self.last_rec_info):
+            try:
+                del self.channel_info[name]
+            except:
+                pass
+
+
 
     def on_start(self):
         for listener in self.listeners:
@@ -143,6 +164,20 @@ class Source():
         self.aborted = False
         self.query = query
         self.range = QueryRange(self.query)
+        self.modulo = self.query.get("modulo", None)
+        if type(self.modulo) is str:
+            try:
+                self.modulo= int (self.modulo)
+            except:
+                raise RuntimeError("Invalid modulo: ", self.modulo)
+
+        self.downsample = self.query.get("downsample", None)
+        if type(self.downsample) is str:
+            try:
+                self.downsample = float(self.downsample)
+            except:
+                raise RuntimeError("Invalid downsample: ", self.downsample)
+
         self.query_index = Source.query_index.get(self.type, -1) + 1
         Source.query_index[self.type]=self.query_index
         self.query_id = f"{self.type}_{self.query_index}"
@@ -240,6 +275,7 @@ class Source():
             self.on_channel_completed(channel_name)
         self.channel_formats = {}
         self.channel_info = {}
+        self.last_rec_info = {}
 
     def close(self):
         if self.is_thread_running():
