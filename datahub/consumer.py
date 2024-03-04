@@ -34,6 +34,12 @@ class Consumer:
         if self in Consumer.instances:
             Consumer.instances.remove(self)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     @staticmethod
     def cleanup():
         for consumer in list(Consumer.instances):

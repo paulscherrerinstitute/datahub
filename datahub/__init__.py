@@ -28,8 +28,9 @@ from datahub.sources.daqbuf import Daqbuf
 from datahub.consumer import Consumer
 from datahub.consumers.h5 import HDF5Writer
 from datahub.consumers.txt import TextWriter
-from datahub.consumers.stdout import StdoutWriter
+from datahub.consumers.stdout import Stdout
 from datahub.consumers.table import Table
+from datahub.consumers.plot import Plot
 
 def cleanup():
     Source.cleanup()

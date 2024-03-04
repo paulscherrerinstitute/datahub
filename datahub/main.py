@@ -14,6 +14,7 @@ def run_json(task):
         file = task.get("file", None)
         format = task.get("format", "h5")
         prnt = task.get("print", False)
+        plot = task.get("plot", None)
         start = task.get("start", None)
         end = task.get("end", None)
         path = task.get("path", None)
@@ -41,13 +42,20 @@ def run_json(task):
         consumers = []
         if file is not None:
             if format.lower() in ["h5", "hdf5"]:
-                consumers.append(HDF5Writer(file, default_compression=compression, path=path))
+                consumers.append(HDF5Writer(file, default_compression=compression))
             elif format.lower() in ["txt", "text"]:
                 consumers.append(TextWriter(file))
             else:
                 raise Exception ("Invalid format: " + format)
         if prnt:
             consumers.append(Stdout())
+        try:
+            if plot is not None:
+                consumers.append(Plot(port = 7777 if len(plot) == 0 else int(plot[0]),
+                                      timeout = 3.0 if len(plot) <2 else float(plot[1]),
+                                      channels = [] if len(plot) <3 else plot[2]))
+        except Exception as ex:
+            logger.exception(ex)
         sources = []
 
         #If does nt have query arg, construct based on channels arg and start/end
@@ -61,7 +69,6 @@ def run_json(task):
                     channels = [s.lstrip("'\"").rstrip("'\"") for s in channels]
                 query = {"channels": channels}
                 query.update(source)
-                print (query)
             if "start" not in query:
                 query["start"] = start
             if "end" not in query:
@@ -118,6 +125,9 @@ def run_json(task):
                 source.verbose = verbose
             if parallel is not None:
                 source.parallel = parallel
+            if path is not None:
+                if source.path is None:
+                    source.path = path
 
         if search is not None:
             if search == []:
@@ -171,6 +181,7 @@ def parse_args():
     parser.add_argument("-f", "--file", help="Save data to file", required=False)
     parser.add_argument("-fmt", "--format", help="File format: h5 (default) or txt", required=False)
     parser.add_argument("-p", "--print", action='store_true', help="Print data to stdout", required=False)
+    parser.add_argument("-g", "--plot", help="Create plots for data on given port (default=7777). ", required=False, nargs="*")
     parser.add_argument("-t", "--time", help="Time type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
     parser.add_argument("-e", "--end", help="Relative or absolute end time or ID", required=False)
@@ -208,6 +219,7 @@ def main():
                 task["format"] = args.format
             if args.print:
                 task["print"] = bool(args.print)
+            task["plot"] = args.plot
             if args.start:
                 task["start"] = args.start
             if args.end:
