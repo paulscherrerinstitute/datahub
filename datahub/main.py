@@ -15,7 +15,7 @@ def run_json(task):
         format = task.get("format", "h5")
         prnt = task.get("print", False)
         plot = task.get("plot", None)
-        matplot = task.get("matplot", None)
+        pshell = task.get("pshell", None)
         start = task.get("start", None)
         end = task.get("end", None)
         path = task.get("path", None)
@@ -51,14 +51,18 @@ def run_json(task):
         if prnt:
             consumers.append(Stdout())
         try:
-            if plot is not None:
-                consumers.append(Plot(port=7777 if len(plot) == 0 else int(plot[0]),
-                                      timeout=3.0 if len(plot) < 2 else float(plot[1]),
-                                      channels=[] if len(plot) < 3 else plot[2]))
+            if pshell is not None:
+                args = {}
+                for arg, val in zip(pshell[::2], pshell[1::2]):
+                    try:
+                        args[arg] = json.loads(val)
+                    except:
+                        args[arg] = val
+                consumers.append(PShell(**args))
         except Exception as ex:
             logger.exception(ex)
-        if matplot is not None:
-            consumers.append(MatPlot(channels=[] if len(matplot) < 1 else matplot[0]))
+        if plot is not None:
+            consumers.append(Plot(channels=[] if len(plot) < 1 else plot[0]))
         sources = []
 
         #If does nt have query arg, construct based on channels arg and start/end
@@ -184,8 +188,8 @@ def parse_args():
     parser.add_argument("-f", "--file", help="Save data to file", required=False)
     parser.add_argument("-fmt", "--format", help="File format: h5 (default) or txt", required=False)
     parser.add_argument("-p", "--print", action='store_true', help="Print data to stdout", required=False)
-    parser.add_argument("-g", "--plot", help="Create plots for data in a plot server on given port (default=7777). ", required=False, nargs="*")
-    parser.add_argument("-m", "--matplot", help="Create plots for data with matplotlib. ",required=False, nargs="*")
+    parser.add_argument("-m", "--plot", help="Create plots with matplotlib. ",required=False, nargs="*")
+    parser.add_argument("-ps", "--pshell", help="Create plots in a PShell plot server on given port (default=7777). ", required=False, nargs="*")
     parser.add_argument("-t", "--time", help="Time type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
     parser.add_argument("-e", "--end", help="Relative or absolute end time or ID", required=False)
@@ -224,7 +228,7 @@ def main():
             if args.print:
                 task["print"] = bool(args.print)
             task["plot"] = args.plot
-            task["matplot"] = args.matplot
+            task["pshell"] = args.pshell
             if args.start:
                 task["start"] = args.start
             if args.end:
