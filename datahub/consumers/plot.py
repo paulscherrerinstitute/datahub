@@ -27,7 +27,7 @@ except:
 
 
 class Plot(Consumer):
-    def __init__(self,  address="localhost", port=7777, timeout=3.0, channels=None, **kwargs):
+    def __init__(self,  address="localhost", port=7777, timeout=3.0, channels=None, layout="Grid", **kwargs):
         global PlotClient
         Consumer.__init__(self, **kwargs)
         self.context = {}
@@ -36,6 +36,7 @@ class Plot(Consumer):
         self.port = port
         self.timeout = timeout
         self.channels = channels
+        self.layout = layout
 
         if PlotClient is None:
             # If PShell package not installed try to load the plot client from the URL
@@ -64,7 +65,7 @@ class Plot(Consumer):
         ps = PlotClient(address=self.address, port=self.port, context=source_context, timeout=self.timeout)
         self.context[source] = ps
         ps.clear_plots()
-        ps.set_context_attrs(quality=None, layout="Grid")
+        ps.set_context_attrs(quality=None, layout=self.layout)
         ps.set_progress(None)
         ps.set_status("Idle")
 
@@ -95,6 +96,7 @@ class Plot(Consumer):
             xdata = None
         else:
             _logger.warning("Unsupported shape for channel: " + name)
+            return
         ps.clear_series(series)
         self.plots[name] = (plot, series, shape, xdata)
         ps.set_status("Running")

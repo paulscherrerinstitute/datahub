@@ -31,6 +31,7 @@ from datahub.consumers.txt import TextWriter
 from datahub.consumers.stdout import Stdout
 from datahub.consumers.table import Table
 from datahub.consumers.plot import Plot
+from datahub.consumers.matplot import MatPlot
 
 def cleanup():
     Source.cleanup()

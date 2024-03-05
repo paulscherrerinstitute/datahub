@@ -6,7 +6,7 @@ from datahub import *
 class PlotTest(unittest.TestCase):
 
     def test_epics(self):
-        with Plot() as plot:
+        with Plot(layout = "Vertical") as plot:
             with Epics(url="localhost:54321", time_type="str") as source:
                 source.add_listener(plot)
                 source.req(["TESTIOC:TESTSINUS:SinCalc"], 0.0, 2.0)
