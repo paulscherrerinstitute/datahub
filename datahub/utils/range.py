@@ -1,3 +1,6 @@
+import sys
+import time
+
 from datahub import is_null_str
 from datahub.utils.timing import *
 
@@ -14,10 +17,21 @@ class QueryRange():
 
     Optionally parameters "start_id", end_id", "start_tm" and end_tm" can be used to avoid type errors,
     """
+    RANGE_DEFAULTS_PULSE_ID = -(5 * 365 * 24 * 3600), (365 * 24 * 3600)  #From 5 years ago to one year from now
+
     def __init__(self, query):
         now = time.time()
         self.start = self._check_str(query.get("start", None))
         self.end = self._check_str(query.get("end", None))
+
+        range_defaults_pulse_id = self.time_to_id(now + QueryRange.RANGE_DEFAULTS_PULSE_ID[0]), \
+                                  self.time_to_id(now + QueryRange.RANGE_DEFAULTS_PULSE_ID[1])
+        if type(self.start) == float: #timestamp
+            if range_defaults_pulse_id[0] < self.start <range_defaults_pulse_id[1]:
+                self.start = int(self.start) #assumes pulse id
+        if type(self.end) == float: #timestamp
+            if range_defaults_pulse_id[0] < self.end <range_defaults_pulse_id[1]:
+                self.end = int(self.end) #assumes pulse id
 
         start_id = query.get("start_id", None)
         if start_id is not None:
@@ -197,3 +211,7 @@ class QueryRange():
             except Exception as ex:
                 _logger.error(ex)
         return date
+
+    def __str__(self):
+       return f"Range from {self.get_start_str()} ({self.get_start_id()}) to {self.get_end_str()} ({self.get_end_id()})"
+
