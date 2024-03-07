@@ -90,11 +90,13 @@ def run_json(task):
             if "modulo" not in query:
                 if modulo:
                     query["modulo"] = modulo
-
-            if query_id:
-                if query["start"]:
+            query_by_id = query_id
+            if "id" in query:
+                query_by_id = str_to_bool(str(query["id"]))
+            if query_by_id:
+                if not is_null_str(query["start"]):
                     query["start"]=int(query["start"])
-                if query["end"]:
+                if not is_null_str(query["end"]):
                     query["end"]=int(query["end"])
 
             return query
@@ -295,7 +297,6 @@ def main():
                             task[source].append({})
                             for arg, val in zip(src[::2], src[1::2]):
                                 full_name = get_full_argument_name(parser, arg)
-                                print(arg, full_name)
                                 if full_name:
                                     arg = full_name
                                 try:

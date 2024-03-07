@@ -6,6 +6,11 @@ def version():
     with resource_stream(__name__, "package_version.txt") as res:
         return res.read()[:-1].decode()
 
+def str_to_bool(str):
+    return str.lower() in ('true', 'yes', '1', 'on')
+
+def is_null_str(str):
+    return (str is None) or (str.lower() == "null") or (str.lower() == "none")
 
 class ProtocolError(RuntimeError):
     def __init__(self):

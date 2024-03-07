@@ -1,3 +1,4 @@
+from datahub import is_null_str
 from datahub.utils.timing import *
 
 _logger = logging.getLogger(__name__)
@@ -67,7 +68,7 @@ class QueryRange():
                 try:
                     return int(par)
                 except:
-                    if par.lower() == "null" or par.lower() == "None":
+                    if is_null_str(par):
                         return None
                     return par
         return par
