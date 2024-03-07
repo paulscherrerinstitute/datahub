@@ -10,7 +10,7 @@ class Source():
     instances = set()
 
     def __init__(self, url=None, backend=None, query_path=None, search_path=None, auto_decompress=False, path=None,
-                 known_backends=[], time_type="nano",  **kwargs):
+                 known_backends=[], time_type="nano", **kwargs):
         self.url = url
         if query_path is not None:
             if not url.endswith(query_path):
@@ -47,6 +47,7 @@ class Source():
         self.verbose = False
         self.parallel = False
         self.auto_decompress = auto_decompress
+        self.prefix = ""
         Source.instances.add(self)
 
     def __enter__(self):
@@ -79,6 +80,8 @@ class Source():
         return self.get_id()
 
     def on_channel_header(self, name, typ, byteOrder, shape, channel_compression, metadata={}):
+        if self.prefix:
+            name = self.prefix + name
         self.channel_info[name] = [typ, byteOrder, shape, channel_compression, metadata]
         self.last_rec_info[name] = [0.0, 0] #timestamp, index
 
@@ -90,6 +93,8 @@ class Source():
 
 
     def on_channel_record(self, name, timestamp, pulse_id, value):
+        if self.prefix:
+            name = self.prefix + name
         if self.downsample:
             now = time.time()
             last_timestamp, last_index = self.last_rec_info[name]
@@ -114,6 +119,7 @@ class Source():
             [typ, byteOrder, shape, channel_compression, metadata] = self.channel_info[name]
             if channel_compression:
                 value = decompress(value, name, channel_compression, shape, typ, byteOrder)
+
         for listener in self.listeners:
             try:
                 listener.on_channel_record( self, name, timestamp, pulse_id, value)
@@ -121,6 +127,8 @@ class Source():
                 _logger.exception("Error appending record on listener %s: %s" % (str(listener), str((name, timestamp, pulse_id, value))))
 
     def on_channel_completed(self, name):
+        if self.prefix:
+            name = self.prefix + name
         for listener in self.listeners:
             try:
                 listener.on_channel_completed( self, name)
@@ -164,6 +172,7 @@ class Source():
         self.aborted = False
         self.query = query
         self.range = QueryRange(self.query)
+
         self.modulo = self.query.get("modulo", None)
         if type(self.modulo) is str:
             try:
@@ -181,6 +190,18 @@ class Source():
         self.query_index = Source.query_index.get(self.type, -1) + 1
         Source.query_index[self.type]=self.query_index
         self.query_id = f"{self.type}_{self.query_index}"
+
+        prefix = self.query.get("prefix", None)
+        if prefix:
+            has_prefix = str_to_bool(str(prefix))
+            if has_prefix == True:
+                self.prefix = self.get_id() + ":"
+            elif has_prefix == False:
+                self.prefix = ""
+            else:
+                self.prefix = prefix
+        else:
+            self.prefix = ""
 
         if background:
             self.processing_thread = Thread(target=self.do_run, args=(query,))

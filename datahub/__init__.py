@@ -7,7 +7,11 @@ def version():
         return res.read()[:-1].decode()
 
 def str_to_bool(str):
-    return str.lower() in ('true', 'yes', '1', 'on')
+    if str.lower() in ('true', 'yes', '1'):
+        return True
+    if str.lower() in ('false', 'no', '0'):
+        return False
+    return None
 
 def is_null_str(str):
     return (str is None) or (str.lower() == "null") or (str.lower() == "none")

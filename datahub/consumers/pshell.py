@@ -125,8 +125,9 @@ class PShell(Consumer):
     def on_channel_completed(self, source, name):
         pc = self.clients.get(source, None)
         if pc:
-            pc.set_progress(None)
-            pc.set_status("Done")
+            if not pc.context.closed:
+                pc.set_progress(None)
+                pc.set_status("Done")
 
 
 

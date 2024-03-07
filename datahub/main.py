@@ -30,6 +30,7 @@ def run_json(task):
         modulo = task.get("modulo", None)
         search = task.get("search", None)
         verbose  = task.get("verbose", None)
+        prefix = task.get("prefix", None)
         query_id = task.get("id", False)
         time_type = task.get("time", "nano")
         if compression == "lz4":
@@ -71,7 +72,7 @@ def run_json(task):
 
         #If does nt have query arg, construct based on channels arg and start/end
         def get_query(source):
-            nonlocal start, end, interval, modulo
+            nonlocal start, end, interval, modulo, prefix
             query = source.get("query", None)
             if query is None:
                 channels = source.pop("channels", [])
@@ -90,6 +91,9 @@ def run_json(task):
             if "modulo" not in query:
                 if modulo:
                     query["modulo"] = modulo
+            if "prefix" not in query:
+                if prefix:
+                    query["prefix"] = prefix
             query_by_id = query_id
             if "id" in query:
                 query_by_id = str_to_bool(str(query["id"]))
@@ -98,7 +102,6 @@ def run_json(task):
                     query["start"]=int(query["start"])
                 if not is_null_str(query["end"]):
                     query["end"]=int(query["end"])
-
             return query
 
         def add_source(cfg, src, empty):
@@ -126,7 +129,7 @@ def run_json(task):
                     index = index + 1
             if index > 0:
                 ret = ret + ", "
-            ret = ret + f"auto_decompress={str(decompress)}, time_type='{str(time_type)}'"
+            ret = ret + f"auto_decompress={str(decompress)}, time_type='{str(time_type)}', prefix='{str(prefix)}'"
             ret = ret + ")"
             return ret
 
@@ -206,6 +209,7 @@ def parse_args():
     parser.add_argument("-c", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-d", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
     parser.add_argument("-pl", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
+    parser.add_argument("-px", "--prefix", action='store_true', help="Add source ID to channel names", required=False)
     parser.add_argument("-pt", "--path", help="Path to data in the file", required=False)
     parser.add_argument("-sr", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
     parser.add_argument("-di", "--interval", help="Downsampling interval between samples in seconds", required=False)
@@ -281,6 +285,8 @@ def main():
                 task["search"] = args.search
             if args.verbose is not None:
                 task["verbose"] = args.verbose
+            if args.prefix is not None:
+                task["prefix"] = args.prefix
 
             for source in KNOWN_SOURCES.keys():
                 source_str = eval("args." + source)

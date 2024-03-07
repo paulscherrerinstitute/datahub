@@ -108,11 +108,11 @@ def process_plotting(tx_queue,  stop_event):
                 continue
             if tx is not None:
                 if tx[0] == "START":
-                    create_plot(tx[1], tx[2], tx[3], tx[4], tx[5])
+                    create_plot(*tx[1:])
                 elif tx[0] == "REC":
-                    update_plot(tx[1], tx[2], tx[3])
+                    update_plot(*tx[1:])
                 if tx[0] == "END":
-                    show_plot(tx[1])
+                    show_plot(*tx[1:])
     except Exception as e:
         _logger.exception(e)
     finally:
