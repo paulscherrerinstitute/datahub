@@ -7,6 +7,10 @@ import inspect
 
 logger = logging.getLogger(__name__)
 
+SOURCE_SEPARATOR = "/"
+CHANNEL_SEPARATOR = ","
+EMPTY_SOURCE = [{}]
+
 def run_json(task):
     try:
         if type(task) == str:
@@ -33,12 +37,12 @@ def run_json(task):
         elif compression.lower() in ["null", "none"]:
             compression = None
 
-        empty_sources = []
-        empty_source = {}
+        valid_sources = {}
         for name in KNOWN_SOURCES.keys():
             _name = name
-            exec(name + ' = task.get("' + name + '", None)')
-            exec(f"if {name} == empty_source: empty_sources.append('{_name}')")
+            exec(f"{name} = task.get('{name}', None)")
+            exec(f"no = 0 if {name} is None else len({name})")
+            exec(f"for i in range(no): \n   if {name}[i] is not None: valid_sources['{name}_'+str(i)] = ({name}[i], KNOWN_SOURCES['{name}'])")
 
         consumers = []
         if file is not None:
@@ -72,7 +76,7 @@ def run_json(task):
             if query is None:
                 channels = source.pop("channels", [])
                 if type(channels) == str:
-                    channels = channels.split(',')
+                    channels = channels.split(CHANNEL_SEPARATOR)
                     channels = [s.lstrip("'\"").rstrip("'\"") for s in channels]
                 query = {"channels": channels}
                 query.update(source)
@@ -95,8 +99,8 @@ def run_json(task):
 
             return query
 
-        def add_source(cfg, src):
-            src.query = get_query(cfg)
+        def add_source(cfg, src, empty):
+            src.query = None if empty else get_query(cfg)
             sources.append(src)
 
         #Create source removing constructor parameters from the query dictionary
@@ -124,9 +128,11 @@ def run_json(task):
             ret = ret + ")"
             return ret
 
-        for name, source in KNOWN_SOURCES.items():
+        for name, (cfg,source) in valid_sources.items():
+            empty = cfg =={}
+            exec(f"{name} = cfg")
             constructor = eval("get_source_constructor(" + source.__name__ + ", '" + name + "')")
-            exec('if ' + name + ' is not None: add_source(' + name + ', ' + constructor + ')')
+            exec('if ' + name + ' is not None: add_source(' + name + ', ' + constructor + ', ' + str(empty) +')')
         for source in sources:
             if verbose is not None:
                 source.verbose = verbose
@@ -152,7 +158,7 @@ def run_json(task):
 
             for source in sources:
                 if source is not None:
-                    if source.type in empty_sources:
+                    if source.query is None:
                         source.print_help()
                     else:
                         source.request(source.query, background=True)
@@ -181,6 +187,7 @@ def get_source_meta(cls):
     ret = ret + ("start=None end=None")
     return ret
 
+
 def parse_args():
     """Parse cli arguments with argparse"""
     parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--')
@@ -208,12 +215,31 @@ def parse_args():
         eval('parser.add_argument("--' + name + '", metavar="' + meta + '", help="' + name + ' query arguments", required=False, nargs="*")')
 
     args = parser.parse_args()
-    return args
+    return parser, args
 
+def get_full_argument_name(parser, abbr):
+    for action in parser._actions:
+        if '-' + abbr in action.option_strings:
+            return action.dest
+    return None
+
+def _split_list(list, separator):
+    result = []
+    sublist = []
+    for item in list:
+        if item == separator:
+            if sublist:
+                result.append(sublist)
+                sublist = []
+        else:
+            sublist.append(item)
+    if sublist:
+        result.append(sublist)
+    return result
 
 def main():
     """Main function"""
-    args = parse_args()
+    parser, args = parse_args()
     try:
         #if args.action == 'search':
         #    return search(args)
@@ -260,12 +286,22 @@ def main():
                     if len(source_str) == 1:
                         task[source] = json.loads(source_str[0])
                     else:
-                        task[source] = {}
-                        for arg, val in zip(source_str[::2], source_str[1::2]):
-                            try:
-                                task[source][arg] = json.loads(val)
-                            except:
-                                task[source][arg] = val
+                        task[source] = []
+                        sources = _split_list(source_str, SOURCE_SEPARATOR)
+                        if sources == []:
+                            task[source] = EMPTY_SOURCE #if source is entered with no arguments, print help for it
+                        for src in sources:
+                            index = len( task[source] )
+                            task[source].append({})
+                            for arg, val in zip(src[::2], src[1::2]):
+                                full_name = get_full_argument_name(parser, arg)
+                                print(arg, full_name)
+                                if full_name:
+                                    arg = full_name
+                                try:
+                                    task[source][index][arg] = json.loads(val)
+                                except:
+                                    task[source][index][arg] = val
             run_json(task)
 
     except RuntimeError as e:
