@@ -3,6 +3,7 @@ import sys
 import numpy as np
 from datahub import Consumer
 from datahub.utils.timing import string_to_timestamp
+from datahub import str_to_bool
 
 _logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ except:
 
 
 class PShell(Consumer):
-    def __init__(self,  channels=None, address="localhost", port=7777, timeout=3.0, layout="Vertical", context=None,  **kwargs):
+    def __init__(self,  channels=None, address="localhost", port=7777, timeout=3.0, layout="Vertical", context=None, **kwargs):
         global PlotClient
         Consumer.__init__(self, **kwargs)
         self.clients = {}
@@ -61,7 +62,8 @@ class PShell(Consumer):
             client.close()
 
     def on_start(self, source):
-        pc = PlotClient(address=self.address, port=self.port, context=self.context, timeout=self.timeout)
+        source_context = str_to_bool(str(self.context))==True
+        pc = PlotClient(address=self.address, port=self.port, context=source.get_id() if source_context else self.context, timeout=self.timeout)
         self.clients[source] = pc
         pc.clear_plots()
         pc.set_context_attrs(quality=None, layout=self.layout)
