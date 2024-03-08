@@ -1,4 +1,6 @@
 """CLI interface """
+import traceback
+
 from datahub import *
 import argparse
 import logging
@@ -32,7 +34,8 @@ def run_json(task):
         verbose  = task.get("verbose", None)
         prefix = task.get("prefix", None)
         query_id = task.get("id", False)
-        time_type = task.get("time", "nano")
+        query_time = task.get("time", False)
+        time_type = task.get("timestamp", "nano")
         channels = task.get("channels", None)
         backend = task.get("backend", None)
         url = task.get("url", None)
@@ -99,14 +102,23 @@ def run_json(task):
             if "prefix" not in query:
                 if prefix:
                     query["prefix"] = prefix
+
             query_by_id = query_id
             if "id" in query:
                 query_by_id = str_to_bool(str(query["id"]))
-            if query_by_id:
-                if not is_null_str(query["start"]):
-                    query["start"]=int(query["start"])
-                if not is_null_str(query["end"]):
-                    query["end"]=int(query["end"])
+            query_by_time = query_time
+            if "time" in query:
+                query_by_time = str_to_bool(str(query["time"]))
+
+            for arg in "start", "end":
+                    try:
+                        if type(query[arg]) != str or not is_null_str(query[arg]):
+                            if query_by_id:
+                                query[arg] = int(query[arg])
+                            elif query_by_time:
+                                query[arg] = float(query[arg])
+                    except:
+                        pass
             return query
 
         def add_source(cfg, src, empty):
@@ -224,10 +236,11 @@ def parse_args():
     parser.add_argument("-p", "--print", action='store_true', help="Print data to stdout", required=False)
     parser.add_argument("-m", "--plot", help="Create plots with matplotlib. ",required=False, nargs="*")
     parser.add_argument("-ps", "--pshell", help="Create plots in a PShell plot server on given port (default=7777). ", required=False, nargs="*")
-    parser.add_argument("-t", "--time", help="Time type: nano/int (default), sec/float or str", required=False)
+    parser.add_argument("-tt", "--timestamp", help="Timestamp type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
     parser.add_argument("-e", "--end", help="Relative or absolute end time or ID", required=False)
-    parser.add_argument("-i", "--id", action='store_true', help="Query by id, and not time", required=False)
+    parser.add_argument("-i", "--id", action='store_true', help="Force query by id", required=False)
+    parser.add_argument("-t", "--time", action='store_true', help="Force query by time", required=False)
     parser.add_argument("-c", "--channels", help="Channels for querying on default source", required=False)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source", required=False)
@@ -293,7 +306,9 @@ def main():
             if args.id:
                 task["id"] = bool(args.id)
             if args.time:
-                task["time"] = args.time
+                task["time"] = bool(args.time)
+            if args.timestamp:
+                task["timestamp"] = args.timestamp
             if args.path:
                 task["path"] = args.path
             if args.decompress:
