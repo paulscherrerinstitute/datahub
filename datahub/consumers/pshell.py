@@ -1,35 +1,17 @@
 import logging
-import sys
 import numpy as np
 from datahub import Consumer
 from datahub.utils.timing import string_to_timestamp
 from datahub import str_to_bool
+from datahub.utils.plot import PlotClient
 
 _logger = logging.getLogger(__name__)
 
-def import_dynamic():
-    import importlib.util
-    import urllib.request
-    module_name = 'pshell_plot'
-    module_url = 'https://raw.githubusercontent.com/paulscherrerinstitute/pshell/master/src/main/python/pshell/plot.py'
-    response = urllib.request.urlopen(module_url)
-    module_code = response.read()
-    module_spec = importlib.util.spec_from_loader(module_name, loader=None, origin=module_url)
-    module = importlib.util.module_from_spec(module_spec)
-    module.__file__ = module_url
-    exec(module_code, module.__dict__)
-    sys.modules[module_name] = module
-
-try:
-    from pshell.plot import PlotClient
-except:
-        PlotClient = None
 
 
 
 class PShell(Consumer):
     def __init__(self,  channels=None, address="localhost", port=7777, timeout=3.0, layout="Vertical", context=None, **kwargs):
-        global PlotClient
         Consumer.__init__(self, **kwargs)
         self.clients = {}
         self.plots = {}
@@ -39,15 +21,6 @@ class PShell(Consumer):
         self.channels = channels
         self.layout = layout
         self.context = context
-
-        if PlotClient is None:
-            # If PShell package not installed try to load the plot client from the URL
-            try:
-                import_dynamic()
-                import pshell_plot
-                PlotClient = pshell_plot.PlotClient
-            except:
-                raise "Cannot import PShell plotting library"
 
         ps = PlotClient(address=self.address, port=self.port,  timeout=self.timeout)
         try:
