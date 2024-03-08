@@ -323,7 +323,15 @@ class Source():
         raise Exception(f"Search not implemented in {self.type}")
 
     def print_search(self, regex):
-        print(json.dumps(self.search(regex), indent=4))
+        if pd is None:
+            _logger.error("Pandas not installed: cannot report search as dataframe")
+        search = self.search(regex)
+        if type(search) == str:
+            print(search)
+        elif search is None:
+            print("Empty")
+        else:
+            print(json.dumps(search, indent=4))
 
     def print_help(self):
         print(self.type+ " [" + self.get_source_meta(self.__class__) + " ...]")

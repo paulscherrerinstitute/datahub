@@ -124,7 +124,6 @@ def run_json(task):
         def add_source(cfg, src, empty):
             nonlocal channels
             if empty and (channels is None):
-                print ("None")
                 src.query = None
             else:
                 src.query = get_query(cfg)
@@ -162,10 +161,9 @@ def run_json(task):
             return ret
 
         if len(valid_sources)==0:
-            if channels:
+            if channels or (search!=None):
                 # Add default source
                 valid_sources[DEFAULT_SOURCE+ "_0"] = ({},KNOWN_SOURCES[DEFAULT_SOURCE])
-
 
         for name, (cfg,source) in valid_sources.items():
             empty = cfg =={}
@@ -180,6 +178,7 @@ def run_json(task):
             if path is not None:
                 if source.path is None:
                     source.path = path
+
 
         if search is not None:
             if search == []:

@@ -106,10 +106,19 @@ class DataBuffer(Source):
         response = requests.post(self.search_url, json=cfg)
         ret = response.json()
         if not self.verbose:
-            try:
+            if pd is None:
                 if self.backend and ret[0]['backend'] == self.backend:
-                    return ret[0]['channels']
-            except:
-                pass
+                    ret = ret[0]['channels']
+            else:
+                if len(ret) == 0:
+                    return None
+                data = []
+                for src in ret:
+                    for channel in src["channels"]:
+                        data.append([src["backend"], channel])
+                df = pd.DataFrame(data, columns=["backend", "name"])
+                df = df.sort_values(by=["backend", "name"])
+                columns_to_display = ["backend", "name"]
+                ret = df[columns_to_display].to_string(index=False)
         return ret
 

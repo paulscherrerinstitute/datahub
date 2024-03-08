@@ -74,10 +74,19 @@ class Epics(Source):
         parameters["limit"] = 0
         response = requests.get(api_base_address + "/records", params=parameters)
         response.raise_for_status()
-        ret = response.json()
+        channels = response.json()
         if not self.verbose:
-            if facility:
-                ret = [record["name"] for record in ret]
+            if pd is None:
+                if facility:
+                    ret = [record["name"] for record in channels]
+                else:
+                    ret = [f"{record['name']} [{record['facility']}]" for record in channels]
             else:
-                ret = [f"{record['name']} [{record['facility']}]" for record in ret]
+                header = list(channels[0].keys()) if len(channels) > 0 else []
+                data = [d.values() for d in channels]
+                df = pd.DataFrame(data, columns=header)
+                if (len(header) > 0):
+                    df = df.sort_values(by=[header[0], header[1]])
+                    columns_to_display = ["facility", "name", "type", "ioc"] #, "description"]
+                    ret = df[columns_to_display].to_string(index=False)
         return ret

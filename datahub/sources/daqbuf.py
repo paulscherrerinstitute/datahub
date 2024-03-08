@@ -150,15 +150,30 @@ class Daqbuf(Source):
             self.close_channels()
 
     def search(self, regex):
-        cfg = {
-            "nameRegex": regex
-        }
-        if self.backend is not None:
-            cfg["backends"] = [self.backend]
-        response = requests.get(self.search_url, params=cfg)
-        ret = response.json()
+        if not regex:
+            return self.known_backends
+        else:
+            cfg = {
+                "nameRegex": regex
+            }
+            if self.backend:
+                cfg["backend"] = self.backend
+            response = requests.get(self.search_url, params=cfg)
+            ret = response.json()
 
-        if not self.verbose:
-            ret = [d["name"] for d in ret.get("channels", [])]
-        return ret
+            if not self.verbose:
+                channels = ret.get("channels", [])
+                if pd is None:
+                    ret = [d["name"] for d in ret.get("channels", [])]
+                else:
+                    if (len(channels)>0):
+                        header = list(channels[0].keys()) if len(channels) > 0 else []
+                        data = [d.values() for d in channels]
+                        df = pd.DataFrame(data, columns=header)
+                        df = df.sort_values(by=["backend", "name"])
+                        columns_to_display = ["backend", "name", "seriesId", "type", "shape"]
+                        ret = df[columns_to_display].to_string(index=False)
+                    else:
+                        return None
+            return ret
 

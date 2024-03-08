@@ -31,10 +31,16 @@ class Pipeline(Bsread):
         return get_response(self.address+rest_endpoint)["pipelines"]
 
     def search(self, regex):
-        instances = self.get_instances()
+        ret = self.get_instances()
+        print(ret)
         if regex:
-            instances = [element for element in instances if regex in element]
-        return instances
+            ret = [element for element in ret if regex in element]
+        if pd:
+            if len(ret) == 0:
+                return None
+            df = pd.DataFrame(ret, columns=["instances"])
+            ret = df.to_string(index=False)
+        return ret
 
 
 
@@ -58,7 +64,12 @@ class Camera(Bsread):
         return get_response(self.address+rest_endpoint)["cameras"]
 
     def search(self, regex):
-        instances = self.get_instances()
+        ret = self.get_instances()
         if regex:
-            instances = [element for element in instances if regex in element]
-        return instances
+            ret = [element for element in ret if regex in element]
+        if pd:
+            if len(ret) == 0:
+                return None
+            df = pd.DataFrame(ret, columns=["instances"])
+            ret = df.to_string(index=False)
+        return ret
