@@ -10,7 +10,7 @@ class Source():
     instances = set()
 
     def __init__(self, url=None, backend=None, query_path=None, search_path=None, auto_decompress=False, path=None,
-                 known_backends=[], time_type="nano", **kwargs):
+                 known_backends=[], time_type="nano", name=None, **kwargs):
         self.url = url
         if query_path is not None:
             if not url.endswith(query_path):
@@ -41,11 +41,13 @@ class Source():
         self.type = type(self).__name__.lower()
         self.query_index= None
         self.query_id = self.user_id = None
-        self.processing_thread=None
+        self.processing_thread = None
+        self.sprocessing_thread = None
         self.aborted = False
         self.running = False
         self.verbose = False
         self.parallel = False
+        self.name = name
         self.auto_decompress = auto_decompress
         self.prefix = ""
         Source.instances.add(self)
@@ -70,6 +72,11 @@ class Source():
         if self.user_id:
             return str(self.user_id)
         return self.query_id
+
+    def get_name(self):
+        if self.name:
+            return self.name
+        return self.get_id()
 
     def set_path(self, path):
         self.path = path
@@ -195,7 +202,7 @@ class Source():
         if prefix:
             has_prefix = str_to_bool(str(prefix))
             if has_prefix == True:
-                self.prefix = self.get_id() + ":"
+                self.prefix = self.get_name() + ":"
             elif has_prefix == False:
                 self.prefix = ""
             else:

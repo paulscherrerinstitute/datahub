@@ -19,7 +19,7 @@ class Pipeline(Bsread):
         self.address = url
         if name:
             url = self.get_instance_stream(name)
-        Bsread.__init__(self, url=url, mode=mode, path=path, **kwargs)
+        Bsread.__init__(self, url=url, mode=mode, path=path, name=name, **kwargs)
 
 
     def get_instance_stream(self, instance_id):
@@ -46,7 +46,7 @@ class Camera(Bsread):
         self.address = url
         if name:
             url = self.get_instance_stream(name)
-        Bsread.__init__(self, url=url, mode="SUB", path=path, **kwargs)
+        Bsread.__init__(self, url=url, mode=mode, path=path, name=name, **kwargs)
 
 
     def get_instance_stream(self, instance_id):

@@ -33,6 +33,9 @@ def run_json(task):
         prefix = task.get("prefix", None)
         query_id = task.get("id", False)
         time_type = task.get("time", "nano")
+        channels = task.get("channels", None)
+        backend = task.get("backend", None)
+        url = task.get("url", None)
         if compression == "lz4":
             compression = Compression.BITSHUFFLE_LZ4
         elif compression.lower() in ["null", "none"]:
@@ -72,14 +75,16 @@ def run_json(task):
 
         #If does nt have query arg, construct based on channels arg and start/end
         def get_query(source):
-            nonlocal start, end, interval, modulo, prefix
+            nonlocal start, end, interval, modulo, prefix, channels
             query = source.get("query", None)
             if query is None:
-                channels = source.pop("channels", [])
-                if type(channels) == str:
-                    channels = channels.split(CHANNEL_SEPARATOR)
-                    channels = [s.lstrip("'\"").rstrip("'\"") for s in channels]
-                query = {"channels": channels}
+                source_channels = source.pop("channels", None)
+                if source_channels is None:
+                    source_channels =  [] if channels is None else channels
+                if type(source_channels) == str:
+                    source_channels = source_channels.split(CHANNEL_SEPARATOR)
+                    source_channels = [s.lstrip("'\"").rstrip("'\"") for s in source_channels]
+                query = {"channels": source_channels}
                 query.update(source)
             if "start" not in query:
                 query["start"] = start
@@ -105,11 +110,17 @@ def run_json(task):
             return query
 
         def add_source(cfg, src, empty):
-            src.query = None if empty else get_query(cfg)
+            nonlocal channels
+            if empty and (channels is None):
+                print ("None")
+                src.query = None
+            else:
+                src.query = get_query(cfg)
             sources.append(src)
 
         #Create source removing constructor parameters from the query dictionary
         def get_source_constructor(cls, typ):
+            nonlocal backend, url
             signature = inspect.signature(cls)
             pars = signature.parameters
             ret = cls.__name__+"("
@@ -121,10 +132,15 @@ def run_json(task):
                     if par.default == inspect.Parameter.empty:
                         ret = ret + name + "=" + typ + ".pop('" + name + "')"
                     else:
-                        if type (par.default) == str:
-                            dflt = "'" + par.default + "'"
+                        default_val = par.default
+                        if (name == "backend") and backend:
+                            default_val = backend
+                        if (name == "url") and url:
+                            default_val = url
+                        if type (default_val) == str:
+                            dflt = "'" + default_val + "'"
                         else:
-                            dflt = str(par.default)
+                            dflt = str(default_val)
                         ret = ret + name + "=" + typ + ".pop('" + name + "', " + dflt + ")"
                     index = index + 1
             if index > 0:
@@ -132,6 +148,12 @@ def run_json(task):
             ret = ret + f"auto_decompress={str(decompress)}, time_type='{str(time_type)}', prefix='{str(prefix)}'"
             ret = ret + ")"
             return ret
+
+        if len(valid_sources)==0:
+            if channels:
+                # Add default source
+                valid_sources[DEFAULT_SOURCE+ "_0"] = ({},KNOWN_SOURCES[DEFAULT_SOURCE])
+
 
         for name, (cfg,source) in valid_sources.items():
             empty = cfg =={}
@@ -198,7 +220,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--')
     parser.add_argument("-j", "--json", help="Complete query defined as JSON", required=False)
     parser.add_argument("-f", "--file", help="Save data to file", required=False)
-    parser.add_argument("-fmt", "--format", help="File format: h5 (default) or txt", required=False)
+    parser.add_argument("-fm", "--format", help="File format: h5 (default) or txt", required=False)
     parser.add_argument("-p", "--print", action='store_true', help="Print data to stdout", required=False)
     parser.add_argument("-m", "--plot", help="Create plots with matplotlib. ",required=False, nargs="*")
     parser.add_argument("-ps", "--pshell", help="Create plots in a PShell plot server on given port (default=7777). ", required=False, nargs="*")
@@ -206,8 +228,11 @@ def parse_args():
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
     parser.add_argument("-e", "--end", help="Relative or absolute end time or ID", required=False)
     parser.add_argument("-i", "--id", action='store_true', help="Query by id, and not time", required=False)
-    parser.add_argument("-c", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
-    parser.add_argument("-d", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
+    parser.add_argument("-c", "--channels", help="Channels for querying on default source", required=False)
+    parser.add_argument("-u", "--url", help="URL of default source", required=False)
+    parser.add_argument("-b", "--backend", help="Backend of default source", required=False)
+    parser.add_argument("-cp", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
+    parser.add_argument("-dc", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
     parser.add_argument("-pl", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
     parser.add_argument("-px", "--prefix", action='store_true', help="Add source ID to channel names", required=False)
     parser.add_argument("-pt", "--path", help="Path to data in the file", required=False)
@@ -287,6 +312,12 @@ def main():
                 task["verbose"] = args.verbose
             if args.prefix is not None:
                 task["prefix"] = args.prefix
+            if args.channels is not None:
+                task["channels"] = args.channels
+            if args.backend is not None:
+                task["backend"] = args.backend
+            if args.url is not None:
+                task["url"] = args.url
 
             for source in KNOWN_SOURCES.keys():
                 source_str = eval("args." + source)

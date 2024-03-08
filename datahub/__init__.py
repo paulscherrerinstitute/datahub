@@ -58,4 +58,6 @@ KNOWN_SOURCES = {
     "daqbuf": Daqbuf,
     "array10": Array10
     }
+
+DEFAULT_SOURCE = os.environ.get("DEFAULT_DATA_SOURCE", "daqbuf")
 from datahub.main import run_json

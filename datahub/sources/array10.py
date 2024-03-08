@@ -14,7 +14,7 @@ class Array10(Source):
         self.ctx = None
         self.receiver = None
         self.pid = -1
-        self.reshape = reshape
+        self.reshape = str_to_bool(str(reshape))
 
     def run(self, query):
         channels = query.get("channels", None)

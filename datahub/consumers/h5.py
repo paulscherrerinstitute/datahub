@@ -76,7 +76,7 @@ class HDF5Writer(Consumer):
             self.file[f"{prefix}"].attrs["backend"] = str(source.backend)
             self.file[f"{prefix}"].attrs["url"] = str(source.url)
             self.file[f"{prefix}"].attrs["query_index"] = str(source.query_index)
-            self.file[f"{prefix}"].attrs["id"] = str(source.get_id())
+            self.file[f"{prefix}"].attrs["name"] = str(source.get_name())
             for key in source.query.keys():
                 self.file[f"{prefix}"].attrs[key] = str(source.query[key])
         self.datasets[source][name] = [ts_ds, id_ds, val_ds]

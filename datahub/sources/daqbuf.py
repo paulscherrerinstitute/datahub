@@ -21,8 +21,8 @@ class Daqbuf(Source):
         Source.__init__(self, url=url, backend=backend, query_path="/events",  search_path="/search/channel", path=path,
                         known_backends=KNOWN_BACKENDS, **kwargs)
         self.delay = delay
-        self.cbor = cbor
-        self.parallel = parallel
+        self.cbor = str_to_bool(str(cbor))
+        self.parallel = str_to_bool(str(parallel))
         if cbor:
             if cbor2 is None:
                 _logger.error("cbor2 not installed: JSON fallback on Daqbuf searches")
@@ -97,7 +97,7 @@ class Daqbuf(Source):
             try:
                 response = conn.getresponse()
                 if response.status != 200:
-                    raise RuntimeError(f"Unable to retrieve data from server: {recsponse.reason} [{response.status}]")
+                    raise RuntimeError(f"Unable to retrieve data from server: {response.reason} [{response.status}]")
                 try:
                     self.read(io.BufferedReader(response), channel)
                 except Exception as e:
@@ -115,8 +115,6 @@ class Daqbuf(Source):
             data = response.json()
             nelm = len(data['values'])
             for i in range(nelm):
-                if i == 0:
-                    print(f">>> {data['tsAnchor']} {data['tsMs'][0]} {data['tsNs'][0]}")
                 secs = data['tsAnchor'] + float(data['tsMs'][i]) / 1000.0
                 timestamp = create_timestamp(secs, data['tsNs'][i])
                 pulse_id = data['pulseAnchor'] + data['pulseOff'][i]
