@@ -184,6 +184,8 @@ def run_json(task):
             if search == []:
                 search = [""]
             for source in sources:
+                # By default seach all available backends, unless requested specifically in command line
+                source.set_backend(backend)
                 try:
                     for regex in search:
                         source.print_search(regex)

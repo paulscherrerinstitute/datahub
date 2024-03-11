@@ -25,10 +25,7 @@ class Source():
         self.channel_info = {}
         self.last_rec_info = {}
         self.listeners = []
-        if type(backend) == str:
-            if backend.lower() in ["none", "null"]:
-                backend = None
-        self.backend = backend
+        self.set_backend(backend)
         self.known_backends= known_backends
         if time_type.lower() in ["str", "string"]:
             self.time_type = "str"
@@ -61,6 +58,15 @@ class Source():
 
     def __str__(self):
         return "%s: %s" % (self.get_desc(), str(self.query))
+
+    def set_backend(self, backend):
+        if type(backend) == str:
+            if backend.strip().lower() in ["none", "null", ""]:
+                backend = None
+        self.backend = backend
+
+    def get_backend(self):
+        return self.backend
 
     def get_desc(self):
         return "%s[%s]" % (self.get_id(), (str(self.backend) if self.backend else self.url))

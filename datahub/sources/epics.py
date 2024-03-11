@@ -65,7 +65,10 @@ class Epics(Source):
 
 
     def search(self, pattern):
-        facility = os.environ.get("SYSDB_ENV", None)
+        #If backend given that tread as facility, Otherwise search the environment
+        facility = self.get_backend()
+        if not facility:
+            facility = os.environ.get("SYSDB_ENV", None)
         api_base_address = "http://iocinfo.psi.ch/api/v2"
         pattern = ".*" + pattern + ".*"  #No regex
         parameters = {"pattern": pattern}
@@ -75,6 +78,7 @@ class Epics(Source):
         response = requests.get(api_base_address + "/records", params=parameters)
         response.raise_for_status()
         channels = response.json()
+        ret = channels
         if not self.verbose:
             if pd is None:
                 if facility:
@@ -82,6 +86,7 @@ class Epics(Source):
                 else:
                     ret = [f"{record['name']} [{record['facility']}]" for record in channels]
             else:
+                ret = None
                 header = list(channels[0].keys()) if len(channels) > 0 else []
                 data = [d.values() for d in channels]
                 df = pd.DataFrame(data, columns=header)
