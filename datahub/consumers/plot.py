@@ -10,10 +10,15 @@ import time
 
 _logger = logging.getLogger(__name__)
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = None
+
+plt = None
+def import_plplot():
+    global plt
+    try:
+        import matplotlib.pyplot
+        plt =  matplotlib.pyplot
+    except:
+        raise Exception("Cannot import matplotlib")
 
 plots = {}
 
@@ -97,6 +102,7 @@ def get_open_figures():
 def process_plotting(tx_queue,  stop_event):
     _logger.info("Start plotting process")
     stop_event.clear()
+    import_plplot()
     try:
         while not stop_event.is_set():
             try:
@@ -133,8 +139,7 @@ class Plot(Consumer):
         self.plots = {}
         self.channels = channels
 
-        if plt is None:
-            raise "Cannot import matplotlib"
+        import_plplot()
 
         self.tx_queue = multiprocessing.Queue()
         self.stop_event = multiprocessing.Event()
@@ -145,7 +150,7 @@ class Plot(Consumer):
         start = time.time()
         while self.stop_event.is_set():
             if time.time() - start > 5.0:
-                raise "Cannot start plotting process"
+                raise Exception("Cannot start plotting process")
             time.sleep(0.01)
 
 
