@@ -4,7 +4,7 @@
 
 import datahub
 import json
-import http
+from http.client import HTTPSConnection, HTTPConnection
 import ssl
 import urllib
 import re
@@ -29,12 +29,12 @@ def create_http_conn(up):
         port = up.port
         if port is None:
             port = 443
-        conn = http.client.HTTPSConnection(up.hostname, port, context=ctx)
+        conn = HTTPSConnection(up.hostname, port, context=ctx)
     else:
         port = up.port
         if port is None:
             port = 80
-        conn = http.client.HTTPConnection(up.hostname, port)
+        conn = HTTPConnection(up.hostname, port)
     return conn
 
 

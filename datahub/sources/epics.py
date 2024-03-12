@@ -66,6 +66,7 @@ class Epics(Source):
 
     def search(self, pattern):
         #If backend given that tread as facility, Otherwise search the environment
+        import requests
         facility = self.get_backend()
         if not facility:
             facility = os.environ.get("SYSDB_ENV", None)
@@ -80,6 +81,7 @@ class Epics(Source):
         channels = response.json()
         ret = channels
         if not self.verbose:
+            pd = self._get_pandas()
             if pd is None:
                 if facility:
                     ret = [record["name"] for record in channels]

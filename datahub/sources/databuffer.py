@@ -38,6 +38,7 @@ class DataBuffer(Source):
             raise Exception("Undefined query type")
 
     def run(self, query):
+        import requests
         channels = query.get("channels",[])
         start_expansion = query.get("start_expansion", False)   #Expand query range on start until next datapoint (can be a very expensive operation depending on the backend)
         end_expansion = query.get("end_expansion", False)       # Expand query range on end until next datapoint (can be a very expensive operation depending on the backend
@@ -106,6 +107,7 @@ class DataBuffer(Source):
         response = requests.post(self.search_url, json=cfg)
         ret = response.json()
         if not self.verbose:
+            pd = self._get_pandas()
             if pd is None:
                 if self.backend and ret[0]['backend'] == self.backend:
                     ret = ret[0]['channels']

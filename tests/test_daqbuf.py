@@ -1,6 +1,5 @@
 import unittest
 from datahub import *
-import time
 
 backend = "sf-databuffer"
 filename = "/Users/gobbo_a/dev/back/daqbuf.h5"

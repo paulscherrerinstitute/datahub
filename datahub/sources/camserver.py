@@ -1,6 +1,7 @@
 from datahub import *
 
 TIMEOUT = None
+_logger = logging.getLogger(__name__)
 
 def validate_response(server_response):
     if server_response["state"] != "ok":
@@ -8,6 +9,7 @@ def validate_response(server_response):
     return server_response
 
 def get_response(url):
+    import requests
     server_response = requests.get(url, timeout=TIMEOUT).json()
     return validate_response(server_response)
 
@@ -35,6 +37,7 @@ class Pipeline(Bsread):
         print(ret)
         if regex:
             ret = [element for element in ret if regex in element]
+        pd = self._get_pandas()
         if pd:
             if len(ret) == 0:
                 return None
@@ -67,6 +70,7 @@ class Camera(Bsread):
         ret = self.get_instances()
         if regex:
             ret = [element for element in ret if regex in element]
+        pd = self._get_pandas()
         if pd:
             if len(ret) == 0:
                 return None

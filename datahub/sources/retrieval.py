@@ -1,5 +1,6 @@
 from datahub import *
 import io
+from http.client import IncompleteRead
 
 _logger = logging.getLogger(__name__)
 
@@ -138,7 +139,6 @@ def process_channel_header(msg):
     res.shape = shape
     return res
 
-
 class Retrieval(Source):
 
     DEFAULT_URL = os.environ.get("RETRIEVAL_DEFAULT_URL", "https://data-api.psi.ch/api/1")
@@ -217,7 +217,7 @@ class Retrieval(Source):
     def read(self, stream):
         try:
             return self.read_throwing(stream)
-        except http.client.IncompleteRead:
+        except IncompleteRead:
             _logger.error("unexpected end of input")
             raise ProtocolError()
 
@@ -279,6 +279,7 @@ class Retrieval(Source):
                 raise RuntimeError(f"corrupted file reading {length} {length_check}")
 
     def search(self, regex):
+        import requests
         res = requests.get(self.search_url, {"regex": regex})
         res.raise_for_status()
         ret = res.json()

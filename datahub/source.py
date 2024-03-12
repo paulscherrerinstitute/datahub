@@ -329,8 +329,6 @@ class Source():
         raise Exception(f"Search not implemented in {self.type}")
 
     def print_search(self, regex):
-        if pd is None:
-            _logger.error("Pandas not installed: cannot report search as dataframe")
         search = self.search(regex)
         if type(search) == str:
             print(search)
@@ -345,6 +343,14 @@ class Source():
             print ("Known backends:")
             for backend in self.known_backends:
                 print (f"\t{backend}")
+
+    def _get_pandas(self):
+        try:
+            import pandas
+            return pandas
+        except:
+            _logger.error("Pandas not installed: cannot report search as dataframe")
+            return None
 
     @staticmethod
     def get_source_meta(cls):

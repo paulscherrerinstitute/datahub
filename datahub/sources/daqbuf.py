@@ -1,10 +1,7 @@
 from datahub import *
 import io
 from threading import Thread
-try:
-    import cbor2
-except:
-    cbor2 = None
+from http.client import IncompleteRead
 
 
 _logger = logging.getLogger(__name__)
@@ -23,9 +20,14 @@ class Daqbuf(Source):
         self.delay = delay
         self.cbor = str_to_bool(str(cbor))
         self.parallel = str_to_bool(str(parallel))
-        if cbor:
-            if cbor2 is None:
-                _logger.error("cbor2 not installed: JSON fallback on Daqbuf searches")
+
+        try:
+            import cbor2
+            self.cbor = cbor2
+        except:
+            _logger.error("cbor2 not installed: JSON fallback on Daqbuf searches")
+            self.cbor = None
+
 
 
     def read(self, stream, channel):
@@ -45,7 +47,7 @@ class Daqbuf(Source):
                 bytes_read = stream.read(length)
                 if len(bytes_read) != length:
                     raise RuntimeError("unexpected EOF")
-                parsed_data = cbor2.loads(bytes_read)
+                parsed_data = self.cbor.loads(bytes_read)
 
                 padding = padding = (8 - (length % 8)) % 8
                 bytes_read = stream.read(padding) #PADDING
@@ -77,7 +79,7 @@ class Daqbuf(Source):
                 if not self.is_running() or self.is_aborted():
                     raise RuntimeError("Query has been aborted")
 
-        except http.client.IncompleteRead:
+        except IncompleteRead:
             _logger.error("Unexpected end of input")
             raise ProtocolError()
         finally:
@@ -87,8 +89,8 @@ class Daqbuf(Source):
     def run_channel(self, channel, conn=None):
         query = dict()
         query["channelName"] = channel
-        query["begDate"] = self.range.get_start_str()
-        query["endDate"] = self.range.get_end_str()
+        query["begDate"] = self.range.get_start_str_iso()
+        query["endDate"] = self.range.get_end_str_iso()
         query["backend"] = self.backend
 
         if self.cbor:
@@ -108,6 +110,7 @@ class Daqbuf(Source):
                     conn.close()
 
         else:
+            import requests
             response = requests.get(self.url, query)
             # Check for successful return of data
             if response.status_code != 200:
@@ -150,6 +153,7 @@ class Daqbuf(Source):
             self.close_channels()
 
     def search(self, regex):
+        import requests
         if not regex:
             return self.known_backends
         else:
@@ -163,6 +167,7 @@ class Daqbuf(Source):
 
             if not self.verbose:
                 channels = ret.get("channels", [])
+                pd = self._get_pandas()
                 if pd is None:
                     ret = [d["name"] for d in ret.get("channels", [])]
                 else:
