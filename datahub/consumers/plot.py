@@ -96,6 +96,7 @@ def get_open_figures():
 
 def process_plotting(tx_queue,  stop_event):
     _logger.info("Start plotting process")
+    stop_event.clear()
     try:
         while not stop_event.is_set():
             try:
@@ -111,7 +112,7 @@ def process_plotting(tx_queue,  stop_event):
                     create_plot(*tx[1:])
                 elif tx[0] == "REC":
                     update_plot(*tx[1:])
-                if tx[0] == "END":
+                elif tx[0] == "END":
                     show_plot(*tx[1:])
     except Exception as e:
         _logger.exception(e)
@@ -137,12 +138,20 @@ class Plot(Consumer):
 
         self.tx_queue = multiprocessing.Queue()
         self.stop_event = multiprocessing.Event()
-        self.stop_event.clear()
-        plotting_process = multiprocessing.Process(target=process_plotting, args=(self.tx_queue, self.stop_event))
-        plotting_process.start()
+        self.stop_event.set()
+        self.plotting_process = multiprocessing.Process(target=process_plotting, args=(self.tx_queue, self.stop_event))
+        self.plotting_process.start()
+        #Wait process to start
+        start = time.time()
+        while self.stop_event.is_set():
+            if time.time() - start > 5.0:
+                raise "Cannot start plotting process"
+            time.sleep(0.01)
 
 
     def on_close(self):
+        while not self.tx_queue.empty():
+            time.sleep(0.1)
         self.stop_event.set()
         self.plots = {}
         self.tx_queue.close()
@@ -169,6 +178,7 @@ class Plot(Consumer):
             return
         self.tx_queue.put(["START", name, shape, typ, xdata, time.time()])
         self.plots[name] = [shape, xdata, time.time()]
+        time.sleep(0.1)
 
     def on_channel_record(self, source, name, timestamp, pulse_id, value):
         if name in self.plots:
@@ -184,6 +194,7 @@ class Plot(Consumer):
                     value = int(value)
                 timestamp = timestamp - start
                 self.tx_queue.put(["REC", name, timestamp, value])
+                #time.sleep(0.1)
             except Exception as e:
                 print("Error in plotting: " + str(e))
 
