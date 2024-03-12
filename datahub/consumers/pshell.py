@@ -26,7 +26,7 @@ class PShell(Consumer):
         try:
             ps.get_contexts()
         except:
-            raise Exception("Cannot connect to plot server on port " + str(self.port))
+            raise Exception(f"Cannot connect to plot server on {address}:{port}")
         finally:
             ps.close()
 
