@@ -11,7 +11,8 @@ _logger = logging.getLogger(__name__)
 
 
 class PShell(Consumer):
-    def __init__(self,  channels=None, address="localhost", port=7777, timeout=3.0, layout="Vertical", context=None, **kwargs):
+    def __init__(self,  channels=None, address="localhost", port=7777, timeout=3.0, layout="Vertical", context=None,
+                 style=None, colormap="Viridis", color=None, marker_size=3, line_width=None, max_count=None, **kwargs):
         Consumer.__init__(self, **kwargs)
         self.clients = {}
         self.plots = {}
@@ -21,6 +22,12 @@ class PShell(Consumer):
         self.channels = channels
         self.layout = layout
         self.context = context
+        self.style = style
+        self.colormap = colormap
+        self.color = color
+        self.marker_size = marker_size
+        self.line_width = line_width
+        self.max_count = max_count
 
         ps = PlotClient(address=self.address, port=self.port,  timeout=self.timeout)
         try:
@@ -55,16 +62,16 @@ class PShell(Consumer):
             plot = pc.add_line_plot(name)
             pc.clear_plot(plot)
             series = pc.add_line_series(plot, name)
-            pc.set_line_series_attrs(series, color=None, marker_size=3, line_width=None, max_count=None)
+            pc.set_line_series_attrs(series, color=self.color, marker_size=self.marker_size, line_width=self.line_width, max_count=self.max_count)
             xdata = None
         elif len(shape) == 1:
             plot = pc.add_line_plot(name)
             pc.clear_plot(plot)
             series = pc.add_line_series(plot, name)
-            pc.set_line_series_attrs(series, color=None, marker_size=1, line_width=None, max_count=None)
+            pc.set_line_series_attrs(series, color=self.color, marker_size=self.marker_size, line_width=self.line_width, max_count=self.max_count)
             xdata = list(range(shape[0]))
         elif len(shape) == 2:
-            plot = pc.add_matrix_plot(name, style=None, colormap="Viridis")
+            plot = pc.add_matrix_plot(name, style=self.style, colormap=self.colormap)
             series = pc.add_matrix_series(plot, "Matrix Series 1")
             pc.set_matrix_series_attrs(series, None, None, None, None, None, None)
             xdata = None
