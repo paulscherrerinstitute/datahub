@@ -25,7 +25,7 @@ def run_json(task):
         txt = task.get("txt", None)
         if type(txt) == list:
             txt = txt[0]
-        prnt = task.get("print", False)
+        prnt = task.get("print", None)
         plot = task.get("plot", None)
         pshell = task.get("pshell", None)
         start = task.get("start", None)
@@ -62,7 +62,7 @@ def run_json(task):
             consumers.append(HDF5Writer(hdf5, default_compression=compression))
         if txt is not None:
             consumers.append(TextWriter(txt))
-        if prnt:
+        if prnt is not None:
             consumers.append(Stdout())
         try:
             if pshell is not None:
@@ -303,7 +303,7 @@ def _split_list(list, separator):
     return result
 
 def print_help():
-    print (f"DataHub {datahub.version()}")
+    print(f"DataHub {datahub.version()}")
     print(f"For help use the option:\n\t-h")
     if DEFAULT_SOURCE:
         print("Default Source:")
@@ -327,14 +327,12 @@ def main():
             run_json(args.json)
         else:
             task={}
-            if args.hdf5:
-                task["hdf5"] = args.hdf5
-            if args.txt:
-                task["txt"] = args.txt
-            if args.print:
-                task["print"] = bool(args.print)
+            task["hdf5"] = args.hdf5
+            task["txt"] = args.txt
+            task["print"] = None if args.print is None else bool(args.print)
             task["plot"] = args.plot
             task["pshell"] = args.pshell
+
             if args.start:
                 task["start"] = args.start
             if args.end:
