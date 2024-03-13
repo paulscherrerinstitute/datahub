@@ -1,4 +1,5 @@
 """CLI interface """
+import sys
 import traceback
 
 from datahub import *
@@ -6,6 +7,7 @@ import argparse
 import logging
 import json
 import inspect
+from datahub.utils.reflection import get_meta
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +19,12 @@ def run_json(task):
     try:
         if type(task) == str:
             task = json.loads(task)
-        file = task.get("file", None)
-        format = task.get("format", "h5")
+        hdf5 = task.get("hdf5", None)
+        if type(hdf5) == list:
+            hdf5 = hdf5[0]
+        txt = task.get("txt", None)
+        if type(txt) == list:
+            txt = txt[0]
         prnt = task.get("print", False)
         plot = task.get("plot", None)
         pshell = task.get("pshell", None)
@@ -52,13 +58,10 @@ def run_json(task):
             exec(f"for i in range(no): \n   if {name}[i] is not None: valid_sources['{name}_'+str(i)] = ({name}[i], KNOWN_SOURCES['{name}'])")
 
         consumers = []
-        if file is not None:
-            if format.lower() in ["h5", "hdf5"]:
-                consumers.append(HDF5Writer(file, default_compression=compression))
-            elif format.lower() in ["txt", "text"]:
-                consumers.append(TextWriter(file))
-            else:
-                raise Exception ("Invalid format: " + format)
+        if hdf5 is not None:
+            consumers.append(HDF5Writer(hdf5, default_compression=compression))
+        if txt is not None:
+            consumers.append(TextWriter(txt))
         if prnt:
             consumers.append(Stdout())
         try:
@@ -219,41 +222,50 @@ def run_json(task):
         cleanup()
 
 
-def get_source_meta(cls):
-    signature = inspect.signature(cls)
-    pars = signature.parameters
-    ret = "channels "
-    for name, par in pars.items():
-        if par.kind != inspect.Parameter.VAR_KEYWORD:
-            if par.default == inspect.Parameter.empty:
-                ret = ret + name + " "
-            else:
-                if type(par.default) == str:
-                    dflt = "'" + par.default + "'"
-                else:
-                    dflt = str(par.default)
-                ret = ret + name + "=" + dflt + " "
-    ret = ret + ("start=None end=None")
-    return ret
-
-
 def parse_args():
     """Parse cli arguments with argparse"""
-    parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--')
+
+    class CustomHelpFormatter(argparse.HelpFormatter):
+        def _format_action_invocation(self, action):
+            if not action.option_strings:
+                metavar, = self._metavar_formatter(action, action.dest)(1)
+                return metavar
+            else:
+                parts = []
+                    # if the Optional doesn't take a value, format is:
+                #    -s, --long
+                if action.nargs == 0:
+                    parts.extend(action.option_strings)
+
+                # if the Optional takes a value, format is:
+                #    -s ARGS, --long ARGS
+                # change to
+                #    -s, --long ARGS
+                else:
+                    default = action.dest.upper()
+                    args_string = self._format_args(action, default)
+                    for option_string in action.option_strings:
+                        # parts.append('%s %s' % (option_string, args_string))
+                        parts.append('%s' % option_string)
+                    parts[-1] += ' %s' % args_string
+                return ', '.join(parts)
+
+    parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--', formatter_class=CustomHelpFormatter)
     parser.add_argument("-j", "--json", help="Complete query defined as JSON", required=False)
-    parser.add_argument("-f", "--file", help="Save data to file", required=False)
-    parser.add_argument("-fm", "--format", help="File format: h5 (default) or txt", required=False)
-    parser.add_argument("-p", "--print", action='store_true', help="Print data to stdout", required=False)
-    parser.add_argument("-m", "--plot", help="Create plots with matplotlib. ",required=False, nargs="*")
-    parser.add_argument("-ps", "--pshell", help="Create plots in a PShell plot server on given port (default=7777). ", required=False, nargs="*")
-    parser.add_argument("-tt", "--timestamp", help="Timestamp type: nano/int (default), sec/float or str", required=False)
+
+    for name, (abbr, cls) in KNOWN_CONSUMERS.items():
+        meta = eval("get_meta(" + cls.__name__ + ")")
+        eval(f'parser.add_argument("-{abbr}", "--{name}", metavar="{meta}", help="{name} options", required=False, nargs="*")')
+
+    parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
     parser.add_argument("-e", "--end", help="Relative or absolute end time or ID", required=False)
     parser.add_argument("-i", "--id", action='store_true', help="Force query by id", required=False)
     parser.add_argument("-t", "--time", action='store_true', help="Force query by time", required=False)
-    parser.add_argument("-c", "--channels", help="Channels for querying on default source", required=False)
+    parser.add_argument("-c", "--channels", help="Channel list (comma-separated)", required=False)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source", required=False)
+    parser.add_argument("-tt", "--timestamp", help="Timestamp type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-cp", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-dc", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
     parser.add_argument("-pl", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
@@ -262,12 +274,11 @@ def parse_args():
     parser.add_argument("-sr", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
     parser.add_argument("-di", "--interval", help="Downsampling interval between samples in seconds", required=False)
     parser.add_argument("-dm", "--modulo", help="Downsampling modulo of the samples", required=False)
-    parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
 
     for name, source in KNOWN_SOURCES.items():
-        meta = eval("Source.get_source_meta(" + source.__name__ + ")")
-        eval('parser.add_argument("--' + name + '", metavar="' + meta + '", help="' + name + ' query arguments", required=False, nargs="*")')
-
+        meta = eval("get_meta(" + source.__name__ + ")")
+        meta = f"channels {meta}start=None end=None"
+        eval(f'parser.add_argument("--{name}", metavar="{meta}", help="{name} query arguments", required=False, nargs="*")')
     args = parser.parse_args()
     return parser, args
 
@@ -291,8 +302,23 @@ def _split_list(list, separator):
         result.append(sublist)
     return result
 
+def print_help():
+    print (f"DataHub {datahub.version()}")
+    print(f"For help use the option:\n\t-h")
+    if DEFAULT_SOURCE:
+        print("Default Source:")
+        print(f"\t{DEFAULT_SOURCE}")
+    print("Known Sources:")
+    for source in KNOWN_SOURCES.keys():
+        print(f"\t{source}")
+    print(f"For help on a source use option:\n\t--<source_name>")
+
+
 def main():
     """Main function"""
+    if len(sys.argv) <= 1:
+        print_help()
+        return
     parser, args = parse_args()
     try:
         #if args.action == 'search':
@@ -301,10 +327,10 @@ def main():
             run_json(args.json)
         else:
             task={}
-            if args.file:
-                task["file"] = args.file
-            if args.format:
-                task["format"] = args.format
+            if args.hdf5:
+                task["hdf5"] = args.hdf5
+            if args.txt:
+                task["txt"] = args.txt
             if args.print:
                 task["print"] = bool(args.print)
             task["plot"] = args.plot

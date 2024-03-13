@@ -145,7 +145,7 @@ class Plot(Consumer):
         self.channels = channels
         self.min_interval = (1.0/max_rate) if max_rate else None
         self.last_plotted_record={}
-        self.colormap = colormap
+        self.colormap = colormap.lower() if colormap else None
         self.color = color
         self.marker_size= marker_size
         self.line_width = line_width

@@ -12,8 +12,8 @@ _logger = logging.getLogger(__name__)
 
 
 class PShell(Consumer):
-    def __init__(self,  channels=None, address="localhost", port=7777, timeout=3.0, layout="Vertical", context=None,
-                 style=None, colormap="Viridis", color=None, marker_size=3, line_width=None, max_count=None, max_rate=None, **kwargs):
+    def __init__(self,  channels=None, address="localhost", port=7777, timeout=3.0, layout="vertical", context=None,
+                 style=None, colormap="viridis", color=None, marker_size=3, line_width=None, max_count=None, max_rate=None, **kwargs):
         Consumer.__init__(self, **kwargs)
         self.clients = {}
         self.plots = {}
@@ -21,10 +21,10 @@ class PShell(Consumer):
         self.port = port
         self.timeout = timeout
         self.channels = channels
-        self.layout = layout
         self.context = context
         self.style = style
-        self.colormap = colormap
+        self.layout = layout.lower().capitalize() if layout else None
+        self.colormap = colormap.lower().capitalize() if colormap else None
         self.color = color
         self.marker_size = marker_size
         self.line_width = line_width

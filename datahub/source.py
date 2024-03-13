@@ -1,7 +1,7 @@
 from datahub import *
 from threading import Thread, current_thread
 import time
-import inspect
+from datahub.utils.reflection import get_meta
 
 _logger = logging.getLogger(__name__)
 
@@ -337,12 +337,35 @@ class Source():
         else:
             print(json.dumps(search, indent=4))
 
+    def get_default_url(self):
+        try:
+            return getattr(self, "DEFAULT_URL")
+        except:
+            return None
+
+    def get_default_backend(self):
+        try:
+            return getattr(self, "DEFAULT_BACKEND")
+        except:
+            return None
+
+
     def print_help(self):
-        print(self.type+ " [" + self.get_source_meta(self.__class__) + " ...]")
+        meta = get_meta(self.__class__)
+        print(f"Source Name: \n\t{self.type}")
+        print(f"Arguments: \n\t[channels {meta}start=None end=None ...]")
+        default_url = self.get_default_url()
+        default_backend = self.get_default_backend()
+        if default_url:
+            print("Default URL:")
+            print(f"\t{default_url}")
+        if default_backend:
+            print("Default Backend:")
+            print(f"\t{default_backend}")
         if self.known_backends:
-            print ("Known backends:")
+            print("Known Backends:")
             for backend in self.known_backends:
-                print (f"\t{backend}")
+                print(f"\t{backend}")
 
     def _get_pandas(self):
         try:
@@ -351,24 +374,6 @@ class Source():
         except:
             _logger.error("Pandas not installed: cannot report search as dataframe")
             return None
-
-    @staticmethod
-    def get_source_meta(cls):
-        signature = inspect.signature(cls)
-        pars = signature.parameters
-        ret = "channels "
-        for name, par in pars.items():
-            if par.kind != inspect.Parameter.VAR_KEYWORD:
-                if par.default == inspect.Parameter.empty:
-                    ret = ret + name + " "
-                else:
-                    if type(par.default) == str:
-                        dflt = "'" + par.default + "'"
-                    else:
-                        dflt = str(par.default)
-                    ret = ret + name + "=" + dflt + " "
-        ret = ret + ("start=None end=None")
-        return ret
 
     @staticmethod
     def cleanup():

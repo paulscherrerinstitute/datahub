@@ -20,7 +20,6 @@ class Daqbuf(Source):
         self.delay = delay
         self.cbor = str_to_bool(str(cbor))
         self.parallel = str_to_bool(str(parallel))
-
         try:
             import cbor2
             self.cbor = cbor2

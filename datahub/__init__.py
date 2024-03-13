@@ -45,6 +45,13 @@ def cleanup():
     Source.cleanup()
     Consumer.cleanup()
 
+KNOWN_CONSUMERS = {
+    "hdf5": ("f", HDF5Writer),
+    "txt":  ("x", TextWriter),
+    "print": ("p", Stdout),
+    "plot": ("m", Plot),
+    "pshell": ("l", PShell)
+}
 
 KNOWN_SOURCES = {
     "epics": Epics,
