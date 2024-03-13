@@ -49,8 +49,8 @@ KNOWN_CONSUMERS = {
     "hdf5": ("f", HDF5Writer),
     "txt":  ("x", TextWriter),
     "print": ("p", Stdout),
-    "plot": ("m", Plot),
-    "pshell": ("l", PShell)
+    "plot": ("pl", Plot),
+    "pshell": ("ps", PShell)
 }
 
 KNOWN_SOURCES = {

@@ -304,14 +304,17 @@ def _split_list(list, separator):
 
 def print_help():
     print(f"DataHub {datahub.version()}")
-    print(f"For help use the option:\n\t-h")
     if DEFAULT_SOURCE:
         print("Default Source:")
         print(f"\t{DEFAULT_SOURCE}")
-    print("Known Sources:")
+    print("Sources:")
     for source in KNOWN_SOURCES.keys():
         print(f"\t{source}")
-    print(f"For help on a source use option:\n\t--<source_name>")
+    print("Consumers:")
+    for consumer in KNOWN_CONSUMERS.keys():
+        print(f"\t{consumer}")
+    print(f"For help use the option:\n\t-h")
+    print(f"For help on a specific source use the option:\n\t--<source_name>")
 
 
 def main():
