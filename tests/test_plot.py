@@ -12,7 +12,7 @@ class PlotTest(unittest.TestCase):
                 source.req(["TESTIOC:TESTSINUS:SinCalc", "TESTIOC:TESTSINUS2:SinCalc"], 0.0, 4.0)
 
     def test_camera(self):
-        with Plot() as plot:
+        with Plot(max_rate=2.0,) as plot:
              with Camera(url="http://localhost:8888", name="simulation") as source:
                 source.add_listener(plot)
                 source.req(None, 0.0, 2.0)

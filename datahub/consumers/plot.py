@@ -26,24 +26,24 @@ plots = {}
 def is_notebook():
     return plt.get_backend() in ["nbAgg", "backend_interagg", "module://backend_interagg"]
 
-def create_plot(name, shape, typ, xdata, start):
+def create_plot(name, shape, typ, xdata, start, colormap, color, marker_size, line_width, max_count):
     try:
         global plots
         if len(shape) == 0:
             fig, ax = plt.subplots(num=name)
             ax.set_title(name)
-            plot, = ax.plot([], [], marker='o')
+            plot, = ax.plot([], [], marker='o', color=color, markersize=marker_size, linewidth=line_width)
             # ax.set_xlim(0, 10)
             # ax.set_ylim(0, 100)
         elif len(shape) == 1:
             fig, ax = plt.subplots(num=name)
             ax.set_title(name)
-            plot, = ax.plot([], [], marker='.')
+            plot, = ax.plot([], [], marker='.', color=color)
             plot.set_xdata(xdata)
         elif len(shape) == 2:
             image_data = np.zeros(shape, typ)
             fig, ax = plt.subplots(num=name)
-            plot = ax.imshow(image_data, cmap='viridis', origin='lower')
+            plot = ax.imshow(image_data, cmap=colormap, origin='lower')
         else:
             return
         if not is_notebook():
@@ -51,7 +51,7 @@ def create_plot(name, shape, typ, xdata, start):
             plt.show()  # Display the current subplot
 
 
-        plots[name] = (plot, shape, fig, ax)
+        plots[name] = (plot, shape, fig, ax, max_count)
     except Exception as ex:
         print(f"Exception creating {name}: {str(ex)}")
         traceback.print_exc()
@@ -60,11 +60,16 @@ def create_plot(name, shape, typ, xdata, start):
 def update_plot(name, timestamp, value):
     try:
         if name in plots:
-            (plot, shape, fig, ax) = plots[name]
+            (plot, shape, fig, ax, max_count) = plots[name]
             if plot is not None:
                 if len(shape) == 0:
-                    plot.set_xdata(np.append(plot.get_xdata(), timestamp))
-                    plot.set_ydata(np.append(plot.get_ydata(), value))
+                    x, y = np.append(plot.get_xdata(), timestamp), np.append(plot.get_ydata(), value)
+                    if max_count:
+                        if len(x) > max_count:
+                            x, y = x[-max_count:], y[-max_count:]
+
+                    plot.set_xdata(x)
+                    plot.set_ydata(y)
                     ax.relim()  # Recalculate the data limits
                     ax.autoscale_view()  # Autoscale the view based on the data limits
                 elif len(shape) == 1:
@@ -134,10 +139,17 @@ def process_plotting(tx_queue,  stop_event):
 
 
 class Plot(Consumer):
-    def __init__(self,  channels=None, **kwargs):
+    def __init__(self,  channels=None, colormap="viridis", color=None,  marker_size=None, line_width=None, max_count=None, max_rate=None, **kwargs):
         Consumer.__init__(self, **kwargs)
         self.plots = {}
         self.channels = channels
+        self.min_interval = (1.0/max_rate) if max_rate else None
+        self.last_plotted_record={}
+        self.colormap = colormap
+        self.color = color
+        self.marker_size= marker_size
+        self.line_width = line_width
+        self.max_count = int(max_count) if max_count else None
 
         import_plplot()
 
@@ -181,7 +193,7 @@ class Plot(Consumer):
         else:
             _logger.warning("Unsupported shape for channel: " + name)
             return
-        self.tx_queue.put(["START", name, shape, typ, xdata, time.time()])
+        self.tx_queue.put(["START", name, shape, typ, xdata, time.time(), self.colormap, self.color, self.marker_size, self.line_width, self.max_count])
         self.plots[name] = [shape, xdata, time.time()]
         time.sleep(0.1)
 
@@ -189,6 +201,11 @@ class Plot(Consumer):
         if name in self.plots:
             shape, xdata, start = self.plots[name]
             try:
+                if self.min_interval:
+                    if len(shape) > 0: #Only downsample arrays
+                        timespan = time.time() - self.last_plotted_record.get(name, 0.0)
+                        if timespan < self.min_interval:
+                            return
                 if type(timestamp) == str:
                     timestamp = string_to_timestamp(timestamp)
                 if type(timestamp) == int:
@@ -199,6 +216,8 @@ class Plot(Consumer):
                     value = int(value)
                 timestamp = timestamp - start
                 self.tx_queue.put(["REC", name, timestamp, value])
+                if self.min_interval:
+                    self.last_plotted_record[name] = time.time()
                 #time.sleep(0.1)
             except Exception as e:
                 print("Error in plotting: " + str(e))

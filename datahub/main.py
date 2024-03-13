@@ -72,8 +72,17 @@ def run_json(task):
                 consumers.append(PShell(**args))
         except Exception as ex:
             logger.exception(ex)
-        if plot is not None:
-            consumers.append(Plot(channels=[] if len(plot) < 1 else plot[0]))
+        try:
+            if plot is not None:
+                args = {}
+                for arg, val in zip(plot[::2], plot[1::2]):
+                    try:
+                        args[arg] = json.loads(val)
+                    except:
+                        args[arg] = val
+                consumers.append(Plot(**args))
+        except Exception as ex:
+            logger.exception(ex)
         sources = []
 
         #If does nt have query arg, construct based on channels arg and start/end

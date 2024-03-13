@@ -1,4 +1,5 @@
 import logging
+import time
 import numpy as np
 from datahub import Consumer
 from datahub.utils.timing import string_to_timestamp
@@ -12,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 class PShell(Consumer):
     def __init__(self,  channels=None, address="localhost", port=7777, timeout=3.0, layout="Vertical", context=None,
-                 style=None, colormap="Viridis", color=None, marker_size=3, line_width=None, max_count=None, **kwargs):
+                 style=None, colormap="Viridis", color=None, marker_size=3, line_width=None, max_count=None, max_rate=None, **kwargs):
         Consumer.__init__(self, **kwargs)
         self.clients = {}
         self.plots = {}
@@ -28,6 +29,8 @@ class PShell(Consumer):
         self.marker_size = marker_size
         self.line_width = line_width
         self.max_count = max_count
+        self.min_interval = (1.0/max_rate) if max_rate else None
+        self.last_plotted_record={}
 
         ps = PlotClient(address=self.address, port=self.port,  timeout=self.timeout)
         try:
@@ -68,7 +71,7 @@ class PShell(Consumer):
             plot = pc.add_line_plot(name)
             pc.clear_plot(plot)
             series = pc.add_line_series(plot, name)
-            pc.set_line_series_attrs(series, color=self.color, marker_size=self.marker_size, line_width=self.line_width, max_count=self.max_count)
+            pc.set_line_series_attrs(series, color=self.color, marker_size=2, line_width=1)
             xdata = list(range(shape[0]))
         elif len(shape) == 2:
             plot = pc.add_matrix_plot(name, style=self.style, colormap=self.colormap)
@@ -88,6 +91,11 @@ class PShell(Consumer):
             plot, series, shape, xdata = self.plots[name]
             pc = self.clients[source]
             try:
+                if self.min_interval:
+                    if len(shape) > 0: #Only downsample arrays
+                        timespan = time.time() - self.last_plotted_record.get(series, 0.0)
+                        if timespan < self.min_interval:
+                            return
                 if len(shape) == 0:
                     if type(timestamp) == str:
                         timestamp = string_to_timestamp(timestamp)
@@ -102,7 +110,8 @@ class PShell(Consumer):
                     pc.set_matrix_series_data(series, value.tolist(), None, None)
             except Exception as e:
                 print("Error in plotting: " + str(e))
-
+            if self.min_interval:
+                self.last_plotted_record[series] = time.time()
 
     def on_channel_completed(self, source, name):
         pc = self.clients.get(source, None)

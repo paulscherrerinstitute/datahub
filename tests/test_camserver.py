@@ -14,7 +14,7 @@ query = {
 }
 
 
-url_pipeline_server = "http://localhost:8889"
+` = "http://localhost:8889"
 url_camera_server = "http://localhost:8888"
 pipeline = "simulation_sp"
 camera = "simulation"
