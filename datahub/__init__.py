@@ -49,7 +49,7 @@ KNOWN_CONSUMERS = {
     "hdf5": ("f", HDF5Writer),
     "txt":  ("x", TextWriter),
     "print": ("p", Stdout),
-    "plot": ("pt", Plot),
+    "plot": ("m", Plot),
     "pshell": ("ps", PShell)
 }
 
