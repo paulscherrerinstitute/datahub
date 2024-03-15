@@ -12,7 +12,15 @@ conda install -c paulscherrerinstitute -c conda-forge  datahub
 
 # Sources
 
-Sources are services that provide data.  These are the currently supported data sources: 
+Sources are services that provide data.
+
+There are 2 kinds of sources:
+- Streaming: can only retrive data in the future.
+- Retrieving: can only retrive data in the past (must wait when requesting future data).
+
+Despite the different natures of these two kinds, datahub has a common way for defining ranges. 
+
+These are the currently supported data sources: 
 
 - daqbuf - aka 'new retrieval' (default) 
 - epics
@@ -72,11 +80,23 @@ Example:
 datahub --file <FILE_NAME> --start <START> --end <END> --<SOURCE_1> <option_1> <value_1> ... <option_n> <value_n> ... --<SOURCE_n> <option_1> <value_1> ... <option_m> <value_m> 
 ```
 
+
+- If no source is specified then __daqbuf__ source is assumed:
+```bash
+datahub --print --hdf5 ~/.data.h5  --start "2024-02-14 08:50:00.000" --end "2024-02-14 08:50:10.000" --channels S10BC01-DBPM010:Q1,S10BC01-DBPM010:X1 
+```
+
 - A single run can retrieve data simultaneously from multiple sources.
-- If no source is specified then __daqbuf__ source is assumed.
+```bash
+datahub -p --epics s 0.0 e 2.0 c S10BC01-DBPM010:X1 --daqbuf s 0.0 e 2.0 c S10BC01-DBPM010:Q1 delay 30.0 
+```
+
+The example above saves the next 2 seconds of data from an EPICS channel, and alse from data read from the databuffer through daqbuf.
+Being daqbuf a retrieving source, and given the fact we want to get future data, a "delay" parameter is specified to provide the time needed
+for actual data to be available in daqbuf backend.
 
 
-This is the help message for the 'datahub' command: 
+The argument documentation is available in the help message for the 'datahub' command: 
 ```
 $ datahub  -h                                                                                                                                                                           
 usage: main.py [-h] [-j JSON] [-f [filename default_compression='gzip' auto_decompress=False path=None metadata_compression='gzip'  ...]] [-x [folder  ...]] [-p [...]] [-m [channels=None colormap='viridis' color=None marker_size=None line_width=None max_count=None max_rate=None  ...]]
@@ -205,6 +225,14 @@ datahub -f tst.h5 -s 0 -e 10 -i -c S10BC01-DBPM010:Q1 --daqbuf delay 10.0 --epic
 
 
 Data can be potted  with the options --plot or --pshell.
+
+This example will print and plot the values of an EPICS channel for 10 seconds:
+
+```bash
+datahub -p -s -0 -e 10 -c S10BC01-DBPM010:Q1 --epics --plot
+```
+
+
 A pshell plotting server can be started (in default per 7777) and used in datahub as :
 ```bash
 pshell_op -test -plot -title=DataHub    
