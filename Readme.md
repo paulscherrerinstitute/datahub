@@ -2,10 +2,19 @@
 
 This package provides utilities to retrieve data from PSI sources.
 
+# Installation
+
+Install via Anaconda/Miniconda:
+
+```
+conda install -c paulscherrerinstitute -c conda-forge  datahub
+```
+
 # Sources
 
-These are the supported data sources: 
-- daqbuf (default)
+Sources are services that provide data.  These are the currently supported data sources: 
+
+- daqbuf - aka 'new retrieval' (default) 
 - epics
 - databuffer
 - retrieval
@@ -17,29 +26,54 @@ These are the supported data sources:
 
 # Consumers
 
-These are the available data consumers: 
-- hdf5: save receive data in a single hdf5 file.  
-- txt: save received data in text files.
+Consumers receive data streams form source. These are the available data consumers:
+ 
+- hdf5: save receive data in hdf5 file.   
+  Argument: file name
+- txt: save received data in text files.   
+  Argument: folder name
 - print: prints data to stdout.
-- plot: plots data to Matplotlib graphs.
-- pshell: sends data to a PShell plot server.
+- plot: plots data to Matplotlib graphs.   
+  Optional plot arguments:
+  - channels=None  (plot subset of the available channels)
+  - colormap="viridis"
+  - color=None
+  - marker_size=None
+  - line_width=None
+  - max_count=None
+  - max_rate=None 
+- pshell: sends data to a PShell plot server.   
+  Optional plot arguments:
+  - channels=None
+  - address="localhost"
+  - port=7777
+  - timeout=3.0
+  - layout="vertical"
+  - context=None,
+  - style=None
+  - colormap="viridis"
+  - color=None
+  - marker_size=3
+  - line_width=None
+  - max_count=None
+  - max_rate=None 
 
 
-# Installation
-
-Install via Anaconda/Miniconda:
-
-```
-conda install -c paulscherrerinstitute -c conda-forge  datahub
-```
 
 # Usage from command line
 
-On the command line data can be retrieved as follow:
+On the command line datahub commands use the following patter:
+
+- datahub [GLOBAL ARGUMENTS] [--<SOURCE NAME 1> [SOURCE ARGUMENTS]]> ... [--<SOURCE NAME n> [SOURCE ARGUMENTS]]
+
+Example:
 
 ```bash
-datahub --file <FILE_NAME> --start <START> --end <END> --<SOURCE> <option_1> <value_1> ... <option_n> <value_n> 
+datahub --file <FILE_NAME> --start <START> --end <END> --<SOURCE_1> <option_1> <value_1> ... <option_n> <value_n> ... --<SOURCE_n> <option_1> <value_1> ... <option_m> <value_m> 
 ```
+
+- A single run can retrieve data simultaneously from multiple sources.
+- If no source is specified then __daqbuf__ source is assumed.
 
 
 This is the help message for the 'datahub' command: 
@@ -110,7 +144,126 @@ optional arguments:
                         array10 query arguments
 ```
 
+
+Source specific help can be displayed as:
+
+```bash
+datahub --<SOURCE>
+```
+ 
+```
+$ $ datahub --retrieval
+Source Name: 
+	retrieval
+Arguments: 
+	[channels url='https://data-api.psi.ch/api/1' backend='sf-databuffer' path=None delay=1.0 start=None end=None ...]
+Default URL:
+	https://data-api.psi.ch/api/1
+Default Backend:
+	sf-databuffer
+Known Backends:
+	sf-databuffer
+	sf-imagebuffer
+	hipa-archive
+                                                                                                                                                                           
+```
+
+- If urls and backends are not specified in the command line arguments, sources utilize the default ones. 
+Default URLs and backends can be redefined by environment variables:
+    - `<SOURCE>_DEFAULT_URL`
+    - `<SOURCE>_DEFAULT_BACKEND`
+
+```bash
+    export DAQBUF_DEFAULT_URL=https://data-api.psi.ch/api/4
+    export DAQBUF_DEFAULT_BACKEND=sf-databuffer
+```
+      
+- The following arguments (or their abbreviations) can be used as source arguments, 
+overwriting the global arguments if present:
+  - channels
+  - start
+  - end
+  - id 
+  - time
+  - url
+  - backend
+  - path
+  - interval
+  - modulo
+  - prefix 
+  
+
+In this example a hdf5 file will be generated  querying the next 10 pulses of S10BC01-DBPM010:Q1 from daqbuf, 
+but also next 2 seconds of the EPICS channel S10BC01-DBPM010:X1:
+
+```bash 
+datahub -f tst.h5 -s 0 -e 10 -i -c S10BC01-DBPM010:Q1 --daqbuf delay 10.0 --epics s 0 e 2 time True c S10BC01-DBPM010:X1   
+```
+  
+- The source specific arguments, unlike the global ones, don't start by '-' or '--', and that boolean values must be explicitly typed.
+      
+
+
+Data can be potted  with the options --plot or --pshell.
+A pshell plotting server can be started (in default per 7777) and used in datahub as :
+```bash
+pshell_op -test -plot -title=DataHub    
+datahub ... -ps [PLOT OPTIONS] 
+``` 
+
+# Query range
+
+The query ranges, specified by arguments __start__ and __end__, can be specified by time or ID, in absolute or relative values.
+By default time range is used, unless the __id__ argument is set.
+For time ranges values can be :
+- Numeric, interpreted as a relative time to now (0). Ex: -10 means 10  seconds ago.
+- Big numeric (> 10 days as ms), interpreted as a timestamp (millis sin EPOCH).
+- String, an absolute timestamp ISO 8601, UTC or local time ('T' can be ommited).
+
+For ID ranges, the  values can be:
+- Absolute.
+- Relative to now (if value < 100000000).
+    
+
+# Channel search
+
+The __--search__ argument is used to search channel names and info instead of querying data. 
+
+- datahub --search --<SOURCE NAME> <PATTERN>
+
+Example:
+
+```bash
+$ datahub --daqbuf --search SARFE10-PSSS059:FIT
+           backend                     name            seriesId type  shape
+     sf-databuffer  SARFE10-PSSS059:FIT-COM          1380690830          []
+     sf-databuffer SARFE10-PSSS059:FIT-FWHM          1380690826          []
+     sf-databuffer  SARFE10-PSSS059:FIT-RES          1380690831          []
+     sf-databuffer  SARFE10-PSSS059:FIT-RMS          1380690827          []
+     sf-databuffer  SARFE10-PSSS059:FIT_ERR          1380701106      [4, 4]
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-COM 7677120138367706877  f64     []
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-COM 7677120138367706877  f64     []
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-COM 7677120138367706877  f64     []
+swissfel-daqbuf-ca SARFE10-PSSS059:FIT-FWHM 1535723503598383715  f64     []
+swissfel-daqbuf-ca SARFE10-PSSS059:FIT-FWHM 1535723503598383715  f64     []
+swissfel-daqbuf-ca SARFE10-PSSS059:FIT-FWHM 1535723503598383715  f64     []
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RES 8682027960712655293  f64     []
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RES 8682027960712655293  f64     []
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RES 8682027960712655293  f64     []
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RMS 8408394372370908679  f64     []
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RMS 8408394372370908679  f64     []
+swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RMS 8408394372370908679  f64     []
+```
+
 # Usage as library
+
+- When used as a library datahub can be used to retrieve data in different patterns.  
+- Sources are freely created and dynamically linked to consumers. 
+- The tests provide examples.
+- In memory operations can be performed: 
+    - Using the __Table__ consumer, which allows retrieving data as a dictionary or a Pandas dataframe.
+    - Extending the __Consumer__ class, and then receiving the data events asynchronously.  
+
 
 ## sf-databuffer with time range
 
@@ -152,3 +305,26 @@ with Retrieval(url="http://sf-daq-5.psi.ch:8380/api/1", backend="sf-imagebuffer"
 ```
 
 
+## Paralelizing queries
+
+Queries can be performed asynchronously, and therefore can be paralellized.
+This example retrieves and saves data from a BSREAD source and from EPICS, for 3 seconds:
+
+
+```python
+from datahub import *
+
+
+with Epics() as epics:
+    with Bsread(url= "tcp://localhost:9999", mode="PULL") as bsread
+        hdf5 = HDF5Writer("~/data.h5")
+        stdout = Stdout()
+        epics.add_listener(hdf5)
+        epics.add_listener(stdout)
+        bsread.add_listener(hdf5)
+        bsread.add_listener(stdout)
+        epics.req(["TESTIOC:TESTSINUS:SinCalc"], None, 3.0, background=True)
+        bsread.req(["UInt8Scalar", "Float32Scalar"], None, 3.0, background=True)
+        epics.join()
+        bsread.join()
+```
