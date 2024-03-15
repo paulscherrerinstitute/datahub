@@ -15,8 +15,8 @@ conda install -c paulscherrerinstitute -c conda-forge  datahub
 Sources are services that provide data.
 
 There are 2 kinds of sources:
-- Streaming: can only retrive data in the future.
-- Retrieving: can only retrive data in the past (must wait when requesting future data).
+- Streaming: can only retrieve data in the future.
+- Retrieving: can only retrieve data from the past (must wait when requesting future data).
 
 Despite the different natures of these two kinds, datahub has a common way for defining ranges. 
 
@@ -34,7 +34,8 @@ These are the currently supported data sources:
 
 # Consumers
 
-Consumers receive data streams form source. These are the available data consumers:
+Consumers receive and process data streams from sources. 
+These are the available data consumers:
  
 - hdf5: save receive data in hdf5 file.   
   Argument: file name
@@ -70,7 +71,7 @@ Consumers receive data streams form source. These are the available data consume
 
 # Usage from command line
 
-On the command line datahub commands use the following patter:
+On the command line, datahub commands use the following pattern:
 
 - datahub [GLOBAL ARGUMENTS] [--<SOURCE NAME 1> [SOURCE ARGUMENTS]]> ... [--<SOURCE NAME n> [SOURCE ARGUMENTS]]
 
@@ -91,8 +92,8 @@ datahub --print --hdf5 ~/.data.h5  --start "2024-02-14 08:50:00.000" --end "2024
 datahub -p --epics s 0.0 e 2.0 c S10BC01-DBPM010:X1 --daqbuf s 0.0 e 2.0 c S10BC01-DBPM010:Q1 delay 30.0 
 ```
 
-The example above saves the next 2 seconds of data from an EPICS channel, and alse from data read from the databuffer through daqbuf.
-Being daqbuf a retrieving source, and given the fact we want to get future data, a "delay" parameter is specified to provide the time needed
+The example above saves the next 2 seconds of data from an EPICS channel, and also from databuffer data read through daqbuf.
+Being daqbuf a retrieving source, and given the fact we want future data, a "delay" parameter is specified to provide the time needed
 for actual data to be available in daqbuf backend.
 
 
@@ -188,7 +189,7 @@ Known Backends:
                                                                                                                                                                            
 ```
 
-- If urls and backends are not specified in the command line arguments, sources utilize the default ones. 
+- If urls and backends are not specified in the command line arguments, sources utilize  default ones. 
 Default URLs and backends can be redefined by environment variables:
     - `<SOURCE>_DEFAULT_URL`
     - `<SOURCE>_DEFAULT_BACKEND`
@@ -220,7 +221,7 @@ but also next 2 seconds of the EPICS channel S10BC01-DBPM010:X1:
 datahub -f tst.h5 -s 0 -e 10 -i -c S10BC01-DBPM010:Q1 --daqbuf delay 10.0 --epics s 0 e 2 time True c S10BC01-DBPM010:X1   
 ```
   
-- The source specific arguments, unlike the global ones, don't start by '-' or '--', and that boolean values must be explicitly typed.
+- Source specific arguments, unlike the global ones, don't start by '-' or '--'. Boolean argument values (such as for __id__ or __time__) must be explicitly typed.
       
 
 
@@ -233,7 +234,7 @@ datahub -p -s -0 -e 10 -c S10BC01-DBPM010:Q1 --epics --plot
 ```
 
 
-A pshell plotting server can be started (in default per 7777) and used in datahub as :
+A pshell plotting server can be started (in default per 7777) and used in datahub with:
 ```bash
 pshell_op -test -plot -title=DataHub    
 datahub ... -ps [PLOT OPTIONS] 
@@ -255,7 +256,7 @@ For ID ranges, the  values can be:
 
 # Channel search
 
-The __--search__ argument is used to search channel names and info instead of querying data. 
+The __--search__ argument is used for searching channel names and info instead of querying data. 
 
 - datahub --search --<SOURCE NAME> <PATTERN>
 
