@@ -7,8 +7,6 @@ backend = "sf-imagebuffer"
 url = "http://sf-daq-5.psi.ch:8380/api/1"
 #url = "http://127.0.0.1:7777/api/1"
 
-#api3 --baseurl http://sf-daq-5.psi.ch:8380/api/1 --default-backend sf-imagebuffer save ./ib.h5 "2024-01-22 10:33:00.000" "2024-01-22 10:33:00.100" SATES21-CAMS154-M2:FPICTURE
-
 #url = "https://data-api.psi.ch/api/1"
 #url = "http://sf-daq-5.psi.ch:8380/api/1"
 #url = "http://sf-daq-5.psi.ch/api/1"
