@@ -115,12 +115,16 @@ def run_json(task):
                 if prefix:
                     query["prefix"] = prefix
 
+            force_id = False
             query_by_id = query_id
             if "id" in query:
-                query_by_id = str_to_bool(str(query["id"]))
-            query_by_time = query_time
+                force_id = query_by_id = str_to_bool(str(query["id"]))
+
+            query_by_time = False if force_id else query_time
             if "time" in query:
                 query_by_time = str_to_bool(str(query["time"]))
+                if query_by_time:
+                    query_by_id = False
 
             for arg in "start", "end":
                     try:
