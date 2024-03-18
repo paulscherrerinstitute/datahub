@@ -253,7 +253,7 @@ def parse_args():
                 else:
                     return ""
             else:
-                return action.metavar
+                return action.metavar or default_metavar
 
 
     parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--', formatter_class=CustomHelpFormatter)
@@ -423,7 +423,9 @@ if __name__ == '__main__':
     args = ["--search", "SARFE10-PSSS059:SPECTRUM_X", "--databuffer"]
     sys.argv = sys.argv + args
     """
+    """
     args = ["-h"]
     sys.argv = sys.argv + args
+    """
     main()
 

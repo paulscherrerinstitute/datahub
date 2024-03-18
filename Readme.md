@@ -99,14 +99,14 @@ for actual data to be available in daqbuf backend.
 
 The argument documentation is available in the help message for the 'datahub' command: 
 ```
-usage: main.py [-h] [-j None]
+usage: main.py [-h] [-j JSON]
                [-f [filename default_compression='gzip' auto_decompress=False path=None metadata_compression='gzip']]
                [-x [folder]] [-p]
                [-m [channels=None colormap='viridis' color=None marker_size=None line_width=None max_count=None max_rate=None]]
                [-ps [channels=None address='localhost' port=7777 timeout=3.0 layout='vertical' context=None style=None colormap='viridis' color=None marker_size=3 line_width=None max_count=None max_rate=None]]
-               [-v] [-s None] [-e None] [-i] [-t] [-c None] [-u None]
-               [-b None] [-tt None] [-cp None] [-dc] [-pl] [-px] [-pt None]
-               [-sr] [-di None] [-dm None]
+               [-v] [-s START] [-e END] [-i] [-t] [-c CHANNELS] [-u URL]
+               [-b BACKEND] [-tt TIMESTAMP] [-cp COMPRESSION] [-dc] [-pl]
+               [-px] [-pt PATH] [-sr] [-di INTERVAL] [-dm MODULO]
                [--epics [channels url=None path=None start=None end=None]]
                [--bsread [channels url='https://dispatcher-api.psi.ch/sf' mode='SUB' path=None start=None end=None]]
                [--pipeline [channels url='http://sf-daqsync-01:8889' name=None mode='SUB' path=None start=None end=None]]
@@ -121,7 +121,7 @@ Command line interface for DataHub 1.0.0
 
 optional arguments:
   -h, --help            show this help message and exit
-  -j, --json None       Complete query defined as JSON
+  -j, --json JSON       Complete query defined as JSON
   -f, --hdf5 [filename default_compression='gzip' auto_decompress=False path=None metadata_compression='gzip' ]
                         hdf5 options
   -x, --txt [folder ]   txt options
@@ -132,25 +132,28 @@ optional arguments:
                         pshell options
   -v, --verbose         Displays complete search results, not just channels
                         names
-  -s, --start None      Relative or absolute start time or ID
-  -e, --end None        Relative or absolute end time or ID
+  -s, --start START     Relative or absolute start time or ID
+  -e, --end END         Relative or absolute end time or ID
   -i, --id              Force query by id
   -t, --time            Force query by time
-  -c, --channels None   Channel list (comma-separated)
-  -u, --url None        URL of default source
-  -b, --backend None    Backend of default source
-  -tt, --timestamp None
+  -c, --channels CHANNELS
+                        Channel list (comma-separated)
+  -u, --url URL         URL of default source
+  -b, --backend BACKEND
+                        Backend of default source
+  -tt, --timestamp TIMESTAMP
                         Timestamp type: nano/int (default), sec/float or str
-  -cp, --compression None
+  -cp, --compression COMPRESSION
                         Compression: gzip (default), szip, lzf, lz4 or none
   -dc, --decompress     Auto-decompress compressed images
   -pl, --parallel       Parallelize query if possible
   -px, --prefix         Add source ID to channel names
-  -pt, --path None      Path to data in the file
+  -pt, --path PATH      Path to data in the file
   -sr, --search         Search channel names given a pattern (instead of
                         fetching data)
-  -di, --interval None  Downsampling interval between samples in seconds
-  -dm, --modulo None    Downsampling modulo of the samples
+  -di, --interval INTERVAL
+                        Downsampling interval between samples in seconds
+  -dm, --modulo MODULO  Downsampling modulo of the samples
   --epics [channels url=None path=None start=None end=None]
                         epics query arguments
   --bsread [channels url='https://dispatcher-api.psi.ch/sf' mode='SUB' path=None start=None end=None]
