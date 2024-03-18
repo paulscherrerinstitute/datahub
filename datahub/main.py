@@ -342,9 +342,9 @@ def main():
             task["hdf5"] = args.hdf5
             task["txt"] = args.txt
             task["print"] = None if args.print is None else bool(args.print)
-            if args.plot:
+            if args.plot is not None:
                 task["plot"] = parse_arg_dict(parser, args.plot)
-            if args.pshell:
+            if args.pshell is not None:
                 task["pshell"] = parse_arg_dict(parser, args.pshell)
             if args.start:
                 task["start"] = args.start
