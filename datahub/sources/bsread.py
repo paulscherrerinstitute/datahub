@@ -13,7 +13,7 @@ class Bsread(Source):
     def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, **kwargs):
         Source.__init__(self, url=url, path=path, **kwargs)
         if bsread is None:
-            raise ("BSREAD library not available")
+            raise Exception("BSREAD library not available")
         self.mode = mode
         self.context = 0
 

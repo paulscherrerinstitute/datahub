@@ -33,7 +33,7 @@ class Compression:
 
 def decompress(blob, name, compression, shape, dtype, border=Endianness.LITTLE):
     if bitshuffle is None:
-        raise ("Bitshuffle not available")
+        raise Exception("Bitshuffle not available")
     if compression == Compression.BITSHUFFLE_LZ4:
         c_length = struct.unpack(">q", blob[0:8])[0]
         b_size = struct.unpack(">i", blob[8:12])[0]
