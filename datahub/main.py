@@ -246,6 +246,16 @@ def parse_args():
                     parts[-1] += ' %s' % args_string
                 return ', '.join(parts)
 
+        def _format_args(self, action, default_metavar):
+            if action.nargs == argparse.ZERO_OR_MORE:
+                if action.metavar:
+                    return '[{}]'.format(action.metavar)
+                else:
+                    return ""
+            else:
+                return action.metavar
+
+
     parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--', formatter_class=CustomHelpFormatter)
     parser.add_argument("-j", "--json", help="Complete query defined as JSON", required=False)
 
@@ -413,5 +423,7 @@ if __name__ == '__main__':
     args = ["--search", "SARFE10-PSSS059:SPECTRUM_X", "--databuffer"]
     sys.argv = sys.argv + args
     """
+    args = ["-h"]
+    sys.argv = sys.argv + args
     main()
 
