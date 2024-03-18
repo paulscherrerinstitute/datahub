@@ -66,24 +66,16 @@ def run_json(task):
             consumers.append(Stdout())
         try:
             if pshell is not None:
-                args = {}
-                for arg, val in zip(pshell[::2], pshell[1::2]):
-                    try:
-                        args[arg] = json.loads(val)
-                    except:
-                        args[arg] = val
-                consumers.append(PShell(**args))
+                if pshell==True:
+                    pshell={}
+                consumers.append(PShell(**pshell))
         except Exception as ex:
             logger.exception(ex)
         try:
             if plot is not None:
-                args = {}
-                for arg, val in zip(plot[::2], plot[1::2]):
-                    try:
-                        args[arg] = json.loads(val)
-                    except:
-                        args[arg] = val
-                consumers.append(Plot(**args))
+                if plot==True:
+                    plot={}
+                consumers.append(Plot(**plot))
         except Exception as ex:
             logger.exception(ex)
         sources = []
@@ -327,6 +319,19 @@ def main():
         print_help()
         return
     parser, args = parse_args()
+
+    def parse_arg_dict(parser, val):
+        ret = {}
+        if val:
+            for arg, val in zip(val[::2], val[1::2]):
+                full_name = get_full_argument_name(parser, arg)
+                if full_name:
+                    arg = full_name
+                try:
+                    ret[arg] = json.loads(val)
+                except:
+                    ret[arg] = val
+        return ret
     try:
         #if args.action == 'search':
         #    return search(args)
@@ -337,9 +342,10 @@ def main():
             task["hdf5"] = args.hdf5
             task["txt"] = args.txt
             task["print"] = None if args.print is None else bool(args.print)
-            task["plot"] = args.plot
-            task["pshell"] = args.pshell
-
+            if args.plot:
+                task["plot"] = parse_arg_dict(parser, args.plot)
+            if args.pshell:
+                task["pshell"] = parse_arg_dict(parser, args.pshell)
             if args.start:
                 task["start"] = args.start
             if args.end:
@@ -386,16 +392,7 @@ def main():
                         if sources == []:
                             task[source] = EMPTY_SOURCE #if source is entered with no arguments, print help for it
                         for src in sources:
-                            index = len( task[source] )
-                            task[source].append({})
-                            for arg, val in zip(src[::2], src[1::2]):
-                                full_name = get_full_argument_name(parser, arg)
-                                if full_name:
-                                    arg = full_name
-                                try:
-                                    task[source][index][arg] = json.loads(val)
-                                except:
-                                    task[source][index][arg] = val
+                            task[source].append(parse_arg_dict(parser, src))
             run_json(task)
 
     except RuntimeError as e:
