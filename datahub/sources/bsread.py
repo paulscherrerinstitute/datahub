@@ -21,8 +21,8 @@ class Bsread(Source):
         mode = bsread.PULL if self.mode == "PULL" else bsread.SUB
         receive_timeout = query.get("receive_timeout", 3000)
         channels = query.get("channels", None)
-        if self.url == bsread.DEFAULT_DISPATCHER_URL:
-            host, port = None, None
+        if not self.url or (self.url == bsread.DEFAULT_DISPATCHER_URL):
+            host, port = None, 9999
             stream_channels = channels
         else:
             host, port = get_host_port_from_stream_address(self.url)

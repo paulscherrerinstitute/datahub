@@ -1,7 +1,6 @@
-from datahub.sources.bsread import Bsread, bsread
+from datahub.sources.bsread import Bsread
 
 class Dispatcher(Bsread):
-    DEFAULT_URL = None if bsread is None else bsread.DEFAULT_DISPATCHER_URL
 
-    def __init__(self, url=DEFAULT_URL, path=None, **kwargs):
-        Bsread.__init__(self, url=url, mode="SUB", path=path, **kwargs)
+    def __init__(self, path=None, **kwargs):
+        Bsread.__init__(self, url=None, mode="SUB", path=path, **kwargs)
