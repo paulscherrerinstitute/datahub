@@ -73,16 +73,12 @@ These are the available data consumers:
 
 On the command line, datahub commands use the following pattern:
 
-- datahub [GLOBAL ARGUMENTS] [--<SOURCE NAME 1> [SOURCE ARGUMENTS]]> ... [--<SOURCE NAME n> [SOURCE ARGUMENTS]]
+```bash
+datahub [GLOBAL ARGUMENTS] [--<SOURCE NAME 1> [SOURCE ARGUMENTS]]> ... [--<SOURCE NAME n> [SOURCE ARGUMENTS]]
+```
 
 Example:
 
-```bash
-datahub --file <FILE_NAME> --start <START> --end <END> --<SOURCE_1> <option_1> <value_1> ... <option_n> <value_n> ... --<SOURCE_n> <option_1> <value_1> ... <option_m> <value_m> 
-```
-
-
-- If no source is specified then __daqbuf__ source is assumed:
 ```bash
 datahub --print --hdf5 ~/.data.h5  --start "2024-02-14 08:50:00.000" --end "2024-02-14 08:50:10.000" --channels S10BC01-DBPM010:Q1,S10BC01-DBPM010:X1 
 ```
@@ -101,11 +97,9 @@ The argument documentation is available in the help message for the 'datahub' co
 ```
 $ datahub  -h                                                                                                                                                                           
 usage: main.py [-h] [-j JSON] [-f [filename default_compression='gzip' auto_decompress=False path=None metadata_compression='gzip'  ...]] [-x [folder  ...]] [-p [...]] [-m [channels=None colormap='viridis' color=None marker_size=None line_width=None max_count=None max_rate=None  ...]]
-               [-ps [channels=None address='localhost' port=7777 timeout=3.0 layout='vertical' context=None style=None colormap='viridis' color=None marker_size=3 line_width=None max_count=None max_rate=None  ...]] [-v] [-s START] [-e END] [-i] [-t] [-c CHANNELS] [-u URL] [-b BACKEND]
-               [-tt TIMESTAMP] [-cp COMPRESSION] [-dc] [-pl] [-px] [-pt PATH] [-sr [SEARCH ...]] [-di INTERVAL] [-dm MODULO] [--epics [channels url=None path=None start=None end=None ...]]
-               [--bsread [channels url='https://dispatcher-api.psi.ch/sf-databuffer' mode='SUB' path=None start=None end=None ...]] [--pipeline [channels url='http://sf-daqsync-01:8889' name=None mode='SUB' path=None start=None end=None ...]]
-               [--camera [channels url='http://sf-daqsync-01:8888' name=None mode='SUB' path=None start=None end=None ...]] [--databuffer [channels url='https://data-api.psi.ch/sf-databuffer' backend='sf-databuffer' path=None delay=1.0 start=None end=None ...]]
-               [--retrieval [channels url='https://data-api.psi.ch/api/1' backend='sf-databuffer' path=None delay=1.0 start=None end=None ...]] [--dispatcher [channels url='https://dispatcher-api.psi.ch/sf-databuffer' path=None start=None end=None ...]]
+               [-ps [channels=None address='localhost' port=7777 timeout=3.0 layout='vertical' context=None style=None colormap='viridis' color=None marker_size=3 line_width=None max_count=None max_rate=None  ...]] [-v] [-s START] [-e END] [-i] [-t] [-c CHANNELS] [-u URL] [-b BACKEND] [-tt TIMESTAMP] [-cp COMPRESSION] [-dc] [-pl] [-px] [-pt PATH] [-sr [SEARCH ...]] [-di INTERVAL] [-dm MODULO]
+               [--epics [channels url=None path=None start=None end=None ...]] [--bsread [channels url=None mode='SUB' path=None start=None end=None ...]] [--pipeline [channels url='http://sf-daqsync-01:8889' name=None mode='SUB' path=None start=None end=None ...]] [--camera [channels url='http://sf-daqsync-01:8888' name=None mode='SUB' path=None start=None end=None ...]]
+               [--databuffer [channels url='https://data-api.psi.ch/sf-databuffer' backend='sf-databuffer' path=None delay=1.0 start=None end=None ...]] [--retrieval [channels url='https://data-api.psi.ch/api/1' backend='sf-databuffer' path=None delay=1.0 start=None end=None ...]] [--dispatcher [channels url=None path=None start=None end=None ...]]
                [--daqbuf [channels url='https://data-api.psi.ch/api/4' backend='sf-databuffer' path=None delay=1.0 cbor=True parallel=False start=None end=None ...]] [--array10 [channels url=None mode='SUB' path=None reshape=False start=None end=None ...]]
 
 Command line interface for DataHub 1.0.0
@@ -131,7 +125,7 @@ optional arguments:
                         Channel list (comma-separated)
   -u, --url URL         URL of default source
   -b, --backend BACKEND
-                        Backend of default source
+                        Backend of default source (use "null" for all backends)
   -tt, --timestamp TIMESTAMP
                         Timestamp type: nano/int (default), sec/float or str
   -cp, --compression COMPRESSION
@@ -258,7 +252,9 @@ For ID ranges, the  values can be:
 
 The __--search__ argument is used for searching channel names and info instead of querying data. 
 
-- datahub --search --<SOURCE NAME> <PATTERN>
+```bash
+datahub --search --<SOURCE NAME> [--backend <BACKEND NAME>] <PATTERN>
+```
 
 Example:
 
@@ -270,18 +266,6 @@ $ datahub --daqbuf --search SARFE10-PSSS059:FIT
      sf-databuffer  SARFE10-PSSS059:FIT-RES          1380690831          []
      sf-databuffer  SARFE10-PSSS059:FIT-RMS          1380690827          []
      sf-databuffer  SARFE10-PSSS059:FIT_ERR          1380701106      [4, 4]
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-COM 7677120138367706877  f64     []
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-COM 7677120138367706877  f64     []
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-COM 7677120138367706877  f64     []
-swissfel-daqbuf-ca SARFE10-PSSS059:FIT-FWHM 1535723503598383715  f64     []
-swissfel-daqbuf-ca SARFE10-PSSS059:FIT-FWHM 1535723503598383715  f64     []
-swissfel-daqbuf-ca SARFE10-PSSS059:FIT-FWHM 1535723503598383715  f64     []
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RES 8682027960712655293  f64     []
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RES 8682027960712655293  f64     []
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RES 8682027960712655293  f64     []
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RMS 8408394372370908679  f64     []
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RMS 8408394372370908679  f64     []
-swissfel-daqbuf-ca  SARFE10-PSSS059:FIT-RMS 8408394372370908679  f64     []
 ```
 
 # Usage as library

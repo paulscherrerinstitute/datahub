@@ -260,7 +260,7 @@ def parse_args():
     parser.add_argument("-t", "--time", action='store_true', help="Force query by time", required=False)
     parser.add_argument("-c", "--channels", help="Channel list (comma-separated)", required=False)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
-    parser.add_argument("-b", "--backend", help="Backend of default source", required=False)
+    parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
     parser.add_argument("-tt", "--timestamp", help="Timestamp type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-cp", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-dc", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)

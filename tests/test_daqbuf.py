@@ -5,8 +5,8 @@ backend = "sf-databuffer"
 filename = "/Users/gobbo_a/dev/back/daqbuf.h5"
 
 channels = ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"]
-start = "2024-02-15T12:41:00Z"
-end = "2024-02-15T12:42:00Z"
+start = "2024-03-15T12:41:00Z"
+end = "2024-03-15T12:42:00Z"
 
 query = {
     "channels": channels,
@@ -35,6 +35,12 @@ class DataBufferTest(unittest.TestCase):
                 dataframe_json.reindex(sorted(dataframe_json.columns), axis=1)
                 print(dataframe_json)
             self.assertEqual(dataframe_cbor.equals(dataframe_json), True)
+
+
+    def test_search(self):
+        with Daqbuf(backend="") as source:
+            ret = source.search("SARFE10-PSSS059:FIT")
+            print (ret)
 
 if __name__ == '__main__':
     unittest.main()
