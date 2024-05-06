@@ -60,8 +60,8 @@ class HDF5Writer(Consumer):
             ts_ds = Dataset(prefix, channel, "timestamp", self.file, dtype=numpy.float64, dataset_compression=self.metadata_compression)
         else:
             ts_ds = Dataset(prefix, channel, "timestamp", self.file, dataset_compression=self.metadata_compression)
-        id_ds = Dataset(prefix, channel, "pulse_id", self.file, dataset_compression=self.metadata_compression) if has_id else None
-        data_ds_name = "data"
+        id_ds = Dataset(prefix, channel, "id", self.file, dataset_compression=self.metadata_compression) if has_id else None
+        data_ds_name = "value"
         if channel_compression and (not self.auto_decompress):
             if shape is None or (len(shape) == 0):
                 raise RuntimeError(f"Compression not supported on scalars")
