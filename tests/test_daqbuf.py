@@ -1,12 +1,18 @@
+import time
 import unittest
 from datahub import *
 
 backend = "sf-databuffer"
 filename = "/Users/gobbo_a/dev/back/daqbuf.h5"
+filename = "/Users/gobbo_a/datahub.h5"
 
 channels = ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"]
-start = "2024-03-15T12:41:00Z"
-end = "2024-03-15T12:42:00Z"
+start = "2024-02-15T12:41:00Z"
+end = "2024-02-15T12:42:00Z"
+
+channels = ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"]
+start = "2024-05-02 09:00:00"
+end = "2024-05-02 10:00:00"
 
 query = {
     "channels": channels,
@@ -36,11 +42,44 @@ class DataBufferTest(unittest.TestCase):
                 print(dataframe_json)
             self.assertEqual(dataframe_cbor.equals(dataframe_json), True)
 
+    def test_save(self):
+        s = time.time()
+        with Daqbuf(backend=backend, cbor=True, parallel=True) as source:
+            hdf5 = HDF5Writer(filename)
+            source.add_listener(hdf5)
+            source.req(channels, start, end)
+        print (time.time()-s)
 
-    def test_search(self):
-        with Daqbuf(backend="") as source:
-            ret = source.search("SARFE10-PSSS059:FIT")
-            print (ret)
+
+    def test_listener(self):
+        last = None
+        class Listener(Consumer):
+            def on_start(self, source):
+                pass
+
+            def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
+                print(f"Started: {name}")
+
+            def on_channel_record(self, source, name, timestamp, pulse_id, value):
+                #print(f"{timestamp} {name}={str(value)} ")
+                nonlocal last
+                last = timestamp, pulse_id, value
+
+            def on_channel_completed(self, source, name):
+                timestamp, pulse_id, value = last
+                timestr = convert_timestamp(timestamp, "str")
+                print(f"Completed: {name}: {last} - {timestr}")
+
+            def on_stop(self, source, exception):
+                pass
+
+
+        s = time.time()
+        with Daqbuf(backend=backend, cbor=True, parallel=True) as source:
+            source.add_listener(Listener())
+            source.request(query)
+        print (time.time()-s)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -142,17 +142,22 @@ class Source():
     def on_channel_completed(self, name):
         if self.prefix:
             name = self.prefix + name
-        for listener in self.listeners:
-            try:
-                listener.on_channel_completed( self, name)
-            except Exception as e:
-                _logger.exception("Error completing channel on listener %s: %s" % (str(listener), str(name)))
-        for d in (self.channel_info, self.last_rec_info):
+        if name in self.channel_info:
+            for listener in self.listeners:
+                try:
+                    listener.on_channel_completed( self, name)
+                except Exception as e:
+                    _logger.exception("Error completing channel on listener %s: %s" % (str(listener), str(name)))
+
             try:
                 del self.channel_info[name]
             except:
                 pass
 
+            try:
+                del self.last_rec_info[name]
+            except:
+                pass
 
 
     def on_start(self):

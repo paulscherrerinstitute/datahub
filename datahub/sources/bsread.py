@@ -13,7 +13,7 @@ class Bsread(Source):
     def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, **kwargs):
         Source.__init__(self, url=url, path=path, **kwargs)
         if bsread is None:
-            raise ("BSREAD library not available")
+            raise Exception("BSREAD library not available")
         self.mode = mode
         self.context = 0
 
@@ -21,8 +21,8 @@ class Bsread(Source):
         mode = bsread.PULL if self.mode == "PULL" else bsread.SUB
         receive_timeout = query.get("receive_timeout", 3000)
         channels = query.get("channels", None)
-        if self.url == bsread.DEFAULT_DISPATCHER_URL:
-            host, port = None, None
+        if not self.url or (self.url == bsread.DEFAULT_DISPATCHER_URL):
+            host, port = None, 9999
             stream_channels = channels
         else:
             host, port = get_host_port_from_stream_address(self.url)

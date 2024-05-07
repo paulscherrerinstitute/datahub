@@ -81,7 +81,7 @@ def update_plot(name, timestamp, value):
                     plot.norm = plt.Normalize(value.min(), value.max())
                     plt.draw()
             if not is_notebook():
-                plt.pause(0.01)
+                repaint(0.01)
 
     except Exception as ex:
         print(f"Exception adding to {name}: {str(ex)}")
@@ -99,8 +99,7 @@ def show_plot(name):
                 pass
 
 def get_open_figures():
-    open_figures = [fig for fig in plt._pylab_helpers.Gcf.get_all_fig_managers() if
-                    fig.canvas.figure.stale is False]
+    open_figures = [fig for fig in plt._pylab_helpers.Gcf.get_all_fig_managers()]
     return len(open_figures)
 
 
@@ -113,10 +112,7 @@ def process_plotting(tx_queue,  stop_event):
             try:
                 tx= tx_queue.get(False)
             except:
-                if get_open_figures() > 0:
-                    plt.pause(0.01)
-                else:
-                    time.sleep(0.01)
+                repaint(0.01)
                 continue
             if tx is not None:
                 if tx[0] == "START":
@@ -133,10 +129,27 @@ def process_plotting(tx_queue,  stop_event):
             plt.show()
         else:
             while get_open_figures() > 0:
-                plt.pause(0.1)
+                repaint()
+
         _logger.info("Exit plotting process")
         sys.exit(0)
 
+
+def repaint(interval=0.1, show_plot=False):
+    if get_open_figures() > 0:
+        #plt.pause(interval)
+
+        #Doing this instead of calling pause in order multiple windows not to fliker
+        manager = plt.get_current_fig_manager()
+        if manager is not None:
+            canvas = manager.canvas
+            if canvas.figure.stale:
+                canvas.draw_idle()
+            if show_plot:
+               plt.show(block=False)
+            canvas.start_event_loop(interval)
+            return
+    time.sleep(interval)
 
 class Plot(Consumer):
     def __init__(self,  channels=None, colormap="viridis", color=None,  marker_size=None, line_width=None, max_count=None, max_rate=None, **kwargs):
