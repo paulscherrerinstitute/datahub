@@ -97,6 +97,7 @@ class DataBuffer(Source):
         self.close_channels()
 
     def search(self, regex):
+        import requests
         cfg = {
             "regex": regex,
             "ordering": "asc",
