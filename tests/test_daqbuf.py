@@ -81,5 +81,18 @@ class DataBufferTest(unittest.TestCase):
         print (time.time()-s)
 
 
+    def test_waveform(self):
+
+        with Daqbuf(backend=backend, cbor=True, parallel=True) as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.req(["SARFE10-PSSS059:SPECTRUM_X"], "2024-05-07 16:00:00", "2024-05-07 16:00:01", False)
+
+
+    def test_backends(self):
+        with Daqbuf() as source:
+            print (source.get_backends())
+            print(source.get_backends())
+
 if __name__ == '__main__':
     unittest.main()

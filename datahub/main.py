@@ -419,10 +419,10 @@ if __name__ == '__main__':
     args = ["--json", json_str]
     sys.argv=sys.argv + args
     """
-    """
+
     args = ["--search", "SARFE10-PSSS059:SPECTRUM_X", "--databuffer"]
     sys.argv = sys.argv + args
-    """
+
     """
     args = ["-h"]
     sys.argv = sys.argv + args

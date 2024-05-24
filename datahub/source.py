@@ -49,6 +49,8 @@ class Source():
         self.prefix = ""
         Source.instances.add(self)
 
+    def get_backends(self):
+        return self.known_backends
     def __enter__(self):
         return self
 
@@ -367,9 +369,10 @@ class Source():
         if default_backend:
             print("Default Backend:")
             print(f"\t{default_backend}")
-        if self.known_backends:
+        backends = self.get_backends()
+        if backends:
             print("Known Backends:")
-            for backend in self.known_backends:
+            for backend in backends:
                 print(f"\t{backend}")
 
     def _get_pandas(self):

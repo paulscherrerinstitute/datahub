@@ -19,5 +19,9 @@ class RetrivalTest(unittest.TestCase):
     def test_search_databuffer(self):
         self.databuffer.print_search("SARFE10-PSSS059")
 
+    def test_search_daqbuf(self):
+        with Daqbuf(backend=None) as source:
+            source.print_search("FPICTURE")
+
 if __name__ == '__main__':
     unittest.main()

@@ -6,8 +6,6 @@ from http.client import IncompleteRead
 
 _logger = logging.getLogger(__name__)
 
-KNOWN_BACKENDS = ["sf-databuffer"]
-
 class Daqbuf(Source):
     DEFAULT_URL = os.environ.get("DAQBUF_DEFAULT_URL", "https://data-api.psi.ch/api/4")
     DEFAULT_BACKEND = os.environ.get("DAQBUF_DEFAULT_BACKEND", "sf-databuffer")
@@ -16,7 +14,9 @@ class Daqbuf(Source):
         if url is None:
             raise RuntimeError("Invalid URL")
         Source.__init__(self, url=url, backend=backend, query_path="/events",  search_path="/search/channel", path=path,
-                        known_backends=KNOWN_BACKENDS, **kwargs)
+                        known_backends=None, **kwargs)
+        self.base_url = url
+        self.known_backends = self.get_backends()
         self.delay = delay
         self.cbor = str_to_bool(str(cbor))
         self.parallel = str_to_bool(str(parallel))
@@ -27,7 +27,18 @@ class Daqbuf(Source):
             _logger.error("cbor2 not installed: JSON fallback on Daqbuf searches")
             self.cbor = None
 
-
+    def get_backends(self):
+        try:
+            if self.known_backends is None:
+                import requests
+                response = requests.get(self.base_url + "/backend/list")
+                ret = response.json()
+                backends = ret["backends_available"]
+                self.known_backends = [backend["name"] for backend in backends]
+            return self.known_backends
+        except Exception as e:
+            _logger.exception(e)
+            return []
 
     def read(self, stream, channel):
         try:
@@ -154,7 +165,7 @@ class Daqbuf(Source):
     def search(self, regex):
         import requests
         if not regex:
-            return self.known_backends
+            return self.get_backends()
         else:
             cfg = {
                 "nameRegex": regex
