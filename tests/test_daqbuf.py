@@ -94,5 +94,12 @@ class DataBufferTest(unittest.TestCase):
             print (source.get_backends())
             print(source.get_backends())
 
+    def test_sf_archiver(self):
+
+        with Daqbuf(backend="sf-archiver", cbor=True, parallel=True) as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.req(["S10CB05-RBOC-DCP10:REF-POWER-AVG"], -1000, 0, False)
+
 if __name__ == '__main__':
     unittest.main()

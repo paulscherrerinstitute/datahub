@@ -20,12 +20,13 @@ class Daqbuf(Source):
         self.delay = delay
         self.cbor = str_to_bool(str(cbor))
         self.parallel = str_to_bool(str(parallel))
-        try:
-            import cbor2
-            self.cbor = cbor2
-        except:
-            _logger.error("cbor2 not installed: JSON fallback on Daqbuf searches")
-            self.cbor = None
+        if self.cbor:
+            try:
+                import cbor2
+                self.cbor = cbor2
+            except:
+                _logger.error("cbor2 not installed: JSON fallback on Daqbuf searches")
+                self.cbor = None
 
     def get_backends(self):
         try:
@@ -67,27 +68,31 @@ class Daqbuf(Source):
                 if type(parsed_data) != dict:
                     raise RuntimeError("Invalid cbor frame: " + str(type(parsed_data)))
 
-                tss = parsed_data.get('tss', [])
-                pulses = parsed_data.get('pulses', [])
-                values = parsed_data.get('values', [])
-                scalar_type = parsed_data.get('scalar_type', None)
-                rangeFinal = parsed_data.get('rangeFinal', False)
+                if parsed_data.get("error", None) :
+                    raise Exception(parsed_data.get("error"))
 
-                if scalar_type:
-                    nelm = len(values)
-                    for i in range(nelm):
-                        timestamp = tss[i]
-                        pulse_id = pulses[i]
-                        value = values[i]
-                        self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
-                        current_channel_name = channel
-                if rangeFinal:
-                    break
-                elif not scalar_type:
-                    raise RuntimeError("Invalid cbor frame keys: " + str(parsed_data.keys()))
+                if not parsed_data.get ("type","") == 'keepalive':
+                    tss = parsed_data.get('tss', [])
+                    pulses = parsed_data.get('pulses', [])
+                    values = parsed_data.get('values', [])
+                    scalar_type = parsed_data.get('scalar_type', None)
+                    rangeFinal = parsed_data.get('rangeFinal', False)
 
-                if not self.is_running() or self.is_aborted():
-                    raise RuntimeError("Query has been aborted")
+                    if scalar_type:
+                        nelm = len(values)
+                        for i in range(nelm):
+                            timestamp = tss[i]
+                            pulse_id = pulses[i]
+                            value = values[i]
+                            self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
+                            current_channel_name = channel
+                    if rangeFinal:
+                        break
+                    elif not scalar_type:
+                        raise RuntimeError("Invalid cbor frame keys: " + str(parsed_data.keys()))
+
+                    if not self.is_running() or self.is_aborted():
+                        raise RuntimeError("Query has been aborted")
 
         except IncompleteRead:
             _logger.error("Unexpected end of input")
