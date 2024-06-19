@@ -32,7 +32,7 @@ class TextWriter(Consumer):
             filename = self.get_path(source, name)
             self.files[source][name] = open(filename, 'a')
 
-    def on_channel_record(self, source, name, timestamp, pulse_id, value):
+    def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):
         file = self.files[source].get(name, None)
         if file:
             trailer = ""

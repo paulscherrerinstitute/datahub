@@ -29,8 +29,10 @@ class Source():
         self.known_backends= known_backends
         if time_type.lower() in ["str", "string"]:
             self.time_type = "str"
-        elif time_type.lower() in ["sec", "seconds", "inc"]:
+        elif time_type.lower() in ["sec", "secs", "seconds"]:
             self.time_type = "sec"
+        elif time_type.lower() in ["milli", "millis", "milliseconds"]:
+            self.time_type = "milli"
         else:
             self.time_type = "nano"
         self.path = path
@@ -106,8 +108,21 @@ class Source():
             except Exception as e:
                 _logger.exception("Error creating channel on listener %s: %s" % (str(listener), str((name, typ, byteOrder, shape, channel_compression))))
 
+    def convert_time(self, timestamp):
+        return convert_timestamp(timestamp, self.time_type)
 
-    def on_channel_record(self, name, timestamp, pulse_id, value):
+    def adjust_type(self, value):
+        if type(value) == int:
+            return numpy.int64(value)
+        elif type(value) == float:
+            return numpy.float64(value)
+        elif type(value) == bool:
+            return numpy.bool(value)
+        elif isinstance(value, list):
+            return numpy.array(value)
+        return value
+
+    def on_channel_record(self, name, timestamp, pulse_id, value, **kwargs):
         if self.prefix:
             name = self.prefix + name
         if self.downsample:
@@ -128,7 +143,7 @@ class Source():
         if timestamp is None:
             timestamp = create_timestamp(time.time())
 
-        timestamp = convert_timestamp(timestamp, self.time_type)
+        timestamp = self.convert_time(timestamp)
 
         if self.auto_decompress:
             [typ, byteOrder, shape, channel_compression, metadata] = self.channel_info[name]
@@ -137,7 +152,7 @@ class Source():
 
         for listener in self.listeners:
             try:
-                listener.on_channel_record( self, name, timestamp, pulse_id, value)
+                listener.on_channel_record(self, name, timestamp, pulse_id, value, **kwargs)
             except Exception as e:
                 _logger.exception("Error appending record on listener %s: %s" % (str(listener), str((name, timestamp, pulse_id, value))))
 
@@ -276,18 +291,10 @@ class Source():
         self.listeners.clear()
 
     #Utility methods to manage automatically calling on_channel_header on the first stream value
-    def receive_channel(self, channel_name, value, timestamp, id, check_changes=False, check_types=False, metadata={}):
+    def receive_channel(self, channel_name, value, timestamp, id, check_changes=False, check_types=False, metadata={}, **kwargs):
         existing = channel_name in self.channel_formats
         if check_types:
-            if type(value) == int:
-                value = numpy.int32(value)
-            elif type(value) == float:
-                value = numpy.float64(value)
-            elif type(value) == bool:
-                value = numpy.bool(value)
-            elif isinstance(value, list):
-                value = numpy.array(value)
-
+            value = self.adjust_type(value);
         if not existing or check_changes:
             try:
                 if isinstance(value, str):
@@ -309,7 +316,7 @@ class Source():
                 self.on_channel_header(channel_name, typ, Endianness.LITTLE, shape, None, metadata)
                 self.channel_formats[channel_name] = fmt
 
-        self.on_channel_record(channel_name, timestamp, id, value)
+        self.on_channel_record(channel_name, timestamp, id, value, **kwargs)
 
     def close_channels(self):
         for channel_name in self.channel_formats.keys():

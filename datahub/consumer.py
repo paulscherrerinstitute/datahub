@@ -12,7 +12,7 @@ class Consumer:
     def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         pass
 
-    def on_channel_record(self, source, name, timestamp, pulse_id, value):
+    def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):
         pass
 
     def on_channel_completed(self, source, name):

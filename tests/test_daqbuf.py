@@ -11,8 +11,8 @@ start = "2024-02-15T12:41:00Z"
 end = "2024-02-15T12:42:00Z"
 
 channels = ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"]
-start = "2024-05-02 09:00:00"
-end = "2024-05-02 10:00:00"
+start = "2024-06-14 09:00:00"
+end = "2024-06-14 10:00:00"
 
 query = {
     "channels": channels,
@@ -21,6 +21,15 @@ query = {
 }
 
 class DataBufferTest(unittest.TestCase):
+
+    def test_dataframe(self):
+        with Daqbuf(backend=backend, cbor=True, parallel=True) as source:
+            table = Table()
+            source.add_listener(table)
+            source.request(query)
+            dataframe_cbor = table.as_dataframe(Table.PULSE_ID)
+            dataframe_cbor.reindex(sorted(dataframe_cbor.columns), axis=1)
+            print(dataframe_cbor)
 
     def test_listeners(self):
         parallel = True
@@ -100,6 +109,40 @@ class DataBufferTest(unittest.TestCase):
             stdout = Stdout()
             source.add_listener(stdout)
             source.req(["S10CB05-RBOC-DCP10:REF-POWER-AVG"], -1000, 0, False)
+
+
+    def test_binned(self):
+        query["bins"]=100
+        with Daqbuf(backend=backend, cbor=True, parallel=False) as source:
+            table = Table()
+            source.add_listener(table)
+            source.request(query)
+            df = table.as_dataframe(Table.TIMESTAMP)
+            df.reindex(sorted(df.columns), axis=1)
+            print(df)
+
+    def test_binned2(self):
+        query["bins"]=100
+        with Daqbuf(backend=backend, cbor=True, parallel=False) as source:
+            stout = Stdout()
+            source.add_listener(stout)
+            source.request(query)
+
+    def test_binned3(self):
+        query["bins"]=100
+        with Daqbuf(backend=backend, cbor=True, parallel=False) as source:
+            plot = Plot()
+            source.add_listener(plot)
+            source.request(query)
+
+    def test_binned4(self):
+        query["bins"]=100
+        with Daqbuf(backend=backend, cbor=True, parallel=False, time_type="millis") as source:
+            stdout = Stdout()
+            hdf5 = HDF5Writer(filename)
+            source.add_listener(hdf5)
+            source.add_listener(stdout)
+            source.request(query)
 
 if __name__ == '__main__':
     unittest.main()

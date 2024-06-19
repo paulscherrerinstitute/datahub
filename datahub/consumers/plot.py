@@ -210,7 +210,7 @@ class Plot(Consumer):
         self.plots[name] = [shape, xdata, time.time()]
         time.sleep(0.1)
 
-    def on_channel_record(self, source, name, timestamp, pulse_id, value):
+    def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):
         if name in self.plots:
             shape, xdata, start = self.plots[name]
             try:

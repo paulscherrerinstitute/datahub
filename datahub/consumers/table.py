@@ -22,9 +22,16 @@ class Table(Consumer):
 
     def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         self.data[name] = []
+        if (metadata.get("bins", None)):
+            for col in "max", "min", "count":
+                self.data[f"{name} {col}"] = []
 
-    def on_channel_record(self, source, name, timestamp, pulse_id, value):
+    def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):
         self.data[name].append({Table.TIMESTAMP: timestamp, Table.PULSE_ID: pulse_id, name: value})
+        if kwargs.get("bins", None):
+            for col in "max", "min", "count":
+                arg_name = f"{name} {col}"
+                self.data[arg_name].append({Table.TIMESTAMP: timestamp, Table.PULSE_ID: pulse_id, arg_name: kwargs[col]})
 
     def on_channel_completed(self, source, name):
         pass

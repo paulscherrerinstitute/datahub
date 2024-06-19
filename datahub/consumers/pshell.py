@@ -86,7 +86,7 @@ class PShell(Consumer):
         pc.set_status("Running")
         pc.set_progress(0.5)
 
-    def on_channel_record(self, source, name, timestamp, pulse_id, value):
+    def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):
         if name in self.plots:
             plot, series, shape, xdata = self.plots[name]
             pc = self.clients[source]

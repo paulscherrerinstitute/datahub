@@ -54,7 +54,7 @@ class Stdout(Consumer):
         #print (f"{self.color_names}\t+{name} - {typ} {byteOrder} {shape} {channel_compression}{TextColors.RESET}")
         pass
 
-    def on_channel_record(self, source, name, timestamp, pulse_id, value):
+    def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):
         if self.first_record:
             self.print_header()
             self.first_record = False
@@ -69,6 +69,8 @@ class Stdout(Consumer):
         else:
             value = str(value)
 
+        if kwargs.get("bins", None):
+            value = f"{value}  \t [{kwargs['min']} - {kwargs['max']}]"
         print(self.align.format(
             str(name),
             str(timestamp),

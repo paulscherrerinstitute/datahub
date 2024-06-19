@@ -26,6 +26,8 @@ def convert_timestamp(timestamp, type="nano"):
         return timestamp_to_string(secs, False)[:-3]
     elif type =="sec":
         return float(timestamp) / 1000000000.0
+    elif type =="milli":
+        return int(timestamp/1000000)
     return timestamp
 
 def time_to_pulse_id(tm=time.time()):

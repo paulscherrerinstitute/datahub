@@ -51,16 +51,19 @@ class HDF5Writer(Consumer):
                 break
         return name
 
+    def _get_time_fmt(self, source):
+        if source.time_type == "str":
+            return "str"
+        elif source.time_type == "sec":
+            return numpy.float64
+        else:
+            return numpy.int64
+
     def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         prefix, channel = self.get_path(source), self.get_group(source, name)
         has_id = metadata.get("has_id", True)
-        if source.time_type == "str":
-            ts_ds = Dataset(prefix, channel, "timestamp", self.file, dtype="str", dataset_compression=self.metadata_compression)
-        elif source.time_type == "sec":
-            ts_ds = Dataset(prefix, channel, "timestamp", self.file, dtype=numpy.float64, dataset_compression=self.metadata_compression)
-        else:
-            ts_ds = Dataset(prefix, channel, "timestamp", self.file, dataset_compression=self.metadata_compression)
-        id_ds = Dataset(prefix, channel, "id", self.file, dataset_compression=self.metadata_compression) if has_id else None
+        ts_ds = Dataset(prefix, channel, "timestamp", self.file, dtype=self._get_time_fmt(source), dataset_compression=self.metadata_compression)
+        id_ds = Dataset(prefix, channel, "id", self.file, dtype=numpy.int64, dataset_compression=self.metadata_compression) if has_id else None
         data_ds_name = "value"
         if channel_compression and (not self.auto_decompress):
             if shape is None or (len(shape) == 0):
@@ -70,6 +73,14 @@ class HDF5Writer(Consumer):
             val_ds = DirectChunkWriteDataset(prefix, channel, data_ds_name, self.file,shape, typ, channel_compression, dataset_compression=Compression.BITSHUFFLE_LZ4)
         else:
             val_ds = Dataset(prefix, channel, data_ds_name, self.file, shape, typ, channel_compression, dataset_compression=self.default_compression)
+            if metadata.get("bins", None):
+                min_ds = Dataset(prefix,  channel, "min", self.file, shape, typ, channel_compression, dataset_compression=self.default_compression)
+                max_ds = Dataset(prefix, channel, "max", self.file, shape, typ, channel_compression,dataset_compression=self.default_compression)
+                cnt_ds = Dataset(prefix, channel, "count", self.file, dtype=numpy.int64, dataset_compression=self.metadata_compression)
+                start_ds = Dataset(prefix, channel, "start", self.file, dtype=self._get_time_fmt(source),dataset_compression=self.metadata_compression)
+                end_ds = Dataset(prefix, channel, "end", self.file, dtype=self._get_time_fmt(source),dataset_compression=self.metadata_compression)
+                val_ds = val_ds, min_ds, max_ds, cnt_ds, start_ds, end_ds
+
         if not self.datasets.get(source, None):
             self.datasets[source] = {}
             self.file[f"{prefix}"].attrs["type"] = str(source.type)
@@ -88,12 +99,19 @@ class HDF5Writer(Consumer):
         for key in metadata.keys():
             self.file[f"{prefix}/{channel}"].attrs[key] = metadata[key]
 
-    def on_channel_record(self, source, name, timestamp, pulse_id, value):
+    def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):
         [ts_ds, id_ds, val_ds] = self.datasets[source][name]
         if ts_ds:
             ts_ds.append(timestamp)
         if id_ds:
             id_ds.append(pulse_id)
+        if kwargs.get("bins", None):
+            val_ds, min_ds, max_ds, cnt_ds, start_ds, end_ds = val_ds
+            min_ds.append(kwargs.get("min"))
+            max_ds.append(kwargs.get("max"))
+            cnt_ds.append(kwargs.get("count"))
+            start_ds.append(kwargs.get("start"))
+            end_ds.append(kwargs.get("end"))
         val_ds.append(value)
 
     def on_channel_completed(self, source, name):
@@ -111,7 +129,11 @@ class HDF5Writer(Consumer):
         for dataset in self.datasets[source].get(name, []):
             try:
                 if dataset is not None:
-                    dataset.close()
+                    if type(dataset) is tuple:
+                        for d in dataset:
+                            d.close()
+                    else:
+                        dataset.close()
             except Exception as ex:
                 _logger.exception("Error closing datasets of channel %s: %s " % (name, str(ex)))
 
