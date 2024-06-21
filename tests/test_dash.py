@@ -14,12 +14,13 @@ now = datetime.now()
 
 time_fmt = "%Y-%m-%d %H:%M:%S"
 backend = "sf-databuffer"
-channels = []
+channels = "S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"
 start = (now - timedelta(hours=1)).strftime(time_fmt)
 end = now.strftime(time_fmt)
 bins = 100
 df = None
 query = None
+colors = [ (0 ,0, 255),  (255, 0, 0),  (0 ,255, 0), (0 ,127, 127),  (127, 127, 0),  (127 ,0, 127), (127 ,127, 127) ]
 
 source = Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds")
 
@@ -61,38 +62,46 @@ def fetch_data(_bins, _channels, _start, _end):
 
 #fetch_data(100, ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"], "2024-06-14 09:00:00", "2024-06-14 10:00:00")
 
-
-def get_figure(df, channel, color):
-    if (df is None) or (channel is None) or (channel not in df.columns):
-        return {}
+def get_series(df, channel, color):
     cols = list(df.columns)
     binned = (channel + " max") in cols
     x = pd.to_datetime(df.index, unit='s')
-    y =df[channel]
+    y = df[channel]
+
+    return go.Scatter(
+        x=x,
+        y=y,
+        mode='lines+markers',
+        name=channel,
+        line=dict(color=f'rgba({color[0]}, {color[1]}, {color[2]}, 1.0)'),
+        marker=dict(
+            color=f'rgba({color[0]}, {color[1]}, {color[2]}, 1.0)',
+            size=5
+        ),
+        error_y=None if not binned else dict(
+            type='data',
+            symmetric=False,
+            array=df[channel + " max"] - y,
+            arrayminus=y - df[channel + " min"],
+            # array= [1.0] * len(df.index),
+            # arrayminus= [2.0] * len(df.index),
+            visible=True,
+            color=f'rgba({color[0]}, {color[1]}, {color[2]}, 0.1)'  # Set the color with transparency
+        )
+    )
+
+
+def get_figure(df, channels):
+    if (df is None) or (channels is None) :
+        return {}
+    data = []
+    index = 0
+    for channel in channels:
+        if (channel in df.columns):
+            data.append(get_series(df, channel, colors[index % len(colors)]))
+            index+=1
     return {
-        'data': [
-            go.Scatter(
-                x=x,
-                y=y,
-                mode='lines+markers',
-                name=channel,
-                line=dict(color=f'rgba({color[0]}, {color[1]}, {color[2]}, 1.0)'),
-                marker=dict(
-                    color=f'rgba({color[0]}, {color[1]}, {color[2]}, 1.0)',
-                    size=5
-                ),
-                error_y=None if not binned else dict(
-                    type='data',
-                    symmetric=False,
-                    array= df[channel + " max"] - y,
-                    arrayminus= y - df[channel + " min"] ,
-                    #array= [1.0] * len(df.index),
-                    # arrayminus= [2.0] * len(df.index),
-                    visible=True,
-                    color=f'rgba({color[0]}, {color[1]}, {color[2]}, 0.1)'  # Set the color with transparency
-                )
-            )
-        ],
+        'data': data,
         'layout': go.Layout(
             #title=str(query),
             xaxis={'title': None},
@@ -101,19 +110,23 @@ def get_figure(df, channel, color):
         )
     }
 
-def fetch_graphs():
-    return [
-        dcc.Dropdown(channels, channels[0], id='dropdown-selection', style={'textAlign': 'center'}),
-        dcc.Graph(
-            id='channel_graph',
-            #figure= get_figure(df, channels[0], c)
-        )
-    ]
+def fetch_graphs(single):
+    if single:
+        return [
+            dcc.Graph(id='graph', figure= get_figure(df, channels))
+        ]
+    else:
+        return [
+            dcc.Graph(
+                id='graph_' + channel, figure=get_figure(df, [channel])
+            ) for channel in channels
+        ]
+
 
 
 # Create the Dash app
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
-c = (0 ,0, 255)
+
 # Define the layout of the app
 app.layout = html.Div(children=[
     html.H1(children='Daqbuf UI'),
@@ -125,7 +138,8 @@ app.layout = html.Div(children=[
         html.Label('To:', style={'margin-right': '10px'}),
         dcc.Input(id='input_to', type='text', style={'margin-right': '10px', 'textAlign': 'center'}, value=str(end)),
         html.Label('Channels:', style={'margin-right': '10px'}),
-        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=channels, options=channels, style={'margin-right': '10px',  'minWidth': '200px', 'width':"100%"}),
+        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=channels, options=channels, style={'margin-right': '10px',  'minWidth': '100px', 'width':"100%"}),
+        dcc.Checklist(id='checkbox_single',options=[{'label': 'Single', 'value': 'single'}], style={'margin-right': '10px','minWidth': '100px'}),
         html.Button('Query', id='button'),
     ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px'}),
     html.Div(id='output-container', style={'margin-top': '20px'})
@@ -140,23 +154,15 @@ app.layout = html.Div(children=[
     State('input_bins', 'value'),
     State('dropdown_channels', 'value'),
     State('input_from', 'value'),
-    State('input_to', 'value')
+    State('input_to', 'value'),
+    State('checkbox_single', 'value')
 )
-
-def update_data(n_clicks, bins, channels, start, end):
+def update_data(n_clicks, bins, channels, start, end, single):
     if n_clicks is None:
         return ''
     #channels = [item.strip() for item in chaneels.split(',')]
     fetch_data(bins, channels, start, end)
-    return fetch_graphs()
-
-
-@callback(
-    Output('channel_graph', 'figure'),
-    Input('dropdown-selection', 'value')
-)
-def update_graph(value):
-    return get_figure(df, value, c)
+    return fetch_graphs(single[0] if single else None)
 
 @app.callback(
     Output('dropdown_channels', 'options'),
