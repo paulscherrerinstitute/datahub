@@ -151,14 +151,17 @@ app.layout = html.Div(children=[
 @callback(
     Output('output-container', 'children'),
     Input('button', 'n_clicks'),
+    Input('checkbox_single', 'value'),
     State('input_bins', 'value'),
     State('dropdown_channels', 'value'),
     State('input_from', 'value'),
     State('input_to', 'value'),
     State('checkbox_single', 'value')
 )
-def update_data(n_clicks, bins, channels, start, end, single):
+def update_data(n_clicks, _, bins, channels, start, end, single):
     if n_clicks is None:
+        return ''
+    if len(channels)==0:
         return ''
     #channels = [item.strip() for item in chaneels.split(',')]
     fetch_data(bins, channels, start, end)
