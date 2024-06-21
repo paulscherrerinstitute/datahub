@@ -1,13 +1,40 @@
 from datahub import *
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import pandas as pd
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from dash import Dash, html, dcc, callback, Output, Input, State
+from dash.exceptions import PreventUpdate
+import plotly.graph_objects as go
+import numpy as np
+
+
+now = datetime.now()
+
+time_fmt = "%Y-%m-%d %H:%M:%S"
 backend = "sf-databuffer"
-channels = None
-start = None
-end = None
-bins = None
+channels = []
+start = (now - timedelta(hours=1)).strftime(time_fmt)
+end = now.strftime(time_fmt)
+bins = 100
 df = None
 query = None
+
+source = Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds")
+
+def search_channels(regex):
+    if not regex:
+        return []
+    #with Daqbuf(backend=backend) as source:
+    source.verbose = True
+    try:
+        ret = source.search(regex)
+        results = [ch["name"] for ch in  ret.get("channels", [])]
+    except:
+        results = []
+
+    return [{'label': result, 'value': result} for result in results]
 
 def fetch_data(_bins, _channels, _start, _end):
     global df, bins, query, channels, start, end
@@ -23,27 +50,20 @@ def fetch_data(_bins, _channels, _start, _end):
     if (bins):
         query["bins"] = bins
 
-    with Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds") as source:
-        table = Table()
-        source.add_listener(table)
-        source.request(query)
-        #dataframe_cbor = table.as_dataframe(Table.PULSE_ID)
-        df = table.as_dataframe(Table.TIMESTAMP)
-        if df is not None:
-            df.reindex(sorted(df.columns), axis=1)
+    #with Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds") as source:
+    table = Table()
+    source.add_listener(table)
+    source.request(query)
+    #dataframe_cbor = table.as_dataframe(Table.PULSE_ID)
+    df = table.as_dataframe(Table.TIMESTAMP)
+    if df is not None:
+        df.reindex(sorted(df.columns), axis=1)
 
-fetch_data(100, ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"], "2024-06-14 09:00:00", "2024-06-14 10:00:00")
-
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
-from dash import Dash, html, dcc, callback, Output, Input, State
-import plotly.graph_objects as go
-import numpy as np
+#fetch_data(100, ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"], "2024-06-14 09:00:00", "2024-06-14 10:00:00")
 
 
 def get_figure(df, channel, color):
-    if df is None:
+    if (df is None) or (channel is None) or (channel not in df.columns):
         return {}
     cols = list(df.columns)
     binned = (channel + " max") in cols
@@ -76,7 +96,8 @@ def get_figure(df, channel, color):
         'layout': go.Layout(
             #title=str(query),
             xaxis={'title': None},
-            yaxis={'title': channel}
+            yaxis={'title': channel},
+            margin=dict(t=40, b=40, l=80, r=40)  # Adjust the top margin (t) to make it smaller
         )
     }
 
@@ -104,12 +125,11 @@ app.layout = html.Div(children=[
         html.Label('To:', style={'margin-right': '10px'}),
         dcc.Input(id='input_to', type='text', style={'margin-right': '10px', 'textAlign': 'center'}, value=str(end)),
         html.Label('Channels:', style={'margin-right': '10px'}),
-        dcc.Input(id='input_channels', type='text', style={'margin-right': '50px', 'width':"100%"}, value=str(", ".join(channels))),
-        html.Button('Submit', id='button')
+        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=channels, options=channels, style={'margin-right': '10px',  'minWidth': '200px', 'width':"100%"}),
+        html.Button('Query', id='button'),
     ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px'}),
     html.Div(id='output-container', style={'margin-top': '20px'})
 ])
-
 
 
 
@@ -118,18 +138,17 @@ app.layout = html.Div(children=[
     Output('output-container', 'children'),
     Input('button', 'n_clicks'),
     State('input_bins', 'value'),
-    State('input_channels', 'value'),
+    State('dropdown_channels', 'value'),
     State('input_from', 'value'),
     State('input_to', 'value')
 )
 
-def update_data(n_clicks, bins, chaneel_str, start, end):
+def update_data(n_clicks, bins, channels, start, end):
     if n_clicks is None:
         return ''
-    channels = [item.strip() for item in chaneel_str.split(',')]
+    #channels = [item.strip() for item in chaneels.split(',')]
     fetch_data(bins, channels, start, end)
     return fetch_graphs()
-
 
 
 @callback(
@@ -138,6 +157,23 @@ def update_data(n_clicks, bins, chaneel_str, start, end):
 )
 def update_graph(value):
     return get_figure(df, value, c)
+
+@app.callback(
+    Output('dropdown_channels', 'options'),
+    Input('dropdown_channels', 'search_value'),
+    State("dropdown_channels", "value")
+)
+def update_results(regex, value):
+    if not regex or len(regex)<3:
+        raise PreventUpdate
+    options = search_channels(regex)
+    #return [o for o in options if o not in value]
+    #Must add to options or else selected value will be removed
+    if value:
+        options = options + [{'label': V, 'value': V} for V in value]
+    return options
+
+
 
 # Run the app
 if __name__ == '__main__':
