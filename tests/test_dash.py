@@ -10,19 +10,15 @@ from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import numpy as np
 
-
-now = datetime.now()
-
-time_fmt = "%Y-%m-%d %H:%M:%S"
 backend = "sf-databuffer"
-channels = "S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"
-start = (now - timedelta(hours=1)).strftime(time_fmt)
-end = now.strftime(time_fmt)
-bins = 100
-df = None
-query = None
+time_fmt = "%Y-%m-%d %H:%M:%S"
 colors = [ (0 ,0, 255),  (255, 0, 0),  (0 ,255, 0), (0 ,127, 127),  (127, 127, 0),  (127 ,0, 127), (127 ,127, 127) ]
 
+
+df = None
+query = None
+query = {"channels": ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"],"start": (datetime.now() - timedelta(hours=1)).strftime(time_fmt),"end": datetime.now().strftime(time_fmt),"bins": 100}
+number_queries = 0
 source = Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds")
 
 def search_channels(regex):
@@ -38,16 +34,8 @@ def search_channels(regex):
 
     return [{'label': result, 'value': result} for result in results]
 
-def fetch_data(_bins, _channels, _start, _end):
-    global df, bins, query, channels, start, end
-    if _bins is not None:
-        bins = _bins
-    if _channels is not None:
-        channels = _channels
-    if _start is not None:
-        start = _start
-    if _end is not None:
-        end = _end
+def fetch_data(bins, channels, start, end):
+    global df, query #, bins, channels, start, end
     query = {
         "channels": channels,
         "start": start,
@@ -65,9 +53,8 @@ def fetch_data(_bins, _channels, _start, _end):
     if df is not None:
         df.reindex(sorted(df.columns), axis=1)
 
-#fetch_data(100, ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"], "2024-06-14 09:00:00", "2024-06-14 10:00:00")
 
-def get_series(df, channel, color):
+def get_series(df, channel, color, index):
     cols = list(df.columns)
     binned = (channel + " max") in cols
     x = pd.to_datetime(df.index, unit='s')
@@ -83,6 +70,7 @@ def get_series(df, channel, color):
             color=f'rgba({color[0]}, {color[1]}, {color[2]}, 1.0)',
             size=5
         ),
+        #yaxis = "y" if (index==0) else ("y"+str(index+1)),
         error_y=None if not binned else dict(
             type='data',
             symmetric=False,
@@ -103,14 +91,14 @@ def get_figure(df, channels):
     index = 0
     for channel in channels:
         if (channel in df.columns):
-            data.append(get_series(df, channel, colors[index % len(colors)]))
+            data.append(get_series(df, channel, colors[index % len(colors)], index))
             index+=1
     return {
         'data': data,
         'layout': go.Layout(
             #title=str(query),
             xaxis={'title': None},
-            yaxis={'title': channel},
+            yaxis={'title': channels[0] if len(channels)==1 else None},
             margin=dict(t=40, b=40, l=80, r=40)  # Adjust the top margin (t) to make it smaller
         )
     }
@@ -118,13 +106,13 @@ def get_figure(df, channels):
 def fetch_graphs(single):
     if single:
         return [
-            dcc.Graph(id='graph', figure= get_figure(df, channels))
+            dcc.Graph(id='graph', figure= get_figure(df, query["channels"]))
         ]
     else:
         return [
             dcc.Graph(
                 id='graph_' + channel, figure=get_figure(df, [channel])
-            ) for channel in channels
+            ) for channel in query["channels"]
         ]
 
 
@@ -143,14 +131,14 @@ app.layout = html.Div(children=[
     html.H1(children='Daqbuf UI'),
     html.Div([
         html.Label('Bins:', style=label_style),
-        dcc.Input(id='input_bins', type='number', min=0, max=1000, step=1, style=input_style, value=bins),
+        dcc.Input(id='input_bins', type='number', min=0, max=1000, step=1, style=input_style, value=100),
         html.Label('From:', style=label_style),
-        dcc.Input(id='input_from', type='text', style=input_style, value=str(start)),
+        dcc.Input(id='input_from', type='text', style=input_style, value=query["start"] if query else ""),
         html.Label('To:', style=label_style),
-        dcc.Input(id='input_to', type='text', style=input_style, value=str(end)),
+        dcc.Input(id='input_to', type='text', style=input_style, value=query["end"] if query else ""),
         dcc.Dropdown(id='dropdown_set_range', placeholder='Set time range', style=drop_style, options=range_options),
         html.Label('Channels:', style=label_style),
-        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=channels, options=channels, style={'margin-right': '20px',  'minWidth': '100px', 'width':"100%", 'minHeight': cmp_height}),
+        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=query["channels"] if query else [], options=query["channels"] if query else [], style={'margin-right': '20px',  'minWidth': '100px', 'width':"100%", 'minHeight': cmp_height}),
         dcc.Checklist(id='checkbox_single',options=[{'label': 'Single', 'value': 'single'}], style=check_style),
         html.Button('Query', id='button_query', style={'minWidth': '100px', 'minHeight': cmp_height}),
     ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px', 'justifyContent': 'center', }),
@@ -204,10 +192,8 @@ def set_range(value):
     elif value == range_options[11]:
         first_day_of_current_month = now.replace(day=1)
         start = datetime.combine(first_day_of_current_month, datetime.min.time())
-
-    format = "%Y-%m-%d %H:%M:%S"
-    start = start.strftime(format)
-    end = end.strftime(format)
+    start = start.strftime(time_fmt)
+    end = end.strftime(time_fmt)
     return start, end
 
 @callback(
@@ -221,12 +207,18 @@ def set_range(value):
     State('checkbox_single', 'value')
 )
 def update_data(n_clicks, _, bins, channels, start, end, single):
+    global number_queries
     if n_clicks is None:
         return ''
+    query = False
+    if number_queries != n_clicks:
+        number_queries = n_clicks
+        query = True
     if len(channels)==0:
         return ''
     #channels = [item.strip() for item in chaneels.split(',')]
-    fetch_data(bins, channels, start, end)
+    if query:
+        fetch_data(bins, channels, start, end)
     return fetch_graphs(single[0] if single else None)
 
 @app.callback(
