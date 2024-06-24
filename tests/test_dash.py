@@ -1,5 +1,6 @@
 from datahub import *
 from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 import dash
 import dash_core_components as dcc
@@ -39,10 +40,14 @@ def search_channels(regex):
 
 def fetch_data(_bins, _channels, _start, _end):
     global df, bins, query, channels, start, end
-    bins = _bins
-    channels = _channels
-    start = _start
-    end = _end
+    if _bins is not None:
+        bins = _bins
+    if _channels is not None:
+        channels = _channels
+    if _start is not None:
+        start = _start
+    if _end is not None:
+        end = _end
     query = {
         "channels": channels,
         "start": start,
@@ -127,30 +132,87 @@ def fetch_graphs(single):
 # Create the Dash app
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 
+cmp_height = '30px'
+label_style = {'margin-right': '0px', 'minHeight': cmp_height, 'display': 'flex', 'alignItems': 'center'}
+input_style = {'margin-right': '10px', 'textAlign': 'center', 'minHeight': cmp_height}
+check_style={'margin-right': '10px','minWidth': '80px', 'minHeight': cmp_height, 'display': 'flex', 'alignItems': 'center'}
+drop_style = {'margin-right': '10px', 'min-width': '130px', 'minHeight': cmp_height}
+range_options = ["Last 1min", "Last 10min", "Last 1h", "Last 12h", "Last 24h", "Last 7d", "Yesterday", "Today", "Last Week", "This Week", "Last Month", "This Month"]
 # Define the layout of the app
 app.layout = html.Div(children=[
     html.H1(children='Daqbuf UI'),
     html.Div([
-        html.Label('Bins:', style={'margin-right': '10px'}),
-        dcc.Input(id='input_bins', type='number', min=0, max=1000, step=1, style={'margin-right': '20px', 'textAlign': 'center'}, value=bins),
-        html.Label('From:', style={'margin-right': '10px'}),
-        dcc.Input(id='input_from', type='text', style={'margin-right': '10px', 'textAlign': 'center'}, value=str(start)),
-        html.Label('To:', style={'margin-right': '10px'}),
-        dcc.Input(id='input_to', type='text', style={'margin-right': '10px', 'textAlign': 'center'}, value=str(end)),
-        html.Label('Channels:', style={'margin-right': '10px'}),
-        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=channels, options=channels, style={'margin-right': '10px',  'minWidth': '100px', 'width':"100%"}),
-        dcc.Checklist(id='checkbox_single',options=[{'label': 'Single', 'value': 'single'}], style={'margin-right': '10px','minWidth': '100px'}),
-        html.Button('Query', id='button'),
-    ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px'}),
+        html.Label('Bins:', style=label_style),
+        dcc.Input(id='input_bins', type='number', min=0, max=1000, step=1, style=input_style, value=bins),
+        html.Label('From:', style=label_style),
+        dcc.Input(id='input_from', type='text', style=input_style, value=str(start)),
+        html.Label('To:', style=label_style),
+        dcc.Input(id='input_to', type='text', style=input_style, value=str(end)),
+        dcc.Dropdown(id='dropdown_set_range', placeholder='Set time range', style=drop_style, options=range_options),
+        html.Label('Channels:', style=label_style),
+        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=channels, options=channels, style={'margin-right': '20px',  'minWidth': '100px', 'width':"100%", 'minHeight': cmp_height}),
+        dcc.Checklist(id='checkbox_single',options=[{'label': 'Single', 'value': 'single'}], style=check_style),
+        html.Button('Query', id='button_query', style={'minWidth': '100px', 'minHeight': cmp_height}),
+    ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px', 'justifyContent': 'center', }),
     html.Div(id='output-container', style={'margin-top': '20px'})
 ])
 
+@app.callback(
+    Output('input_from', 'value'),
+    Output('input_to', 'value'),
+    Input('dropdown_set_range', 'value')
+)
+def set_range(value):
+    if not value:
+        raise PreventUpdate
+    now = datetime.now()
+    start = None
+    end = now
 
+    if value == range_options[0]:
+        start = now - timedelta(minutes=1)
+    elif value == range_options[1]:
+        start = now - timedelta(minutes=10)
+    elif value == range_options[2]:
+        start = now - timedelta(hours=1)
+    elif value == range_options[3]:
+        start = now - timedelta(hours=12)
+    elif value == range_options[4]:
+        start = now - timedelta(hours=24)
+    elif value == range_options[5]:
+        start = now - timedelta(days=7)
+    elif value == range_options[6]:
+        yesterday_date = now.date() - timedelta(days=1)
+        start = datetime.combine(yesterday_date, datetime.min.time())
+        end = datetime.combine(yesterday_date, datetime.max.time())
+    elif value == range_options[7]:
+        start = datetime.combine(now.date(), datetime.min.time())
+    elif value == range_options[8]:
+        start_of_current_week = now.date() - timedelta(days=now.weekday())
+        end_of_last_week = start_of_current_week - timedelta(days=1)
+        start_of_last_week = end_of_last_week - timedelta(days=6)
+        start = datetime.combine(start_of_last_week, datetime.min.time())
+        end = datetime.combine(end_of_last_week, datetime.max.time())
+    elif value == range_options[9]:
+        start = datetime.combine(now.date() - timedelta(days=now.weekday()), datetime.min.time())
+    elif value == range_options[10]:
+        previous_month = now - relativedelta(months=1)
+        first_day_of_previous_month = previous_month.replace(day=1)
+        last_day_of_previous_month = previous_month.replace(day=1) + relativedelta(months=1) - timedelta(days=1)
+        start = datetime.combine(first_day_of_previous_month, datetime.min.time())
+        end = datetime.combine(last_day_of_previous_month, datetime.max.time())
+    elif value == range_options[11]:
+        first_day_of_current_month = now.replace(day=1)
+        start = datetime.combine(first_day_of_current_month, datetime.min.time())
 
-# Define the callback
+    format = "%Y-%m-%d %H:%M:%S"
+    start = start.strftime(format)
+    end = end.strftime(format)
+    return start, end
+
 @callback(
     Output('output-container', 'children'),
-    Input('button', 'n_clicks'),
+    Input('button_query', 'n_clicks'),
     Input('checkbox_single', 'value'),
     State('input_bins', 'value'),
     State('dropdown_channels', 'value'),
