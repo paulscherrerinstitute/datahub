@@ -1,11 +1,11 @@
+import time
 from datahub import *
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
-from dash import Dash, html, dcc, callback, Output, Input, State
+#import dash_bootstrap_components as dbc
+from dash import Dash, html, dcc, callback, Output, Input, State, dcc
 from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import numpy as np
@@ -20,6 +20,9 @@ query = None
 query = {"channels": ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"],"start": (datetime.now() - timedelta(hours=1)).strftime(time_fmt),"end": datetime.now().strftime(time_fmt),"bins": 100}
 number_queries = 0
 source = Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds")
+table = Table()
+source.add_listener(table)
+
 
 def search_channels(regex):
     if not regex:
@@ -45,8 +48,6 @@ def fetch_data(bins, channels, start, end):
         query["bins"] = bins
 
     #with Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds") as source:
-    table = Table()
-    source.add_listener(table)
     source.request(query)
     #dataframe_cbor = table.as_dataframe(Table.PULSE_ID)
     df = table.as_dataframe(Table.TIMESTAMP)
@@ -140,7 +141,8 @@ app.layout = html.Div(children=[
         html.Label('Channels:', style=label_style),
         dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=query["channels"] if query else [], options=query["channels"] if query else [], style={'margin-right': '20px',  'minWidth': '100px', 'width':"100%", 'minHeight': cmp_height}),
         dcc.Checklist(id='checkbox_single',options=[{'label': 'Single', 'value': 'single'}], style=check_style),
-        html.Button('Query', id='button_query', style={'minWidth': '100px', 'minHeight': cmp_height}),
+        html.Button('Query', n_clicks=0, id='button_query', style={'minWidth': '100px', 'minHeight': cmp_height}),
+        dcc.Loading(id="loading",type="default",children=html.Div(id='loading_output'))
     ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px', 'justifyContent': 'center', }),
     html.Div(id='output-container', style={'margin-top': '20px'})
 ])
@@ -196,30 +198,49 @@ def set_range(value):
     end = end.strftime(time_fmt)
     return start, end
 
+
+
+@callback(
+    Output('button_query', 'disabled', allow_duplicate=True),
+    Input('button_query', 'n_clicks'),
+    prevent_initial_call=True
+)
+def on_click(n_clicks):
+    if not n_clicks:
+        raise PreventUpdate
+    return True
+
 @callback(
     Output('output-container', 'children'),
+    Output('loading_output', 'children'),
+    Output('button_query', 'disabled', allow_duplicate=True),
     Input('button_query', 'n_clicks'),
     Input('checkbox_single', 'value'),
     State('input_bins', 'value'),
     State('dropdown_channels', 'value'),
     State('input_from', 'value'),
     State('input_to', 'value'),
-    State('checkbox_single', 'value')
+    State('checkbox_single', 'value'),
+    prevent_initial_call=True
 )
 def update_data(n_clicks, _, bins, channels, start, end, single):
     global number_queries
-    if n_clicks is None:
-        return ''
+    if not n_clicks:
+        raise PreventUpdate
     query = False
     if number_queries != n_clicks:
+        if source.is_running():
+            raise PreventUpdate
         number_queries = n_clicks
         query = True
     if len(channels)==0:
-        return ''
+        return '','', False
     #channels = [item.strip() for item in chaneels.split(',')]
     if query:
+        _start = time.time()
         fetch_data(bins, channels, start, end)
-    return fetch_graphs(single[0] if single else None)
+
+    return fetch_graphs(single[0] if single else None), '', False
 
 @app.callback(
     Output('dropdown_channels', 'options'),
