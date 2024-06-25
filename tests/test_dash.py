@@ -1,4 +1,6 @@
 import time
+import traceback
+
 from datahub import *
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -8,6 +10,9 @@ import dash
 from dash import Dash, html, dcc, callback, Output, Input, State, dcc
 from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
+import flask
+from flask import session
+import traceback
 import numpy as np
 
 backend = "sf-databuffer"
@@ -15,30 +20,20 @@ time_fmt = "%Y-%m-%d %H:%M:%S"
 colors = [ (0 ,0, 255),  (255, 0, 0),  (0 ,255, 0), (0 ,127, 127),  (127, 127, 0),  (127 ,0, 127), (127 ,127, 127) ]
 
 
-df = None
-query = None
-query = {"channels": ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"],"start": (datetime.now() - timedelta(hours=1)).strftime(time_fmt),"end": datetime.now().strftime(time_fmt),"bins": 100}
-number_queries = 0
-source = Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds")
-table = Table()
-source.add_listener(table)
-
-
 def search_channels(regex):
     if not regex:
         return []
-    #with Daqbuf(backend=backend) as source:
-    source.verbose = True
     try:
-        ret = source.search(regex)
-        results = [ch["name"] for ch in  ret.get("channels", [])]
+        with  Daqbuf(backend=backend) as source:
+            source.verbose = True
+            ret = source.search(regex)
+            results = [ch["name"] for ch in  ret.get("channels", [])]
     except:
         results = []
 
     return [{'label': result, 'value': result} for result in results]
 
 def fetch_data(bins, channels, start, end):
-    global df, query #, bins, channels, start, end
     query = {
         "channels": channels,
         "start": start,
@@ -46,17 +41,21 @@ def fetch_data(bins, channels, start, end):
     }
     if (bins):
         query["bins"] = bins
+    session["query"] = query
 
-    #with Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds") as source:
-    source.request(query)
-    #dataframe_cbor = table.as_dataframe(Table.PULSE_ID)
-    df = table.as_dataframe(Table.TIMESTAMP)
-    if df is not None:
-        df.reindex(sorted(df.columns), axis=1)
+    with Daqbuf(backend=backend, cbor=True, parallel=True, time_type="seconds") as source:
+        table = Table()
+        source.add_listener(table)
+        source.request(query)
+        df = table.as_dataframe(Table.TIMESTAMP)
+        if df is not None:
+            df.reindex(sorted(df.columns), axis=1)
+        #session["df"]=df.to_dict()
+        return df
 
 
 def get_series(df, channel, color, index):
-    cols = list(df.columns)
+    cols = list(df.keys())
     binned = (channel + " max") in cols
     x = pd.to_datetime(df.index, unit='s')
     y = df[channel]
@@ -84,6 +83,13 @@ def get_series(df, channel, color, index):
         )
     )
 
+def init_session():
+    if session.get("query", None) is None:
+        session["query"] = ""
+        #session["source"] = source
+        #session["table"] = table
+        #session["df"] = source
+
 
 def get_figure(df, channels):
     if (df is None) or (channels is None) :
@@ -91,7 +97,7 @@ def get_figure(df, channels):
     data = []
     index = 0
     for channel in channels:
-        if (channel in df.columns):
+        if (channel in df.keys()):
             data.append(get_series(df, channel, colors[index % len(colors)], index))
             index+=1
     return {
@@ -104,22 +110,23 @@ def get_figure(df, channels):
         )
     }
 
-def fetch_graphs(single):
+def fetch_graphs(df, single):
     if single:
         return [
-            dcc.Graph(id='graph', figure= get_figure(df, query["channels"]))
+            dcc.Graph(id='graph', figure= get_figure(df, session["query"]["channels"]))
         ]
     else:
         return [
             dcc.Graph(
                 id='graph_' + channel, figure=get_figure(df, [channel])
-            ) for channel in query["channels"]
+            ) for channel in session["query"]["channels"]
         ]
 
 
-
 # Create the Dash app
-app = dash.Dash(__name__, suppress_callback_exceptions=True)
+server = flask.Flask(__name__)
+app = dash.Dash(__name__, server=server, title='Daqbuf UI', update_title='Loading...',suppress_callback_exceptions=True)
+server.config.update(SECRET_KEY=os.urandom(24))
 
 cmp_height = '30px'
 label_style = {'margin-right': '0px', 'minHeight': cmp_height, 'display': 'flex', 'alignItems': 'center'}
@@ -127,6 +134,10 @@ input_style = {'margin-right': '10px', 'textAlign': 'center', 'minHeight': cmp_h
 check_style={'margin-right': '10px','minWidth': '80px', 'minHeight': cmp_height, 'display': 'flex', 'alignItems': 'center'}
 drop_style = {'margin-right': '10px', 'min-width': '130px', 'minHeight': cmp_height}
 range_options = ["Last 1min", "Last 10min", "Last 1h", "Last 12h", "Last 24h", "Last 7d", "Yesterday", "Today", "Last Week", "This Week", "Last Month", "This Month"]
+
+def _getCheckSingleOptions(disabled=False):
+    return [{'label': 'Single', 'value': 'single', 'disabled': disabled}]
+
 # Define the layout of the app
 app.layout = html.Div(children=[
     html.H1(children='Daqbuf UI'),
@@ -134,27 +145,42 @@ app.layout = html.Div(children=[
         html.Label('Bins:', style=label_style),
         dcc.Input(id='input_bins', type='number', min=0, max=1000, step=1, style=input_style, value=100),
         html.Label('From:', style=label_style),
-        dcc.Input(id='input_from', type='text', style=input_style, value=query["start"] if query else ""),
+        dcc.Input(id='input_from', type='text', style=input_style, value=""),
         html.Label('To:', style=label_style),
-        dcc.Input(id='input_to', type='text', style=input_style, value=query["end"] if query else ""),
+        dcc.Input(id='input_to', type='text', style=input_style, value=""),
         dcc.Dropdown(id='dropdown_set_range', placeholder='Set time range', style=drop_style, options=range_options),
         html.Label('Channels:', style=label_style),
-        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=query["channels"] if query else [], options=query["channels"] if query else [], style={'margin-right': '20px',  'minWidth': '100px', 'width':"100%", 'minHeight': cmp_height}),
-        dcc.Checklist(id='checkbox_single',options=[{'label': 'Single', 'value': 'single'}], style=check_style),
+        dcc.Dropdown(id='dropdown_channels', placeholder='Enter query channel names', multi=True, value=[], options=[], style={'margin-right': '20px',  'minWidth': '100px', 'width':"100%", 'minHeight': cmp_height}),
+        dcc.Checklist(id='checkbox_single',options=_getCheckSingleOptions(), style=check_style),
         html.Button('Query', n_clicks=0, id='button_query', style={'minWidth': '100px', 'minHeight': cmp_height}),
-        dcc.Loading(id="loading",type="default",children=html.Div(id='loading_output'))
+        dcc.Loading(id="loading",type="default",children=html.Div(id='loading_output')),
+        dcc.Store(id='store', data=''),
     ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px', 'justifyContent': 'center', }),
     html.Div(id='output-container', style={'margin-top': '20px'})
 ])
 
 @app.callback(
-    Output('input_from', 'value'),
-    Output('input_to', 'value'),
-    Input('dropdown_set_range', 'value')
+    Output('dropdown_set_range', 'value'),
+    Input('store', 'data')
+)
+def on_page_load(data):
+    session["init"]=True
+    return ""
+
+@app.callback(
+    Output('input_from', 'value', allow_duplicate=True),
+    Output('input_to', 'value', allow_duplicate=True),
+    Input('dropdown_set_range', 'value'),
+    prevent_initial_call=True
 )
 def set_range(value):
     if not value:
-        raise PreventUpdate
+        if session.get("init", False):
+            value = range_options[2]
+            session["init"] = False
+        else:
+            raise PreventUpdate
+
     now = datetime.now()
     start = None
     end = now
@@ -199,21 +225,31 @@ def set_range(value):
     return start, end
 
 
+@callback(
+    Output('button_query', 'disabled', allow_duplicate=True),
+    Output('checkbox_single', 'options', allow_duplicate=True),
+    Input('checkbox_single', 'value'),
+    prevent_initial_call=True
+)
+def on_click_single(value):
+    return True, _getCheckSingleOptions(True)
 
 @callback(
     Output('button_query', 'disabled', allow_duplicate=True),
+    Output('checkbox_single', 'options', allow_duplicate=True),
     Input('button_query', 'n_clicks'),
     prevent_initial_call=True
 )
 def on_click(n_clicks):
     if not n_clicks:
         raise PreventUpdate
-    return True
+    return True, _getCheckSingleOptions(True)
 
 @callback(
     Output('output-container', 'children'),
     Output('loading_output', 'children'),
     Output('button_query', 'disabled', allow_duplicate=True),
+    Output('checkbox_single', 'options', allow_duplicate=True),
     Input('button_query', 'n_clicks'),
     Input('checkbox_single', 'value'),
     State('input_bins', 'value'),
@@ -221,31 +257,27 @@ def on_click(n_clicks):
     State('input_from', 'value'),
     State('input_to', 'value'),
     State('checkbox_single', 'value'),
+    State('button_query', 'disabled'),
     prevent_initial_call=True
 )
-def update_data(n_clicks, _, bins, channels, start, end, single):
-    global number_queries
-    if not n_clicks:
-        raise PreventUpdate
-    query = False
-    if number_queries != n_clicks:
-        if source.is_running():
-            raise PreventUpdate
-        number_queries = n_clicks
-        query = True
-    if len(channels)==0:
-        return '','', False
-    #channels = [item.strip() for item in chaneels.split(',')]
-    if query:
-        _start = time.time()
-        fetch_data(bins, channels, start, end)
 
-    return fetch_graphs(single[0] if single else None), '', False
+def update_data(n_clicks, _, bins, channels, start, end, single, querying):
+    init_session()
+    graphs = ''
+    single = single[0] if single else None
+    if n_clicks:
+        if len(channels)>0:
+            try:
+                df = fetch_data(bins, channels, start, end)
+                graphs = fetch_graphs(df, single)
+            except:
+                traceback.print_exc()
+    return graphs, '', False, _getCheckSingleOptions(False)
 
 @app.callback(
     Output('dropdown_channels', 'options'),
     Input('dropdown_channels', 'search_value'),
-    State("dropdown_channels", "value")
+    State("dropdown_channels", "value"),
 )
 def update_results(regex, value):
     if not regex or len(regex)<3:
@@ -261,4 +293,4 @@ def update_results(regex, value):
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(host='0.0.0.0', port=8050, debug=True)
