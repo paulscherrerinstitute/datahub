@@ -293,4 +293,5 @@ def update_results(regex, value):
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port=8050, debug=True)
+    ssl_context = None #('cert.pem', 'key_unencrypted.pem')
+    app.run_server(host='0.0.0.0', port=8050, debug=True, ssl_context=ssl_context)
