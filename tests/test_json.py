@@ -1,5 +1,5 @@
 import unittest
-from datahub import *
+from datahub.main import run_json
 
 
 json_str = '{' \
