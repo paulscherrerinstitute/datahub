@@ -53,5 +53,6 @@ class Table(Consumer):
                     dataframe = pd.merge(dataframe, df, how='outer', on=index)
         if dataframe is not None:
             # fill NaN with last known value (assuming recording system worked without error)
-            dataframe.fillna(method='pad', inplace=True)
+            #dataframe.fillna(method='pad', inplace=True)
+            dataframe.ffill(inplace=True)
         return dataframe
