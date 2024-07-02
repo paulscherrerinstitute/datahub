@@ -1,4 +1,5 @@
 from datahub import *
+from datahub.utils.data import *
 import redis
 import time
 import threading
@@ -9,14 +10,23 @@ def produce(channel_name):
     stream = channel_name
     try:
         with redis.Redis(host='std-daq-build', port=6379, db=0) as r:
+            now = time.time()
+            id = time_to_pulse_id(now)
             while(True):
-                now = time.time()
-                id = time_to_pulse_id(now)
                 timestamp = create_timestamp(now)
                 value = random.random()
-                r.xadd(stream, {'channel': channel_name, 'timestamp': timestamp, 'value': value, 'id': id})
-                r.xtrim(stream, maxlen=MAX_STREAM_LENGHT, approximate=False)
-                time.sleep(0.01) #100Hz
+                #if channel_name== 'channel3':
+                #   value = ">>>"+str(value)
+                r.xadd(stream, {'channel': channel_name, 'timestamp': timestamp, 'value': encode(value), 'id': id}, maxlen=MAX_STREAM_LENGHT)
+                #print(id, channel_name)
+                #r.xtrim(stream, maxlen=MAX_STREAM_LENGHT, approximate=False)
+                while True:
+                    time.sleep(0.001) #100Hz
+                    now = time.time()
+                    new_id = time_to_pulse_id(now)
+                    if new_id != id:
+                        id = new_id
+                        break
     except Exception as e:
         print(e)
 
