@@ -5,6 +5,7 @@ except:
 
 from datahub import *
 from datahub.utils.data import *
+import threading
 
 _logger = logging.getLogger(__name__)
 
@@ -80,9 +81,6 @@ class Redis(Source):
                                 if sent_id >= id:
                                     _logger.warning(f"Invalid ID {id} - last sent ID {sent_id}")
                                 else:
-                                    expected = sent_id + 1
-                                    if (sent_id != -1) and (expected != id):
-                                        _logger.warning(f"Missed ID {expected} - received {id}")
                                     timestamp = msg.pop("timestamp", None)
                                     if self.range.has_started():
                                         try:
@@ -123,4 +121,32 @@ class Redis(Source):
                                 streams.append(key)
                 return sorted(streams)
 
+class RedisStream(Redis):
 
+    def __init__(self, channels, **kwargs):
+        Redis.__init__(self, **kwargs)
+        self.message_buffer = collections.deque(maxlen=10)
+        self.condition = threading.Condition()
+        self.req(channels, 0.0, 365 * 24 * 60 * 60, background=True)
+
+    def close(self):
+        Redis.close(self)
+
+    def on_msg(self, id, timestamp, msg):
+        with self.condition:
+            self.message_buffer.append((id, timestamp, msg))
+            self.condition.notify()
+
+    def drain(self):
+        self.message_buffer.clear()
+
+    def receive(self, timeout=None):
+        start = time.time()
+        while True:
+            if len(self.message_buffer) == 0:
+                if timeout is not None:
+                    if (time.time() - start) > timeout:
+                        return None
+                time.sleep(0.001)
+            else:
+                return self.message_buffer.popleft()

@@ -36,7 +36,7 @@ class Table(Consumer):
     def on_channel_completed(self, source, name):
         pass
 
-    def as_dataframe(self, index=TIMESTAMP):
+    def as_dataframe(self, index=TIMESTAMP, replace_nan=False):
         import pandas as pd
         dataframe = None
         drop = Table.PULSE_ID if index!=Table.PULSE_ID else Table.TIMESTAMP
@@ -46,13 +46,12 @@ class Table(Consumer):
                 df = pd.DataFrame(self.data[key])
                 df = df.drop(columns=[drop])
                 df = df.set_index(index)
-
                 if dataframe is None:
                     dataframe = df
                 else:
                     dataframe = pd.merge(dataframe, df, how='outer', on=index)
-        if dataframe is not None:
-            # fill NaN with last known value (assuming recording system worked without error)
-            #dataframe.fillna(method='pad', inplace=True)
+        if (dataframe is not None) and replace_nan:
+            #Fill NA/NaN values by propagating the last valid observation to next valid.
             dataframe.ffill(inplace=True)
+        dataframe.sort_index(inplace=True)
         return dataframe

@@ -58,7 +58,6 @@ class Source():
 
     def __exit__(self, type, value, traceback):
         self.close()
-        self.__str__()
 
     def __str__(self):
         return "%s: %s" % (self.get_desc(), str(self.query))
