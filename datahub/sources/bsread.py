@@ -4,6 +4,8 @@ except:
     bsread = None
 
 from datahub import *
+from datahub.utils.checker import check_msg
+import collections
 
 _logger = logging.getLogger(__name__)
 
@@ -21,6 +23,7 @@ class Bsread(Source):
         mode = bsread.PULL if self.mode == "PULL" else bsread.SUB
         receive_timeout = query.get("receive_timeout", 3000)
         channels = query.get("channels", None)
+        filter = query.get("filter", None)
         if not self.url or (self.url == bsread.DEFAULT_DISPATCHER_URL):
             host, port = None, 9999
             stream_channels = channels
@@ -40,21 +43,66 @@ class Bsread(Source):
                     timestamp = create_timestamp(data.data.global_timestamp, data.data.global_timestamp_offset)
                     pulse_id = data.data.pulse_id
                     format_changed = data.data.format_changed
-                    if not channels:
-                        channels = data.data.data.keys()
-                    for channel_name in channels:
-                        try:
-                            v = data.data.data[channel_name].value
-                            self.receive_channel(channel_name, v, timestamp, pulse_id, check_changes=format_changed)
-                        except Exception as ex:
-                            _logger.exception("Error receiving data: %s " % str(ex))
+                    data=data.data.data
+
+                    msg = {channel: data[channel].value for channel in (channels if channels else data.keys())}
+
+                    try:
+                        if not filter or self.is_valid(filter, id, timestamp, msg):
+                            self.on_msg(pulse_id, timestamp, msg, format_changed)
+                    except Exception as e:
+                        _logger.exception("Error receiving data: %s " % str(e))
+
             self.close_channels()
         if self.context:
             self.context.destroy()
             self.context = None
+
+    def is_valid(self, filter, id, timestamp, msg):
+        try:
+            return check_msg(msg, filter)
+        except Exception as e:
+            _logger.warning("Error processing filter: %s " % str(e))
+            return False
+
+    def on_msg(self, id, timestamp, msg, format_changed):
+        for channel in msg.keys():
+            try:
+                self.receive_channel(channel, msg[channel], timestamp, id, check_changes=format_changed)
+            except Exception as ex:
+                _logger.exception("Error receiving data: %s " % str(ex))
+
 
     def close(self):
         if self.context:
             self.context.destroy()
             self.context = None
         Source.close(self)
+
+
+class BsreadStream(Bsread):
+
+    def __init__(self, channels=None, filter=None, **kwargs):
+        Bsread.__init__(self, **kwargs)
+        self.message_buffer = collections.deque(maxlen=10)
+        self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True)
+
+    def close(self):
+        Bsread.close(self)
+
+    def on_msg(self, id, timestamp, msg, format_changed):
+        self.message_buffer.append((id, timestamp, msg))
+
+    def drain(self):
+        self.message_buffer.clear()
+
+    def receive(self, timeout=None):
+        start = time.time()
+        while True:
+            if len(self.message_buffer) == 0:
+                if timeout is not None:
+                    if (time.time() - start) > timeout:
+                        return None
+                time.sleep(0.001)
+            else:
+                return self.message_buffer.popleft()

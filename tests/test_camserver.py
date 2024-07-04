@@ -2,7 +2,7 @@ import unittest
 from datahub import *
 
 url = "tcp://localhost:5554"
-filename = "/Users/gobbo_a/dev/back/camserver.h5"
+filename = "/Users/gobbo_a/tst.h5"
 channels = ["intensity", "height"]
 start = None
 end = 3.0
@@ -14,7 +14,7 @@ query = {
 }
 
 
-` = "http://localhost:8889"
+url_pipeline_server = "http://localhost:8889"
 url_camera_server = "http://localhost:8888"
 pipeline = "simulation_sp"
 camera = "simulation"
@@ -38,13 +38,15 @@ class CamserverTest(unittest.TestCase):
         self.source.request(query)
         dataframe = table.as_dataframe()
         self.assertEqual(list(dataframe.keys()), channels)
-        self.source.close_listeners(True)
+        self.source.close_listeners()
 
     def test_pipeline(self):
-        hdf5 = HDF5Writer(filename)
+        #hdf5 = HDF5Writer(filename)
+        stdout = Stdout()
         table = Table()
-        self.pipeline.add_listener(hdf5)
+        #self.pipeline.add_listener(hdf5)
         self.pipeline.add_listener(table)
+        self.pipeline.add_listener(stdout)
         self.pipeline.request(query)
         dataframe = table.as_dataframe()
         self.assertEqual(list(dataframe.keys()), channels)

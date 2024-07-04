@@ -5,6 +5,7 @@ except:
 
 from datahub import *
 from datahub.utils.data import *
+from datahub.utils.checker import check_msg
 import threading
 
 _logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ class Redis(Source):
         partial_msg = query.get("partial_msg", True)
         channels = query.get("channels", [])
         size_align_buffer = query.get("size_align_buffer", 1000)
+        filter = query.get("filter", None)
 
         with redis.Redis(host=self.host, port=self.port, db=self.db, decode_responses=False) as r:
             group_name = self.create_group(r, channels)
@@ -84,7 +86,8 @@ class Redis(Source):
                                     timestamp = msg.pop("timestamp", None)
                                     if self.range.has_started():
                                         try:
-                                            self.on_msg(id, timestamp, msg)
+                                            if not filter or self.is_valid(filter, id, timestamp, msg):
+                                                self.on_msg(id, timestamp, msg)
                                         except Exception as e:
                                             _logger.exception("Error receiving data: %s " % str(e))
                                     sent_id = id
@@ -95,6 +98,12 @@ class Redis(Source):
                 self.destroy_group(r, channels, group_name)
                 self.close_channels()
 
+    def is_valid(self, filter, id, timestamp, msg):
+        try:
+            return check_msg(msg, filter)
+        except Exception as e:
+            _logger.warning("Error processing filter: %s " % str(e))
+            return False
 
     def on_msg(self, id, timestamp, msg):
         for channel_name in msg.keys():
@@ -123,19 +132,16 @@ class Redis(Source):
 
 class RedisStream(Redis):
 
-    def __init__(self, channels, **kwargs):
+    def __init__(self, channels, filter=None, **kwargs):
         Redis.__init__(self, **kwargs)
         self.message_buffer = collections.deque(maxlen=10)
-        self.condition = threading.Condition()
-        self.req(channels, 0.0, 365 * 24 * 60 * 60, background=True)
+        self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True)
 
     def close(self):
         Redis.close(self)
 
     def on_msg(self, id, timestamp, msg):
-        with self.condition:
-            self.message_buffer.append((id, timestamp, msg))
-            self.condition.notify()
+        self.message_buffer.append((id, timestamp, msg))
 
     def drain(self):
         self.message_buffer.clear()
