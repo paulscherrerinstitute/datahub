@@ -15,7 +15,7 @@ import time
 channels = ['channel1', 'channel2', 'channel3']
 
 class DataBufferTest(unittest.TestCase):
-    """
+
     def test_redis_print(self):
         with Plot() as plot:
             with Stdout() as stdout:
@@ -36,7 +36,7 @@ class DataBufferTest(unittest.TestCase):
                     df = table.as_dataframe(index=Table.PULSE_ID)
                     print(df)
 
-    """
+
     def test_redis_stream(self):
         with RedisStream(channels, time_type="str", filter="(channel3>0.5 AND channel1<0.5) OR channel2<0.1") as source:
             for i in range(10):
