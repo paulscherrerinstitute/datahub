@@ -38,6 +38,9 @@ class DataBufferTest(unittest.TestCase):
 
 
     def test_redis_stream(self):
+        with RedisStream(channels, time_type="str") as source:
+            for i in range(10):
+                print(i, source.receive(1.0))
         with RedisStream(channels, time_type="str", filter="(channel3>0.5 AND channel1<0.5) OR channel2<0.1") as source:
             for i in range(10):
                 print(i, source.receive(1.0))
