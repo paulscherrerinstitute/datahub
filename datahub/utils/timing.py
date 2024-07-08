@@ -58,3 +58,12 @@ def string_to_datetime(date_string):
         return dateutil_parser.parse(date_string)
     else:
         return datetime.fromisoformat(date_string.rstrip('Z')).replace(tzinfo=timezone.utc)
+
+def get_utc_offset():
+    now = time.time()
+    dt_utc = datetime.utcfromtimestamp(now)
+    dt_local = datetime.fromtimestamp(now)
+    difference = dt_local-dt_utc
+    return difference.total_seconds()
+
+
