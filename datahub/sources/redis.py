@@ -54,46 +54,46 @@ class Redis(Source):
                 aligned_data = MaxLenDict(maxlen=size_align_buffer)
                 while not self.range.has_ended() and not self.aborted:
                     entries = r.xreadgroup(group_name, self.consumer_name, streams, count=5 * len(channels), block=100)
-                    for stream, messages in entries:
-                        for message_id, message_data in messages:
-                            channel = message_data[b'channel'].decode('utf-8')
-                            timestamp = int(message_data[b'timestamp'].decode('utf-8'))
-                            id = int(message_data[b'id'].decode('utf-8'))
-                            data = message_data[b'value']
-                            value = decode(data)
-                            if id not in aligned_data:
-                                aligned_data[id] = {"timestamp": timestamp}
-                            aligned_data[id][channel] = value
-                            r.xack(stream, group_name, message_id)  # Acknowledge message
+                    if entries:
+                        for stream, messages in entries:
+                            for message_id, message_data in messages:
+                                channel = message_data[b'channel'].decode('utf-8')
+                                timestamp = int(message_data[b'timestamp'].decode('utf-8'))
+                                id = int(message_data[b'id'].decode('utf-8'))
+                                data = message_data[b'value']
+                                value = decode(data)
+                                if id not in aligned_data:
+                                    aligned_data[id] = {"timestamp": timestamp}
+                                aligned_data[id][channel] = value
+                                r.xack(stream, group_name, message_id)  # Acknowledge message
 
-                    keys_in_order = sorted(list(aligned_data.keys()))
-                    last_complete_id = -1
-                    for id in [keys_in_order[i] for i in range(len(keys_in_order) - 1, 0, -1)]:
-                        if len(aligned_data[id]) == (len(channels) + 1):
-                            last_complete_id = id
-                            break
+                        keys_in_order = sorted(list(aligned_data.keys()))
+                        last_complete_id = -1
+                        for id in [keys_in_order[i] for i in range(len(keys_in_order) - 1, 0, -1)]:
+                            if len(aligned_data[id]) == (len(channels) + 1):
+                                last_complete_id = id
+                                break
 
-                    for i in range(len(keys_in_order)):
-                        id = keys_in_order[i]
-                        complete = len(aligned_data[id]) == (len(channels) + 1)
-                        done = complete or (last_complete_id > id) or (len(aligned_data) > (size_align_buffer / 2))
-                        if done:
-                            msg = aligned_data.pop(id)
-                            if complete or partial_msg:
-                                if sent_id >= id:
-                                    _logger.warning(f"Invalid ID {id} - last sent ID {sent_id}")
+                        for i in range(len(keys_in_order)):
+                            id = keys_in_order[i]
+                            complete = len(aligned_data[id]) == (len(channels) + 1)
+                            done = complete or (last_complete_id > id) or (len(aligned_data) > (size_align_buffer / 2))
+                            if done:
+                                msg = aligned_data.pop(id)
+                                if complete or partial_msg:
+                                    if sent_id >= id:
+                                        _logger.warning(f"Invalid ID {id} - last sent ID {sent_id}")
+                                    else:
+                                        timestamp = msg.pop("timestamp", None)
+                                        if self.range.has_started():
+                                            try:
+                                                if not filter or self.is_valid(filter, id, timestamp, msg):
+                                                    self.on_msg(id, timestamp, msg)
+                                            except Exception as e:
+                                                _logger.exception("Error receiving data: %s " % str(e))
+                                        sent_id = id
                                 else:
-                                    timestamp = msg.pop("timestamp", None)
-                                    if self.range.has_started():
-                                        try:
-                                            if not filter or self.is_valid(filter, id, timestamp, msg):
-                                                self.on_msg(id, timestamp, msg)
-                                        except Exception as e:
-                                            _logger.exception("Error receiving data: %s " % str(e))
-                                    sent_id = id
-                            else:
-                                logging.debug(f"Discarding partial message: {id}")
-                    time.sleep(0.01)
+                                    logging.debug(f"Discarding partial message: {id}")
             finally:
                 self.destroy_group(r, channels, group_name)
                 self.close_channels()
@@ -135,24 +135,24 @@ class RedisStream(Redis):
     def __init__(self, channels, filter=None, **kwargs):
         Redis.__init__(self, **kwargs)
         self.message_buffer = collections.deque(maxlen=10)
+        self.condition = threading.Condition()
         self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True)
 
     def close(self):
         Redis.close(self)
 
     def on_msg(self, id, timestamp, msg):
-        self.message_buffer.append((id, timestamp, msg))
+        with self.condition:
+            self.message_buffer.append((id, timestamp, msg))
+            self.condition.notify()
 
     def drain(self):
-        self.message_buffer.clear()
+        with self.condition:
+            self.message_buffer.clear()
 
     def receive(self, timeout=None):
-        start = time.time()
-        while True:
-            if len(self.message_buffer) == 0:
-                if timeout is not None:
-                    if (time.time() - start) > timeout:
-                        return None
-                time.sleep(0.001)
-            else:
+        with self.condition:
+            if not self.message_buffer:
+                self.condition.wait(timeout)
+            if self.message_buffer:
                 return self.message_buffer.popleft()

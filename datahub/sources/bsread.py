@@ -6,6 +6,7 @@ except:
 from datahub import *
 from datahub.utils.checker import check_msg
 import collections
+import threading
 
 _logger = logging.getLogger(__name__)
 
@@ -85,24 +86,24 @@ class BsreadStream(Bsread):
     def __init__(self, channels=None, filter=None, **kwargs):
         Bsread.__init__(self, **kwargs)
         self.message_buffer = collections.deque(maxlen=10)
+        self.condition = threading.Condition()
         self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True)
 
     def close(self):
         Bsread.close(self)
 
     def on_msg(self, id, timestamp, msg, format_changed):
-        self.message_buffer.append((id, timestamp, msg))
+        with self.condition:
+            self.message_buffer.append((id, timestamp, msg))
+            self.condition.notify()
 
     def drain(self):
-        self.message_buffer.clear()
+        with self.condition:
+            self.message_buffer.clear()
 
     def receive(self, timeout=None):
-        start = time.time()
-        while True:
-            if len(self.message_buffer) == 0:
-                if timeout is not None:
-                    if (time.time() - start) > timeout:
-                        return None
-                time.sleep(0.001)
-            else:
+        with self.condition:
+            if not self.message_buffer:
+                self.condition.wait(timeout)
+            if self.message_buffer:
                 return self.message_buffer.popleft()
