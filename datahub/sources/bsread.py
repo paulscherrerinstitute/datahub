@@ -107,3 +107,4 @@ class BsreadStream(Bsread):
                 self.condition.wait(timeout)
             if self.message_buffer:
                 return self.message_buffer.popleft()
+

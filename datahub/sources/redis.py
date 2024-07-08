@@ -156,3 +156,14 @@ class RedisStream(Redis):
                 self.condition.wait(timeout)
             if self.message_buffer:
                 return self.message_buffer.popleft()
+
+    def forward_bsread(self, port, mode="PUB"):
+        from datahub.utils.bsread import create_sender
+        sender = create_sender(port, mode)
+        try:
+            while True:
+                id, timestamp, data = self.receive()
+                timestamp = (int(timestamp / 1e9), int(timestamp % 1e9)) #float(timestamp) / 1e9
+                sender.send(data=data, pulse_id=id, timestamp=timestamp, check_data=True)
+        finally:
+            sender.close()

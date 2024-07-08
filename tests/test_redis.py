@@ -45,6 +45,9 @@ class DataBufferTest(unittest.TestCase):
             for i in range(10):
                 print(i, source.receive(1.0))
 
+    def test_redis_stream_as_bsread(self):
+        with RedisStream(channels) as source:
+            source.forward_bsread(5678)
 
 
 if __name__ == '__main__':
