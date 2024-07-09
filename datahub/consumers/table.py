@@ -53,5 +53,6 @@ class Table(Consumer):
         if (dataframe is not None) and replace_nan:
             #Fill NA/NaN values by propagating the last valid observation to next valid.
             dataframe.ffill(inplace=True)
-        dataframe.sort_index(inplace=True)
+        if (dataframe is not None):
+            dataframe.sort_index(inplace=True)
         return dataframe
