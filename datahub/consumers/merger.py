@@ -39,6 +39,6 @@ class Merger (Consumer):
                 self.merger.callback = self.on_received_message
 
             def on_received_message(self, id, timestamp, msg):
-                for channel, value  in msg.items():
+                for channel, value in msg.items():
                     self.receive_channel(channel, value, timestamp, id, check_changes=True)
         return MergerSource(self)

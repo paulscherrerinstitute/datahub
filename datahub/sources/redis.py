@@ -26,19 +26,24 @@ class Redis(Source):
 
     def create_group(self, r, channels):
         group_name = generate_random_string(16)
-        for channel in channels:
-            try:
-                r.xgroup_create(channel, group_name, mkstream=False)
-            except Exception as e:
-                _logger.warning(f"Error creating stream group: {str(e)}")
+        try:
+            pipeline = r.pipeline()
+            for channel in channels:
+                pipeline.xgroup_create(channel, group_name, mkstream=False)
+            pipeline.execute()
+        except Exception as e:
+            _logger.warning(f"Error creating stream group: {str(e)}")
+
         return group_name
 
     def destroy_group(self, r, channels, group_name):
-        for channel in channels:
-            try:
-                r.xgroup_destroy(channel, group_name)
-            except Exception as e:
-                _logger.warning(f"Error destroying stream group: {str(e)}")
+        try:
+            pipeline = r.pipeline()
+            for channel in channels:
+                pipeline.xgroup_destroy(channel, group_name)
+            pipeline.execute()
+        except Exception as e:
+            _logger.warning(f"Error destroying stream group: {str(e)}")
 
     def run(self, query):
         partial_msg = query.get("partial_msg", True)
