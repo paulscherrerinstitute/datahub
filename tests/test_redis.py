@@ -49,6 +49,38 @@ class DataBufferTest(unittest.TestCase):
         with RedisStream(channels) as source:
             source.forward_bsread(5678)
 
+    def test_redis_stream(self):
+        # with RedisStream(channels, time_type="str") as source:
+        #    for i in range(1000):
+        #        print(i, source.receive(1.0))
+        # with RedisStream(channels, time_type="str", filter="(channel3>0.5 AND channel1<0.5) OR channel2<0.1") as source:
+        #    for i in range(10):
+        #        print(i, source.receive(1.0))
+        buf = []
+        start = time.time()
+        end = start + 600.0
+
+        with RedisStream(channels, time_type="str", queue_size=100, size_align_buffer=1000) as source:
+            while time.time() < end:
+                rec = source.receive(1.0)
+                if rec:
+                    buf.append(rec[0])
+                    if len(rec[2]) != 3:
+                        print(
+                            f"Partial message on {time.time() - start} at index {len(buf)} id:{buf[-1]} - keys: {rec[2].keys()}")
+                else:
+                    print(f"Null message on {time.time() - start} after index {len(buf)} id:{buf[-1] if buf else None}")
+            print(f"Number Records: {len(buf)}")
+
+            min_index = buf[0]
+            max_index = buf[-1]
+            full_range = set(range(min_index, max_index + 1))
+            missing_records = sorted(full_range - set(rec for rec in buf))
+            missing_indices = [i - min_index for i in missing_records]
+            print(f"Number missing: {len(missing_records)}")
+            print(f"Missing records: {missing_records}")
+            print(f"Missing indices: {missing_indices}")
+
 
 if __name__ == '__main__':
     unittest.main()

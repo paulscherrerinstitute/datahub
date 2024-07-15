@@ -56,14 +56,18 @@ class Redis(Source):
                     entries = r.xreadgroup(group_name, self.consumer_name, streams, count=5 * len(channels), block=100)
                     if entries:
                         for stream, messages in entries:
-                            for message_id, message_data in messages:
-                                channel = message_data[b'channel'].decode('utf-8')
-                                timestamp = int(message_data[b'timestamp'].decode('utf-8'))
-                                id = int(message_data[b'id'].decode('utf-8'))
-                                data = message_data[b'value']
-                                value = decode(data)
-                                align.add(id, timestamp, channel, value)
-                                r.xack(stream, group_name, message_id)  # Acknowledge message
+                            processed_ids = []
+                            try:
+                                for message_id, message_data in messages:
+                                    channel = message_data[b'channel'].decode('utf-8')
+                                    timestamp = int(message_data[b'timestamp'].decode('utf-8'))
+                                    id = int(message_data[b'id'].decode('utf-8'))
+                                    data = message_data[b'value']
+                                    value = decode(data)
+                                    align.add(id, timestamp, channel, value)
+                                    processed_ids.append(message_id)
+                            finally:
+                                r.xack(stream, group_name, *processed_ids)
                         align.process()
             finally:
                 self.destroy_group(r, channels, group_name)
@@ -96,9 +100,9 @@ class Redis(Source):
 
 class RedisStream(Redis):
 
-    def __init__(self, channels, filter=None, **kwargs):
+    def __init__(self, channels, filter=None, queue_size=100,  **kwargs):
         Redis.__init__(self, **kwargs)
-        self.message_buffer = collections.deque(maxlen=10)
+        self.message_buffer = collections.deque(maxlen=queue_size)
         self.condition = threading.Condition()
         self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True)
 

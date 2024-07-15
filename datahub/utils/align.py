@@ -36,24 +36,25 @@ class Align():
             id = keys_in_order[i]
             complete = len(self.aligned_data[id]) == (self.no_channels + 1)
             done = complete or (last_complete_id > id) or (len(self.aligned_data) > self.size_buffer)
-            if done:
-                msg = self.aligned_data.pop(id)
-                if complete or self.partial_msg:
-                    if self.sent_id >= id:
-                        _logger.warning(f"Invalid ID {id} - last sent ID {self.sent_id}")
-                    else:
-                        timestamp = msg.pop("timestamp", None)
-                        timestamp_s = timestamp/1e9 if isinstance(timestamp, int) else timestamp
-                        timestamp_s = timestamp_s + self.utc_offset if timestamp_s else time.time()
-                        if not self.range or self.range.has_started(timestamp_s):
-                            try:
-                                if not self.filter or self.is_valid(self.filter, id, timestamp, msg):
-                                    self.on_msg(id, timestamp, msg)
-                            except Exception as e:
-                                _logger.exception("Error receiving data: %s " % str(e))
-                        self.sent_id = id
+            if not done:
+                break
+            msg = self.aligned_data.pop(id)
+            if complete or self.partial_msg:
+                if self.sent_id >= id:
+                    _logger.warning(f"Invalid ID {id} - last sent ID {self.sent_id}")
                 else:
-                    logging.debug(f"Discarding partial message: {id}")
+                    timestamp = msg.pop("timestamp", None)
+                    timestamp_s = timestamp/1e9 if isinstance(timestamp, int) else timestamp
+                    timestamp_s = timestamp_s + self.utc_offset if timestamp_s else time.time()
+                    if not self.range or self.range.has_started(timestamp_s):
+                        try:
+                            if not self.filter or self.is_valid(self.filter, id, timestamp, msg):
+                                self.on_msg(id, timestamp, msg)
+                        except Exception as e:
+                            _logger.exception("Error receiving data: %s " % str(e))
+                    self.sent_id = id
+            else:
+                logging.debug(f"Discarding partial message: {id}")
 
     def is_valid(self, filter, id, timestamp, msg):
         try:

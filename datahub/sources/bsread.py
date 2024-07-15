@@ -83,9 +83,9 @@ class Bsread(Source):
 
 class BsreadStream(Bsread):
 
-    def __init__(self, channels=None, filter=None, **kwargs):
+    def __init__(self, channels, filter=None, queue_size=100,  **kwargs):
         Bsread.__init__(self, **kwargs)
-        self.message_buffer = collections.deque(maxlen=10)
+        self.message_buffer = collections.deque(maxlen=queue_size)
         self.condition = threading.Condition()
         self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True)
 
