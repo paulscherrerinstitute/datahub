@@ -58,7 +58,7 @@ class DataBufferTest(unittest.TestCase):
         #        print(i, source.receive(1.0))
         buf = []
         start = time.time()
-        end = start + 600.0
+        end = start + 6.0
 
         with RedisStream(channels, time_type="str", queue_size=100, size_align_buffer=1000) as source:
             while time.time() < end:

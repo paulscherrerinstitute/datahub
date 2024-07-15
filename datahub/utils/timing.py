@@ -33,7 +33,7 @@ def time_to_pulse_id(tm=time.time(), utc=False):
     if not utc:
         tm = tm - get_utc_offset()
     offset = tm - PULSE_ID_START_TIME
-    id = int(PULSE_ID_START_TIME / PULSE_ID_INTERVAL)
+    id = int(offset / PULSE_ID_INTERVAL)
     return id
 
 
@@ -70,5 +70,3 @@ def get_utc_offset():
     dt_local = datetime.fromtimestamp(now)
     difference = dt_local-dt_utc
     return difference.total_seconds()
-
-

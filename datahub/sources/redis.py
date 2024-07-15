@@ -46,7 +46,7 @@ class Redis(Source):
         channels = query.get("channels", [])
         size_buffer = query.get("size_buffer", 1000)
         filter = query.get("filter", None)
-        align = Align(channels, self.on_msg, self.range, filter , partial_msg=partial_msg, size_buffer=size_buffer, utc_timestamp=utc_timestamp)
+        align = Align(self.on_msg, channels, self.range, filter , partial_msg=partial_msg, size_buffer=size_buffer, utc_timestamp=utc_timestamp)
 
         with redis.Redis(host=self.host, port=self.port, db=self.db, decode_responses=False) as r:
             group_name = self.create_group(r, channels)

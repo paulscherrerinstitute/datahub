@@ -46,6 +46,7 @@ class Source():
         self.running = False
         self.verbose = False
         self.parallel = False
+        self.downsample = False
         self.name = name
         self.auto_decompress = auto_decompress
         self.prefix = ""
@@ -161,7 +162,7 @@ class Source():
         if name in self.channel_info:
             for listener in self.listeners:
                 try:
-                    listener.on_channel_completed( self, name)
+                    listener.on_channel_completed(self, name)
                 except Exception as e:
                     _logger.exception("Error completing channel on listener %s: %s" % (str(listener), str(name)))
 
