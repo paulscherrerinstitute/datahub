@@ -10,7 +10,7 @@ except:
     _logger.error("dateutil not installed: fewer data formats are supported")
     dateutil_parser=None
 
-PULSE_ID_START_TIME = 1504524711.65
+PULSE_ID_START_TIME = 1504531686.91
 PULSE_ID_INTERVAL = 0.01
 PULSE_ID_INTERVAL_DEC = len(str(PULSE_ID_INTERVAL).split('.')[1]) if '.' in str(PULSE_ID_INTERVAL) else 0
 
