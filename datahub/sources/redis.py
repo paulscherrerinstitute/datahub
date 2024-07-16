@@ -11,7 +11,7 @@ import threading
 _logger = logging.getLogger(__name__)
 
 class Redis(Source):
-    DEFAULT_URL = os.environ.get("REDIS_DEFAULT_URL", 'std-daq-build:6379')
+    DEFAULT_URL = os.environ.get("REDIS_DEFAULT_URL", 'sf-daqsync-18:6379')
     DEFAULT_BACKEND = os.environ.get("REDIS_DEFAULT_BACKEND", '0')
 
     def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, path=None, **kwargs):
