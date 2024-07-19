@@ -5,6 +5,8 @@ import time
 import threading
 import random
 
+DEFAULT_URL = os.environ.get("REDIS_DEFAULT_URL", 'sf-daqsync-18:6379')
+HOST, PORT = get_host_port_from_stream_address(DEFAULT_URL)
 
 def ingest(r, stream, data, max_stream_lenght=1000):
     if not isinstance(stream, (list, tuple)):
@@ -33,7 +35,7 @@ def wait_new_id(id):
 
 def produce_single(channel):
     try:
-        with redis.Redis(host='std-daq-build', port=6379, db=0) as r:
+        with redis.Redis(host=HOST, port=PORT, db=0) as r:
             now = time.time()
             id, timestamp = time_to_pulse_id(now), create_timestamp(now)
             while(True):
@@ -49,7 +51,7 @@ def produce_single(channel):
 
 def produce_batch(channels):
     try:
-        with redis.Redis(host='std-daq-build', port=6379, db=0) as r:
+        with redis.Redis(host=HOST, port=PORT, db=0) as r:
             now = time.time()
             id, timestamp = time_to_pulse_id(now), create_timestamp(now)
             while(True):
