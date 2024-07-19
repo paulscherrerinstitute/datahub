@@ -2,7 +2,7 @@ import logging
 import time
 from datahub.utils.data import *
 from datahub.utils.checker import check_msg
-from datahub.utils.timing import get_utc_offset, string_to_timestamp
+from datahub.utils.timing import get_utc_offset, string_to_timestamp, time_to_pulse_id
 
 _logger = logging.getLogger(__name__)
 
@@ -23,6 +23,8 @@ class Align():
         self.no_channels = 0 if channels==None else len(channels)
 
     def add(self, id, timestamp, channel, value):
+        if not id:
+            id = time_to_pulse_id(timestamp)
         if id not in self.aligned_data:
             self.aligned_data[id] = {"timestamp": timestamp}
         self.aligned_data[id][channel] = value

@@ -36,8 +36,9 @@ def run_json(task):
         parallel = task.get("parallel", None)
         interval = task.get("interval", None)
         modulo = task.get("modulo", None)
+        filter = task.get("filter", None)
         search = task.get("search", None)
-        verbose  = task.get("verbose", None)
+        verbose = task.get("verbose", None)
         prefix = task.get("prefix", None)
         query_id = task.get("id", False)
         query_time = task.get("time", False)
@@ -45,6 +46,7 @@ def run_json(task):
         channels = task.get("channels", None)
         backend = task.get("backend", None)
         url = task.get("url", None)
+        align = task.get("align", None)
         if compression == "lz4":
             compression = Compression.BITSHUFFLE_LZ4
         elif compression.lower() in ["null", "none"]:
@@ -106,6 +108,9 @@ def run_json(task):
             if "prefix" not in query:
                 if prefix:
                     query["prefix"] = prefix
+            if "filter" not in query:
+                if filter:
+                    query["filter"] = filter
 
             force_id = False
             query_by_id = query_id
@@ -200,9 +205,17 @@ def run_json(task):
                 except:
                     logger.exception(f"Error searching source: {str(source)}")
         else:
-            for source in sources:
+            if align:
+                merger = Merger(filter = filter)
+                src = merger.to_source()
+                for source in sources:
+                    source.add_listener(merger)
                 for consumer in consumers:
-                    source.add_listener(consumer)
+                    src.add_listener(consumer)
+            else:
+                for source in sources:
+                    for consumer in consumers:
+                        source.add_listener(consumer)
 
             for source in sources:
                 if source is not None:
@@ -271,6 +284,8 @@ def parse_args():
     parser.add_argument("-c", "--channels", help="Channel list (comma-separated)", required=False)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
+    parser.add_argument("-a", "--align", action='store_true', help="Merge sources aligning the message ids",required=False)
+    parser.add_argument("-l", "--filter", help="Sets a filter for data", required=False)
     parser.add_argument("-tt", "--timestamp", help="Timestamp type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-cp", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-dc", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
@@ -378,10 +393,14 @@ def main():
                 task["interval"] = args.interval
             if args.modulo:
                 task["modulo"] = args.modulo
+            if args.filter:
+                task["filter"] = args.filter
             if args.search is not None:
                 task["search"] = args.search
             if args.verbose is not None:
                 task["verbose"] = args.verbose
+            if args.align is not None:
+                task["align"] = args.align
             if args.prefix is not None:
                 task["prefix"] = args.prefix
             if args.channels is not None:

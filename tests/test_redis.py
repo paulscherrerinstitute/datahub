@@ -17,14 +17,16 @@ channels = ['channel1', 'channel2', 'channel3']
 class DataBufferTest(unittest.TestCase):
 
     def test_redis_print(self):
-        with Plot() as plot:
+            #with Plot() as plot:
             with Stdout() as stdout:
-                with Redis(time_type="str") as source:
-                    src_ch = source.search("chann");
-                    src_db = source.search();
-                    source.add_listener(stdout)
-                    source.add_listener(plot)
-                    source.req(channels, 0.0, 2.0)
+                with HDF5Writer("/Users/gobbo_a/dev/back/redis.h5") as h5:
+                    with Redis(time_type="str") as source:
+                        src_ch = source.search("chann");
+                        src_db = source.search();
+                        source.add_listener(stdout)
+                        #source.add_listener(plot)
+                        source.add_listener(h5)
+                        source.req(channels, 0.0, 2.0)
 
     def test_redis_dataframe(self):
             with Table() as table:
@@ -80,6 +82,21 @@ class DataBufferTest(unittest.TestCase):
             print(f"Number missing: {len(missing_records)}")
             print(f"Missing records: {missing_records}")
             print(f"Missing indices: {missing_indices}")
+
+    def test_redis_merger(self):
+        with Redis(time_type="str") as stream1:
+            with Redis(time_type="str") as stream2:
+                stdout =Stdout()
+                merger=Merger(filter = "channel1>0.5")
+
+                stream1.add_listener(merger)
+                stream2.add_listener(merger)
+                merger.to_source().add_listener(stdout)
+
+                stream1.req(["channel1"], 0.0, 2.0, background=True, filter = "channel1>0.5")
+                stream2.req(["channel2"], 0.0, 2.0, background=True)
+                stream1.join()
+                stream2.join()
 
 
 if __name__ == '__main__':

@@ -2,10 +2,10 @@ from datahub import Consumer, Source
 from datahub.utils.align import *
 
 class Merger (Consumer):
-    def __init__(self,  callback=None, **kwargs):
+    def __init__(self,  callback=None, filter=None, partial_msg=True, **kwargs):
         Consumer.__init__(self, **kwargs)
         self.channels = {}
-        self.align = Align(self.on_received_message, None, range=None, filter=None, partial_msg=True)
+        self.align = Align(self.on_received_message, None, range=None, filter=filter, partial_msg=partial_msg)
         self.callback = callback
 
     def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):

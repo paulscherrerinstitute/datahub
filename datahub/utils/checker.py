@@ -1,7 +1,10 @@
 import re
 
+CHANNEL_NAME_ALLOWED_SYMBOLS =  ":-"
+CHANNEL_NAME_PATTERN = "[\w" + CHANNEL_NAME_ALLOWED_SYMBOLS + "]"
+
 def check_msg_single_statement(msg, statement):
-    pattern = r"^(?P<name>\w+)(?P<op>==|!=|<=|>=|>|<)(?P<value>.+)$"
+    pattern = r"^(?P<name>" + CHANNEL_NAME_PATTERN + "+)(?P<op>==|!=|<=|>=|>|<)(?P<value>.+)$"
     match = re.match(pattern, statement)
     if not match:
         raise ValueError(f"Invalid statement: {statement}")
@@ -53,7 +56,8 @@ def check_msg_single_statement(msg, statement):
 
 def check_msg(msg, statement):
     def tokenize(expression):
-        token_pattern = re.compile(r'\s*(AND|OR|\(|\)|True|False|\w+(<|>|[!=<>]=)[^\s()]+)\s*')
+        #token_pattern = re.compile(r'\s*(AND|OR|\(|\)|True|False|\w+(<|>|[!=<>]=)[^\s()]+)\s*')
+        token_pattern = re.compile(r'\s*(AND|OR|\(|\)|True|False|' + CHANNEL_NAME_PATTERN + '+(<|>|[!=<>]=)[^\s()]+)\s*')
         tokens = token_pattern.findall(expression)
         # Extract the first element from each tuple in tokens, which contains the actual token.
         tokens = [token[0] for token in tokens]
@@ -71,7 +75,7 @@ def check_msg(msg, statement):
                 return True
             elif token == 'False':
                 return False
-            elif re.match(r"^\w+([!=<>]=|>|<).+$", token):
+            elif re.match(r"^" + CHANNEL_NAME_PATTERN + "+([!=<>]=|>|<).+$", token):
                 return check_msg_single_statement(entry, token)
             else:
                 raise ValueError(f"Unexpected token: {token}")
