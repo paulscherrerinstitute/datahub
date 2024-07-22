@@ -34,8 +34,6 @@ class Bsread(Source):
         receive_timeout = query.get("receive_timeout", 3000)
         channels = query.get("channels", None)
         filter = query.get("filter", None)
-        if channels==[]:
-            channels=None
         if not self.url or (self.url == bsread.DEFAULT_DISPATCHER_URL):
             host, port = None, 9999
             stream_channels = channels
@@ -57,7 +55,8 @@ class Bsread(Source):
                     format_changed = data.data.format_changed
                     data=data.data.data
 
-                    msg = {channel: data[channel].value for channel in (channels if channels else data.keys())}
+                    keys = channels if (channels and (len(channels)>0)) else data.keys()
+                    msg = {channel: data[channel].value for channel in keys}
 
                     try:
                         if not filter or self.is_valid(filter, id, timestamp, msg):

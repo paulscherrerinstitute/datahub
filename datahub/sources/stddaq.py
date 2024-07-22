@@ -8,7 +8,7 @@ class Stddaq(Bsread):
     """
     Retrieves data from CamServer cameras.
     """
-    DEFAULT_URL = os.environ.get("STDDAQ_DEFAULT_URL", "daq-monitoring.psi.ch:6379")
+    DEFAULT_URL = os.environ.get("STDDAQ_DEFAULT_URL", "sf-daq-6.psi.ch:6379")
 
     def __init__(self, url=DEFAULT_URL, name=None, mode="SUB", path=None, **kwargs):
         """
