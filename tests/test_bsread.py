@@ -44,5 +44,11 @@ class BsreadTest(unittest.TestCase):
         with BsreadStream(url=url, mode=mode,time_type="str", channels=channels, filter= "UInt8Scalar<10") as source:
             for i in range(10):
                 print(i, source.receive(1.0))
+
+    def test_bsread_no_channels(self):
+        stdout = Stdout()
+        self.source.add_listener(stdout)
+        self.source.req(None, 0.0, 1.0)
+
 if __name__ == '__main__':
     unittest.main()

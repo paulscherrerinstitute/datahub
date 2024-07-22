@@ -132,14 +132,13 @@ def run_json(task):
                                 query[arg] = float(query[arg])
                     except:
                         pass
+            if (query["start"] is None) and (query["end"] is None):
+                return None
             return query
 
-        def add_source(cfg, src, empty):
+        def add_source(cfg, src):
             nonlocal channels
-            if empty and (channels is None):
-                src.query = None
-            else:
-                src.query = get_query(cfg)
+            src.query = get_query(cfg)
             sources.append(src)
 
         #Create source removing constructor parameters from the query dictionary
@@ -179,10 +178,9 @@ def run_json(task):
                 valid_sources[DEFAULT_SOURCE+ "_0"] = ({},KNOWN_SOURCES[DEFAULT_SOURCE])
 
         for name, (cfg,source) in valid_sources.items():
-            empty = cfg =={}
             exec(f"{name} = cfg")
             constructor = eval("get_source_constructor(" + source.__name__ + ", '" + name + "')")
-            exec('if ' + name + ' is not None: add_source(' + name + ', ' + constructor + ', ' + str(empty) +')')
+            exec('if ' + name + ' is not None: add_source(' + name + ', ' + constructor + ')')
         for source in sources:
             if verbose is not None:
                 source.verbose = verbose
@@ -191,7 +189,6 @@ def run_json(task):
             if path is not None:
                 if source.path is None:
                     source.path = path
-
 
         if search is not None:
             if search == []:
@@ -451,6 +448,8 @@ if __name__ == '__main__':
     """
     """
     args = ["-h"]
+    sys.argv = sys.argv + args
+    args = ["--daqbuf"]
     sys.argv = sys.argv + args
     """
     main()
