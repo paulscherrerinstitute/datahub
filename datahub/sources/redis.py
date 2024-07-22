@@ -99,16 +99,18 @@ class Redis(Source):
     def search(self, regex=None):
         with redis.Redis(host=self.host, port=self.port, db=self.db, decode_responses=True) as r:
             if not regex:
-                #info = r.info('keyspace')
                 #return r.config_get('databases')
                 return r.info('keyspace')
             else:
                 cursor = '0'
                 streams = []
+                match = f'*{regex}*' if regex else '*'
                 while cursor != 0:
-                    cursor, keys = r.scan(cursor=cursor, match='*')
+                    cursor, keys = r.scan(cursor=cursor, match=match)
                     for key in keys:
                         if regex in key and r.type(key) == 'stream':
+                                if type(key)!=str:
+                                    key = key.decode('utf-8')
                                 streams.append(key)
                 return sorted(streams)
 

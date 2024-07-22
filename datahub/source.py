@@ -203,6 +203,8 @@ class Source():
     def request(self, query, background=False) -> None:
         if self.is_running():
             raise RuntimeError("Ongoing query")
+        if self.verbose:
+            print (f"Requesting from {self.url}: ", query)
 
         self.aborted = False
         self.query = query

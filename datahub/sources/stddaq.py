@@ -24,9 +24,7 @@ class Stddaq(Bsread):
         self.db='0'
         if name:
             url = self.get_instance_stream(name)
-        print ("Creating stream from: ", url )
         Bsread.__init__(self, url=url, mode=mode, path=path, name=name, **kwargs)
-
 
     def get_instance_stream(self, name):
         with redis.Redis(host=self.host, port=self.port, db=self.db) as r:
@@ -35,13 +33,19 @@ class Stddaq(Bsread):
 
 
     def search(self, regex):
-        ret = []
-        if regex:
-            ret = [element for element in ret if regex in element]
-        pd = self._get_pandas()
-        if pd:
-            if len(ret) == 0:
-                return None
-            df = pd.DataFrame(ret, columns=["instances"])
-            ret = df.to_string(index=False)
-        return ret
+        with redis.Redis(host=self.host, port=self.port, db=self.db) as r:
+            if not regex:
+                #return r.config_get('databases')
+                return r.info('keyspace')
+            else:
+                cursor = '0'
+                streams = []
+                match = f'*{regex}*' if regex else '*'
+                while cursor != 0:
+                    cursor, keys = r.scan(cursor=cursor, match=match)
+                    for key in keys:
+                        if r.type(key) == b'string':
+                            if type(key) != str:
+                                key = key.decode('utf-8')
+                            streams.append(key)
+                return sorted(streams)
