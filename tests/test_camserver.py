@@ -5,7 +5,7 @@ url = "tcp://localhost:5554"
 filename = "/Users/gobbo_a/tst.h5"
 channels = ["intensity", "height"]
 start = None
-end = 3.0
+end = 1.0
 query = {
     "channels": channels,
     "start": start,
@@ -38,7 +38,6 @@ class CamserverTest(unittest.TestCase):
         self.source.request(query)
         dataframe = table.as_dataframe()
         self.assertEqual(list(dataframe.keys()), channels)
-        self.source.close_listeners()
 
     def test_pipeline(self):
         #hdf5 = HDF5Writer(filename)
@@ -50,7 +49,6 @@ class CamserverTest(unittest.TestCase):
         self.pipeline.request(query)
         dataframe = table.as_dataframe()
         self.assertEqual(list(dataframe.keys()), channels)
-        self.pipeline.close_listeners()
 
     def test_camera(self):
         query["channels"] = None
@@ -62,6 +60,37 @@ class CamserverTest(unittest.TestCase):
         dataframe = table.as_dataframe()
         self.assertEqual(list(dataframe.keys()), ['width', 'height', 'image', 'x_axis', 'y_axis'])
         self.camera.close_listeners()
+
+    def test_config(self):
+        with Pipeline(url=url_pipeline_server, name="_simulation3_sp", config = {"binning_x":2,"binning_y":2}) as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.req(start = 0.0, end=2.0, channels = ["width", "height"])
+
+        config = {
+            "pipeline_type": "processing",
+            "camera_name": "simulation"
+        }
+        with Pipeline(url=url_pipeline_server, config=config) as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.request(query)
+
+        with Pipeline(url=url_pipeline_server, name="tst", config=config) as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.request(query)
+
+        with Pipeline(url=url_pipeline_server, name=pipeline) as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.request(query)
+
+        with Pipeline(url=url_pipeline_server, name="_simulation3_sp", config = {"binning_x":2, "binning_y":2}) as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.req(start = 0.0, end=2.0, channels = ["width", "height"])
+
 
 if __name__ == '__main__':
     unittest.main()
