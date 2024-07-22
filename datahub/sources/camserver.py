@@ -17,33 +17,43 @@ def get_response(url, post=None, params=None):
     return validate_response(server_response)
 
 
+def split_suffix_in_brackets(s):
+    if not s:
+        return None, None
+    pattern = re.compile(r"(.*)\[(.*)\]$")
+    match = pattern.search(s)
+    if match:
+        # Extract the prefix and the value inside brackets
+        prefix = match.group(1)
+        value = match.group(2)
+        if not prefix:
+            prefix=None
+        return prefix, value
+    else:
+        return s, None
+
 class Pipeline(Bsread):
     DEFAULT_URL = os.environ.get("PIPELINE_DEFAULT_URL", "http://sf-daqsync-01:8889")
 
     def __init__(self, url=DEFAULT_URL, name=None, config=None, mode="SUB", path=None, **kwargs):
         self.address = url
-        if not name and not config:
-            raise Exception("Check config")
-
-        if name and name[0] == "_":
-            instance = None
-            pipeline = name[1:]
-        else:
-            instance = name
-            pipeline = None
-        try:
-            url = self.get_stream(instance)
-        except:
-            if not config:
-                if pipeline:
-                    url = self.create_instance_from_name(name=pipeline, instance_id=instance)
-            else:
-                if type(config)==str:
-                    config = eval(config)
-                if pipeline:
-                    url = self.create_instance_from_name(name=pipeline, instance_id=instance, additional_config=config)
+        if name or config:
+            instance, pipeline = split_suffix_in_brackets(name)
+            try:
+                if not instance:
+                    raise Exception("Create")
+                url = self.get_stream(instance)
+            except:
+                if not config:
+                    if pipeline:
+                        url = self.create_instance_from_name(name=pipeline, instance_id=instance)
                 else:
-                    url = self.create_stream_from_config(config, instance)
+                    if type(config)==str:
+                        config = eval(config)
+                    if pipeline:
+                        url = self.create_instance_from_name(name=pipeline, instance_id=instance, additional_config=config)
+                    else:
+                        url = self.create_stream_from_config(config, instance)
 
         Bsread.__init__(self, url=url, mode=mode, path=path, name=name, **kwargs)
 
@@ -121,3 +131,6 @@ class Camera(Bsread):
             df = pd.DataFrame(ret, columns=["instances"])
             ret = df.to_string(index=False)
         return ret
+
+
+

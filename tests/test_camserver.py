@@ -62,7 +62,7 @@ class CamserverTest(unittest.TestCase):
         self.camera.close_listeners()
 
     def test_config(self):
-        with Pipeline(url=url_pipeline_server, name="_simulation3_sp", config = {"binning_x":2,"binning_y":2}) as source:
+        with Pipeline(url=url_pipeline_server, name="[simulation3_sp]", config = {"binning_x":2,"binning_y":2}) as source:
             stdout = Stdout()
             source.add_listener(stdout)
             source.req(start = 0.0, end=2.0, channels = ["width", "height"])
@@ -86,7 +86,7 @@ class CamserverTest(unittest.TestCase):
             source.add_listener(stdout)
             source.request(query)
 
-        with Pipeline(url=url_pipeline_server, name="_simulation3_sp", config = {"binning_x":2, "binning_y":2}) as source:
+        with Pipeline(url=url_pipeline_server, name="test[simulation3_sp]", config = {"binning_x":2, "binning_y":2}) as source:
             stdout = Stdout()
             source.add_listener(stdout)
             source.req(start = 0.0, end=2.0, channels = ["width", "height"])
