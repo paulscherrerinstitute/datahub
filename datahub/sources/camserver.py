@@ -33,9 +33,19 @@ def split_suffix_in_brackets(s):
         return s, None
 
 class Pipeline(Bsread):
+    """
+    Retrieves data from CamServer pipelines.
+    """
     DEFAULT_URL = os.environ.get("PIPELINE_DEFAULT_URL", "http://sf-daqsync-01:8889")
 
     def __init__(self, url=DEFAULT_URL, name=None, config=None, mode="SUB", path=None, **kwargs):
+        """
+        url (str, optional): PipelineServer URL. Default value can be set by the env var PIPELINE_DEFAULT_URL.
+        name (str, optional): name of the instance and/or pipeline in the format: INSTANCE_NAME[PIPELINE_NAME]
+        config (dict, optional): pipeline configuration (or additional configuration if pipeline name is defined)
+        mode (str, optional): "SUB" or "PULL"
+        path (str, optional): hint for the source location in storage or displaying.
+        """
         self.address = url
         if name or config:
             instance, pipeline = split_suffix_in_brackets(name)
@@ -103,9 +113,18 @@ class Pipeline(Bsread):
 
 
 class Camera(Bsread):
+    """
+    Retrieves data from CamServer cameras.
+    """
     DEFAULT_URL = os.environ.get("CAMERA_DEFAULT_URL", "http://sf-daqsync-01:8888")
 
     def __init__(self, url=DEFAULT_URL, name=None, mode="SUB", path=None, **kwargs):
+        """
+        url (str, optional): CameraServer URL. Default value can be set by the env var CAMERA_DEFAULT_URL.
+        name (str): camera name
+        mode (str, optional): "SUB" or "PULL"
+        path (str, optional): hint for the source location in storage or displaying.
+        """
         self.address = url
         if name:
             url = self.get_instance_stream(name)

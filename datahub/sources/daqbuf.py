@@ -7,10 +7,22 @@ from http.client import IncompleteRead
 _logger = logging.getLogger(__name__)
 
 class Daqbuf(Source):
+    """
+    Retrieves data from a Daqbuf service (new retrieval).
+    """
+
     DEFAULT_URL = os.environ.get("DAQBUF_DEFAULT_URL", "https://data-api.psi.ch/api/4")
     DEFAULT_BACKEND = os.environ.get("DAQBUF_DEFAULT_BACKEND", "sf-databuffer")
 
     def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, path=None, delay=1.0, cbor=True, parallel=False, **kwargs):
+        """
+        url (str, optional): Daqbuf URL. Default value can be set by the env var DAQBUF_DEFAULT_URL.
+        backend (str, optional): Daqbuf backend. Default value can be set by the env var DAQBUF_DEFAULT_BACKEND.
+        path (str, optional): hint for the source location in storage or displaying.
+        delay (float, optional): Wait time for channels to be uploaded to storage before retrieval.
+        cbor (bool, optional): if True (default) retrieves data as CBOR, otherwise as JSON.
+        parallel (bool, optional): if True performs the retrieval of multiple channels in differt threads.
+        """
         if url is None:
             raise RuntimeError("Invalid URL")
         Source.__init__(self, url=url, backend=backend, query_path="/events",  search_path="/search/channel", path=path,

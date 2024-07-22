@@ -6,8 +6,17 @@ GENERATE_ID = False
 _logger = logging.getLogger(__name__)
 
 class Array10(Source):
+    """
+    Retrieves data from an Array10 stream.
+    """
     DEFAULT_URL = os.environ.get("ARRAY10_DEFAULT_URL", None)
     def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, reshape=False, **kwargs):
+        """
+        url (str, optional): Stream URL. Default value can be set by the env var ARRAY10_DEFAULT_URL.
+        mode (str, optional): "SUB" or "PULL"
+        path (str, optional): hint for the source location in storage or displaying.
+        reshape (bool, optional): if True reshapes receiving array into 2d arrays/
+        """
         Source.__init__(self, url=url, path=path, **kwargs)
         self.context = 0
         self.mode = mode

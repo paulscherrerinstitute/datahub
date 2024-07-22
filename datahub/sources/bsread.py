@@ -11,9 +11,18 @@ import threading
 _logger = logging.getLogger(__name__)
 
 class Bsread(Source):
+    """
+    Retrieves data from a Bsread source.
+    """
+
     DEFAULT_URL = os.environ.get("BSREAD_DEFAULT_URL", None if (bsread is None) else bsread.DEFAULT_DISPATCHER_URL)
 
     def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, **kwargs):
+        """
+        url (str, optional): Stream URL. Default value can be set by the env var BSREAD_DEFAULT_URL.
+        mode (str, optional): "SUB" or "PULL"
+        path (str, optional): hint for the source location in storage or displaying.
+        """
         Source.__init__(self, url=url, path=path, **kwargs)
         if bsread is None:
             raise Exception("BSREAD library not available")

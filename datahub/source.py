@@ -367,7 +367,12 @@ class Source():
     def print_help(self):
         meta = get_meta(self.__class__)
         print(f"Source Name: \n\t{self.type}")
+        if (self.__class__.__doc__):
+            print("Description:")
+            print (f"\t{self.__class__.__doc__.strip()}")
         print(f"Arguments: \n\t[channels {meta}start=None end=None ...]")
+        if (self.__class__.__init__.__doc__):
+            print (self.__class__.__init__.__doc__)
         default_url = self.get_default_url()
         default_backend = self.get_default_backend()
         if default_url:

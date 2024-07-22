@@ -234,7 +234,7 @@ def run_json(task):
 def parse_args():
     """Parse cli arguments with argparse"""
 
-    class CustomHelpFormatter(argparse.HelpFormatter):
+    class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
         def _format_action_invocation(self, action):
             if not action.option_strings:
                 metavar, = self._metavar_formatter(action, action.dest)(1)
@@ -268,8 +268,15 @@ def parse_args():
             else:
                 return action.metavar or default_metavar
 
-
-    parser = argparse.ArgumentParser(description='Command line interface for DataHub  ' + datahub.version(), prefix_chars='--', formatter_class=CustomHelpFormatter)
+    usage = "datahub [--GLOBAL_ARG_1 VALUE]...[--GLOBAL_ARG_N VALUE] [--<SOURCE 1>] [SOURCE_1_ARG_1 VALUE]...[SOURCE_1_ARG_N VALUE]...[--<SOURCE M>] [SOURCE_M_ARG_1 VALUE]...[SOURCE_M_ARG_N VALUE]"
+    desc='Command line interface for DataHub  ' + datahub.version()
+    epilog =f"Sources: {','.join(KNOWN_SOURCES.keys())}"
+    epilog = epilog + f"\nConsumers: {','.join(KNOWN_CONSUMERS.keys())}"
+    if DEFAULT_SOURCE:
+        epilog = epilog + f"\nDefault Source (can be set by the env var DEFAULT_DATA_SOURCE): {DEFAULT_SOURCE}"
+    epilog = epilog + f"\nThe source argument can be omited if only the default source is used."
+    epilog = epilog + '\n\nFor source specific documentation:  datahub --<SOURCE>'
+    parser = argparse.ArgumentParser(usage=usage, description=desc, prefix_chars='--', formatter_class=CustomHelpFormatter, epilog=epilog)
     parser.add_argument("-j", "--json", help="Complete query defined as JSON", required=False)
 
     for name, (abbr, cls) in KNOWN_CONSUMERS.items():
@@ -326,7 +333,7 @@ def _split_list(list, separator):
 def print_help():
     print(f"DataHub {datahub.version()}")
     if DEFAULT_SOURCE:
-        print("Default Source:")
+        print("Default Source (can be set by the env var DEFAULT_DATA_SOURCE):")
         print(f"\t{DEFAULT_SOURCE}")
     print("Sources:")
     for source in KNOWN_SOURCES.keys():

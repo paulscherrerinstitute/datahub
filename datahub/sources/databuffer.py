@@ -5,10 +5,20 @@ _logger = logging.getLogger(__name__)
 KNOWN_BACKENDS = ["sf-databuffer", "sf-archiverappliance"]
 
 class DataBuffer(Source):
+    """
+    Retrieves data from the DataBuffer.
+    """
+
     DEFAULT_URL = os.environ.get("DATA_BUFFER_DEFAULT_URL", "https://data-api.psi.ch/sf-databuffer")
     DEFAULT_BACKEND = os.environ.get("DATA_BUFFER_DEFAULT_BACKEND", "sf-databuffer")
 
     def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, path=None, delay=1.0, **kwargs):
+        """
+        url (str, optional): DataBuffer URL. Default value can be set by the env var DATA_BUFFER_DEFAULT_URL.
+        backend (str, optional): DataBuffer backend. Default value can be set by the env var DATA_BUFFER_DEFAULT_BACKEND.
+        path (str, optional): hint for the source location in storage or displaying.
+        delay (float, optional): Wait time for channels to be uploaded to storage before retrieval.
+        """
         if url is None:
             raise RuntimeError("Invalid URL")
         Source.__init__(self, url=url, backend=backend, query_path="/query",  search_path="/channels", path=path,

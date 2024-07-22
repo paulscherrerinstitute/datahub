@@ -11,10 +11,19 @@ import threading
 _logger = logging.getLogger(__name__)
 
 class Redis(Source):
+    """
+    Retrieves data from the Redis or Dragonfly streams.
+    """
+
     DEFAULT_URL = os.environ.get("REDIS_DEFAULT_URL", 'sf-daqsync-18:6379')
     DEFAULT_BACKEND = os.environ.get("REDIS_DEFAULT_BACKEND", '0')
 
     def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, path=None, **kwargs):
+        """
+        url (str, optional): Redis URL. Default value can be set by the env var REDIS_DEFAULT_URL.
+        backend (str): Redis database. Default value can be set by the env var REDIS_DEFAULT_BACKEND.
+        path (str, optional): hint for the source location in storage or displaying.
+        """
         Source.__init__(self, url=url, backend=backend, path=path, **kwargs)
         if redis is None:
             raise Exception("PyRedis library not available")
