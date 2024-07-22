@@ -33,6 +33,7 @@ from datahub.sources.camserver import Camera
 from datahub.sources.databuffer import DataBuffer
 from datahub.sources.dispatcher import Dispatcher
 from datahub.sources.daqbuf import Daqbuf
+from datahub.sources.stddaq import Stddaq
 from datahub.sources.redis import Redis, RedisStream
 from datahub.consumer import Consumer
 from datahub.consumers.h5 import HDF5Writer
@@ -65,7 +66,8 @@ KNOWN_SOURCES = {
     "dispatcher": Dispatcher,
     "daqbuf": Daqbuf,
     "array10": Array10,
-    "redis": Redis
+    "redis": Redis,
+    "stddaq": Stddaq
     }
 
 DEFAULT_SOURCE = os.environ.get("DEFAULT_DATA_SOURCE", "daqbuf")
