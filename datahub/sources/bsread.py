@@ -34,6 +34,8 @@ class Bsread(Source):
         receive_timeout = query.get("receive_timeout", 3000)
         channels = query.get("channels", None)
         filter = query.get("filter", None)
+        if channels==[]:
+            channels=None
         if not self.url or (self.url == bsread.DEFAULT_DISPATCHER_URL):
             host, port = None, 9999
             stream_channels = channels
