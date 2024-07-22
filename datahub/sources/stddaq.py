@@ -24,12 +24,14 @@ class Stddaq(Bsread):
         self.db='0'
         if name:
             url = self.get_instance_stream(name)
+        print ("Creating stream from: ", url )
         Bsread.__init__(self, url=url, mode=mode, path=path, name=name, **kwargs)
 
 
     def get_instance_stream(self, name):
         with redis.Redis(host=self.host, port=self.port, db=self.db) as r:
-            return r.get(name)
+            ret = r.get(name)
+            return ret.decode('utf-8').strip()   if ret else ret
 
 
     def search(self, regex):
