@@ -138,6 +138,12 @@ def run_json(task):
                         pass
             if (query["start"] is None) and (query["end"] is None):
                 return None
+
+            try:
+                if "bins" in query.keys():
+                    query["bins"] = int(query["bins"])
+            except Exception as ex:
+                logger.warning(f"Invalid value for bins: {query['bins']}")
             return query
 
         def add_source(cfg, src):
