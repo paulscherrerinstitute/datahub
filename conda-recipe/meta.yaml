@@ -1,5 +1,5 @@
 package:
-  name: data_api
+  name: datahub
   version: "{{ load_setup_py_data().version }}"
 
 source:
