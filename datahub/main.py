@@ -35,6 +35,7 @@ def run_json(task):
         compression = task.get("compression", Compression.GZIP)
         parallel = task.get("parallel", None)
         interval = task.get("interval", None)
+        bins = task.get("bins", None)
         modulo = task.get("modulo", None)
         filter = task.get("filter", None)
         search = task.get("search", None)
@@ -84,7 +85,7 @@ def run_json(task):
 
         #If does nt have query arg, construct based on channels arg and start/end
         def get_query(source):
-            nonlocal start, end, interval, modulo, prefix, channels
+            nonlocal start, end, interval, modulo, prefix, channels, bins
             query = source.get("query", None)
             if query is None:
                 source_channels = source.pop("channels", None)
@@ -111,6 +112,9 @@ def run_json(task):
             if "filter" not in query:
                 if filter:
                     query["filter"] = filter
+            if "bins" not in query:
+                if bins:
+                    query["bins"] = bins
 
             force_id = False
             query_by_id = query_id
@@ -286,6 +290,7 @@ def parse_args():
     parser.add_argument("-i", "--id", action='store_true', help="Force query by id", required=False)
     parser.add_argument("-t", "--time", action='store_true', help="Force query by time", required=False)
     parser.add_argument("-c", "--channels", help="Channel list (comma-separated)", required=False)
+    parser.add_argument("-n", "--bins", help="Number of data bins", required=False)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
     parser.add_argument("-a", "--align", action='store_true', help="Merge sources aligning the message ids",required=False)
@@ -395,6 +400,8 @@ def main():
                 task["parallel"] = args.parallel
             if args.interval:
                 task["interval"] = args.interval
+            if args.bins:
+                task["bins"] = args.bins
             if args.modulo:
                 task["modulo"] = args.modulo
             if args.filter:
