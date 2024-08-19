@@ -114,12 +114,14 @@ class Daqbuf(Source):
             if current_channel_name:
                 self.on_channel_completed(current_channel_name)
 
-    def run_channel(self, channel, cbor, bins=None, conn=None):
+    def run_channel(self, channel, cbor, bins=None, last=None, conn=None):
         query = dict()
         query["channelName"] = channel
         query["begDate"] = self.range.get_start_str_iso()
         query["endDate"] = self.range.get_end_str_iso()
         query["backend"] = self.backend
+        if last is not None:
+            query["oneBeforeRange"] = "true" if last else "false"
 
         if cbor:
             create_connection = conn is None
@@ -183,6 +185,7 @@ class Daqbuf(Source):
         self.range.wait_end(delay=self.delay)
         channels = query.get("channels", [])
         bins = query.get("bins", None)
+        last = query.get("last", None)
         cbor = self.cbor and not bins
         if isinstance(channels, str):
             channels = [channels, ]
@@ -191,7 +194,7 @@ class Daqbuf(Source):
         try:
             if self.parallel:
                 for channel in channels:
-                    thread = Thread(target=self.run_channel, args=(channel, cbor, bins))
+                    thread = Thread(target=self.run_channel, args=(channel, cbor, bins, last))
                     thread.setDaemon(True)
                     thread.start()
                     threads.append(thread)
@@ -201,7 +204,7 @@ class Daqbuf(Source):
                 if cbor:
                     conn = create_http_conn(self.url)
                 for channel in channels:
-                    self.run_channel(channel, cbor, bins, conn)
+                    self.run_channel(channel, cbor, bins, last, conn)
         finally:
             if conn:
                 conn.close()

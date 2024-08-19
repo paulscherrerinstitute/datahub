@@ -36,6 +36,7 @@ def run_json(task):
         parallel = task.get("parallel", None)
         interval = task.get("interval", None)
         bins = task.get("bins", None)
+        last = task.get("last", None)
         modulo = task.get("modulo", None)
         filter = task.get("filter", None)
         search = task.get("search", None)
@@ -85,7 +86,7 @@ def run_json(task):
 
         #If does nt have query arg, construct based on channels arg and start/end
         def get_query(source):
-            nonlocal start, end, interval, modulo, prefix, channels, bins
+            nonlocal start, end, interval, modulo, prefix, channels, bins, last
             query = source.get("query", None)
             if query is None:
                 source_channels = source.pop("channels", None)
@@ -115,6 +116,9 @@ def run_json(task):
             if "bins" not in query:
                 if bins:
                     query["bins"] = bins
+            if "last" not in query:
+                if last:
+                    query["last"] = last
 
             force_id = False
             query_by_id = query_id
@@ -144,6 +148,14 @@ def run_json(task):
                     query["bins"] = int(query["bins"])
             except Exception as ex:
                 del query["bins"]
+
+            try:
+                if "last" in query.keys():
+                    query["last"] = bool(query["last"])
+            except Exception as ex:
+                del query["last"]
+
+
 
             return query
 
@@ -301,7 +313,8 @@ def parse_args():
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
     parser.add_argument("-a", "--align", action='store_true', help="Merge sources aligning the message ids",required=False)
-    parser.add_argument("-l", "--filter", help="Sets a filter for data", required=False)
+    parser.add_argument("-r", "--filter", help="Sets a filter for data", required=False)
+    parser.add_argument("-l", "--last",  action='store_true', help="Include last value before range", required=False)
     parser.add_argument("-tt", "--timestamp", help="Timestamp type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-cp", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-dc", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
@@ -409,6 +422,8 @@ def main():
                 task["interval"] = args.interval
             if args.bins:
                 task["bins"] = args.bins
+            if args.last:
+                task["last"] = bool(args.last)
             if args.modulo:
                 task["modulo"] = args.modulo
             if args.filter:
