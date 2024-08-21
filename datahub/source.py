@@ -2,6 +2,7 @@ from datahub import *
 from threading import Thread, current_thread
 import time
 from datahub.utils.reflection import get_meta
+import datahub.utils.timing as timing
 
 _logger = logging.getLogger(__name__)
 
@@ -208,7 +209,7 @@ class Source():
 
         self.aborted = False
         self.query = query
-        self.range = QueryRange(self.query)
+        self.range = QueryRange(self.query, self)
 
         self.modulo = self.query.get("modulo", None)
         if type(self.modulo) is str:
@@ -365,6 +366,11 @@ class Source():
         except:
             return None
 
+    def time_to_pulse_id(self, tm=time.time()):
+        return timing.time_to_pulse_id(tm)
+
+    def pulse_id_to_time(self, id):
+        return timing.pulse_id_to_time(id)
 
     def print_help(self):
         meta = get_meta(self.__class__)

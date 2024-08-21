@@ -19,11 +19,11 @@ class QueryRange():
     """
     RANGE_DEFAULTS_PULSE_ID = -(5 * 365 * 24 * 3600), (365 * 24 * 3600)  #From 5 years ago to one year from now
 
-    def __init__(self, query):
+    def __init__(self, query, source=None):
         now = time.time()
         self.start = self._check_str(query.get("start", None))
         self.end = self._check_str(query.get("end", None))
-
+        self.source = source
         range_defaults_pulse_id = self.time_to_id(now + QueryRange.RANGE_DEFAULTS_PULSE_ID[0]), \
                                   self.time_to_id(now + QueryRange.RANGE_DEFAULTS_PULSE_ID[1])
         if type(self.start) == float: #timestamp
@@ -68,8 +68,8 @@ class QueryRange():
         self.max_relative_id = 100000000
 
         #Seconds
-        self.start_sec, self.start_str, self.start_id, self.start_type = self._parse_par(self.start, now)
-        self.end_sec, self.end_str, self.end_id, self.end_type = self._parse_par(self.end, now)
+        self.start_sec, self.start_str, self.start_id, self.start_type = self._parse_par(self.start, now, True)
+        self.end_sec, self.end_str, self.end_id, self.end_type = self._parse_par(self.end, now, False)
 
         if self.start_sec > self.end_sec:
             raise Exception("Invalid query range: %s to %s" % (self.start, self.end))
@@ -87,7 +87,7 @@ class QueryRange():
                     return par
         return par
 
-    def _parse_par(self, par, now):
+    def _parse_par(self, par, now, start):
         if par is None: #Absent parameters mean the current time
             par = 0.0
         if type(par) == float:
@@ -109,6 +109,8 @@ class QueryRange():
             if par <= self.max_relative_id:
                 id = id + self.time_to_id()
             sec = self.id_to_time(id)
+            offset = PULSE_ID_INTERVAL/2
+            sec = sec + (-offset if start else offset)
             st = self.seconds_to_string(sec)
             typ = "id"
         else:
@@ -116,9 +118,13 @@ class QueryRange():
         return sec, st, id, typ
 
     def time_to_id(self, tm=time.time()):
+        if self.source is not None:
+            return self.source.time_to_pulse_id(tm)
         return time_to_pulse_id(tm)
 
     def id_to_time(self, id):
+        if self.source is not None:
+            return self.source.pulse_id_to_time(id)
         return pulse_id_to_time(id)
 
     def wait_time(self, target_time):

@@ -10,7 +10,7 @@ except:
     _logger.error("dateutil not installed: fewer data formats are supported")
     dateutil_parser=None
 
-PULSE_ID_START_TIME = 1504531686.91
+PULSE_ID_START_TIME = 1504951960.114 # This  is fluctuating and changed after Jul/24 from 1504531686.91
 PULSE_ID_INTERVAL = 0.01
 PULSE_ID_INTERVAL_DEC = len(str(PULSE_ID_INTERVAL).split('.')[1]) if '.' in str(PULSE_ID_INTERVAL) else 0
 
@@ -29,20 +29,16 @@ def convert_timestamp(timestamp, type="nano"):
         return int(timestamp/1000000)
     return timestamp
 
-def time_to_pulse_id(tm=time.time(), utc=False):
-    if not utc:
-        tm = tm - get_utc_offset()
+def time_to_pulse_id(tm=time.time()):
+    tm = tm - get_utc_offset()
     offset = tm - PULSE_ID_START_TIME
     id = int(offset / PULSE_ID_INTERVAL)
     return id
 
-
-
-def pulse_id_to_time(id, utc=False):
+def pulse_id_to_time(id):
     offset = float(id) * PULSE_ID_INTERVAL
     ret = PULSE_ID_START_TIME + offset
-    if not utc:
-        ret = ret + get_utc_offset()
+    ret = ret + get_utc_offset()
     return round(ret, PULSE_ID_INTERVAL_DEC)
 
 

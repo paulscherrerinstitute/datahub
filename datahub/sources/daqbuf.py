@@ -41,6 +41,17 @@ class Daqbuf(Source):
                 _logger.error("cbor2 not installed: JSON fallback on Daqbuf searches")
                 self.cbor = None
 
+    def pulse_id_to_time(self, id):
+        import requests
+        response = requests.get(self.base_url + "/map/pulse/sf-databuffer/" + str(id))
+        if response.status_code != 200:
+            raise RuntimeError("Unable to retrieve data from server: ", response)
+        data = response.text
+        nanos = int(data)
+        secs = convert_timestamp(nanos, "sec")
+        ret = round(secs, PULSE_ID_INTERVAL_DEC)
+        return ret
+
     def get_backends(self):
         try:
             if self.known_backends is None:
