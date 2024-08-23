@@ -2,6 +2,7 @@ import logging
 import h5py
 import numpy
 import datetime
+import threading
 from datahub import Consumer, Compression, bitshuffle_compression_lz4, decompress
 
 _logger = logging.getLogger(__name__)
@@ -23,12 +24,14 @@ class HDF5Writer(Consumer):
                 path = "/" + path
             self.path = path
         self.datasets = {}
+        self.lock = threading.Lock()
 
     def on_start(self, source):
-        if self.file == None:
-            self.file = h5py.File(self.filename, "w")
-            now_date = datetime.datetime.now(datetime.timezone.utc)
-            self.file.attrs["creation"] = now_date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        with self.lock:
+            if self.file is None:
+                self.file = h5py.File(self.filename, "w")
+                now_date = datetime.datetime.now(datetime.timezone.utc)
+                self.file.attrs["creation"] = now_date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
     def on_stop(self, source, exception):
         pass
