@@ -9,10 +9,13 @@ class Table(Consumer):
     PULSE_ID = "pulse_id"
     def __init__(self, **kwargs):
         Consumer.__init__(self, **kwargs)
+        self.clear()
+
+    def clear(self):
         self.data = {}
 
     def on_close(self):
-        self.data = {}
+        self.clear()
 
     def on_start(self, source):
         pass
