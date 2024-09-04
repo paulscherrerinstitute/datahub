@@ -17,7 +17,7 @@ Install via Anaconda/Miniconda:
 conda install -c paulscherrerinstitute -c conda-forge  datahub
 ```
 
-# Dependenceis
+# Dependencies
 
 As this library can be used in different ways, not all dependencies may be needed, so they are not enforced 
 in installation.
