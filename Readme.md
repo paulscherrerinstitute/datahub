@@ -17,6 +17,30 @@ Install via Anaconda/Miniconda:
 conda install -c paulscherrerinstitute -c conda-forge  datahub
 ```
 
+# Dependenceis
+
+As this library can be used in different ways, not all dependencies may be needed, so they are not enforced 
+in installation.
+
+The only mandatory dependencies are:
+  - numpy
+  - h5py
+
+These dependencies  can be needed accordingly to the used data source:
+  - requests (required by daqbuf, retrieval, databuffer, retrieval and camserver sources)
+  - cbor2 (required by daqbuf source)
+  - pyepics (required by EPICS source)
+  - pyzmq (required by array10 and bsread sources)
+  - bsread (required for bsread, camserver, dispatcher and stdaq sources)
+  - redis (required by redis and stddaq sources)
+
+ And these are other optional helper dependencies:
+  - bitshuffle (saving compressed datasets)
+  - python-dateutil (support more formats for date/time parsing)
+  - pytz (time localization)
+  - pandas (delivering data as dataframes and formatting printing to stdout)
+  - matplotlib (data plotting)
+
 # Sources
 
 Sources are services that provide data.

@@ -9,3 +9,5 @@ bitshuffle
 bsread
 pytz
 pandas
+redis
+matplotlib
