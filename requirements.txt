@@ -1,4 +1,11 @@
 numpy
 h5py
 requests
+pyepics
+bsread
+pytz
+pandas
+bitshuffle
+cbor2
+python-dateutil
 setuptools

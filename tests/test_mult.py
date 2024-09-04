@@ -16,6 +16,7 @@ class EpicsTest(unittest.TestCase):
         self.epics = Epics()
         self.bsread = Bsread(url=url_bsread, mode=mode_bsread)
 
+
     def tearDown(self):
         cleanup()
 

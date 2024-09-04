@@ -20,7 +20,7 @@ requirements:
     - numpy
 
 #Optional requirements
-#Q   - pyepics
+#    - pyepics
 #    - bsread
 #    - pytz
 #    - pandas

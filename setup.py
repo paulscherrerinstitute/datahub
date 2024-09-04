@@ -24,6 +24,8 @@ setup(
     keywords="",
     url="https://github.com/paulscherrerinstitute/" + PACKAGE_NAME,
     long_description=read('Readme.md'),
+    install_requires=[
+    ],
     entry_points={
         'console_scripts': [
             f'{PACKAGE_NAME} = {PACKAGE_NAME}.main:main',
