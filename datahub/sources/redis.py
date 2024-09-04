@@ -26,7 +26,7 @@ class Redis(Source):
         """
         Source.__init__(self, url=url, backend=backend, path=path, **kwargs)
         if redis is None:
-            raise Exception("PyRedis library not available")
+            raise Exception("redis library not available")
         self.consumer_name = 'datahub'
         self.host, self.port = get_host_port_from_stream_address(self.url)
         self.db = self.backend

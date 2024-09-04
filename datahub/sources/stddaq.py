@@ -19,7 +19,7 @@ class Stddaq(Bsread):
         """
         self.address = url
         if redis is None:
-            raise Exception("PyRedis library not available")
+            raise Exception("redis library not available")
         self.host, self.port = get_host_port_from_stream_address(url)
         self.db='0'
         if name:

@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 class Channel:
     def __init__(self, name, source):
         if epics is None:
-            raise Exception("EPICS library not available")
+            raise Exception("pyepics library not available")
         self.name = name
         self.channel = epics.PV(name, auto_monitor=True)
         self.id = 0

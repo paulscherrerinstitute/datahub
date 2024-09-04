@@ -25,7 +25,7 @@ class Bsread(Source):
         """
         Source.__init__(self, url=url, path=path, **kwargs)
         if bsread is None:
-            raise Exception("BSREAD library not available")
+            raise Exception("bsread library not available")
         self.mode = mode
         self.context = 0
 

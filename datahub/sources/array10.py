@@ -22,7 +22,7 @@ class Array10(Source):
         """
         Source.__init__(self, url=url, path=path, **kwargs)
         if zmq is None:
-            raise Exception("zmq library not available")
+            raise Exception("pyzmq library not available")
         self.context = 0
         self.mode = mode
         self.ctx = None
