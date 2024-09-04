@@ -1,4 +1,7 @@
-import zmq
+try:
+    import zmq
+except:
+    zmq = None
 
 from datahub import *
 
@@ -18,6 +21,8 @@ class Array10(Source):
         reshape (bool, optional): if True reshapes receiving array into 2d arrays/
         """
         Source.__init__(self, url=url, path=path, **kwargs)
+        if zmq is None:
+            raise Exception("zmq library not available")
         self.context = 0
         self.mode = mode
         self.ctx = None

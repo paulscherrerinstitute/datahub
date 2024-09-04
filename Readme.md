@@ -4,6 +4,13 @@ This package provides utilities to retrieve data from PSI sources.
 
 # Installation
 
+Install via pip:
+
+```
+pip install psi-datahub
+```
+
+
 Install via Anaconda/Miniconda:
 
 ```

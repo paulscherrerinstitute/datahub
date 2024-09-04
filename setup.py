@@ -2,6 +2,7 @@ import os
 import pathlib
 from setuptools import setup, find_packages
 
+PACKAGE_PREFIX = "psi-"
 PACKAGE_NAME = "datahub"
 
 def read(fname):
@@ -14,16 +15,17 @@ def version():
 
 
 setup(
-    name=PACKAGE_NAME,
+    name=PACKAGE_PREFIX + PACKAGE_NAME,
     version=version(),
     packages=find_packages(),
     author="Paul Scherrer Institute",
     author_email="daq@psi.ch",
-    description=("Interface for retrieving data from PSI's sources."),
+    description="Utilities to retrieve data from PSI sources.",
     license="GPLv3",
     keywords="",
     url="https://github.com/paulscherrerinstitute/" + PACKAGE_NAME,
     long_description=read('Readme.md'),
+    long_description_content_type="text/markdown",
     install_requires=[
     ],
     entry_points={

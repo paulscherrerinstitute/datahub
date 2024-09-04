@@ -2,10 +2,10 @@ numpy
 h5py
 requests
 pyepics
+pyzmq
+cbor2
+python-dateutil
+bitshuffle
 bsread
 pytz
 pandas
-bitshuffle
-cbor2
-python-dateutil
-setuptools
