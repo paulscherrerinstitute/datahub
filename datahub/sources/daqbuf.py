@@ -96,17 +96,17 @@ class Daqbuf(Source):
                     raise Exception(parsed_data.get("error"))
 
                 if not parsed_data.get ("type","") == 'keepalive':
+                    values = parsed_data.get('values', [])
                     tss = parsed_data.get('tss', [])
                     pulses = parsed_data.get('pulses', [])
-                    values = parsed_data.get('values', [])
                     scalar_type = parsed_data.get('scalar_type', None)
                     rangeFinal = parsed_data.get('rangeFinal', False)
 
                     if scalar_type:
                         nelm = len(values)
                         for i in range(nelm):
-                            timestamp = tss[i]
-                            pulse_id = pulses[i]
+                            timestamp = tss[i] if len(tss)>i else None
+                            pulse_id = pulses[i] if len(pulses)>i else None
                             value = values[i]
                             self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
                             current_channel_name = channel
