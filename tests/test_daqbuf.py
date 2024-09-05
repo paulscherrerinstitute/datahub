@@ -144,5 +144,11 @@ class DataBufferTest(unittest.TestCase):
             source.add_listener(stdout)
             source.request(query)
 
+    def test_enums(self):
+        with Daqbuf(backend=backend, cbor=True, parallel=False, time_type="str") as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.req(["blabla"], -10, -9)
+
 if __name__ == '__main__':
     unittest.main()

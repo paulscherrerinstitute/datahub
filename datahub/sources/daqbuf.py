@@ -2,7 +2,7 @@ from datahub import *
 import io
 from threading import Thread
 from http.client import IncompleteRead
-
+import http
 
 _logger = logging.getLogger(__name__)
 
@@ -101,6 +101,8 @@ class Daqbuf(Source):
                     pulses = parsed_data.get('pulses', [])
                     scalar_type = parsed_data.get('scalar_type', None)
                     rangeFinal = parsed_data.get('rangeFinal', False)
+                    valuestrings = parsed_data.get('valuestrings', [])
+                    enums = len(valuestrings) == len(values)
 
                     if scalar_type:
                         nelm = len(values)
@@ -108,6 +110,8 @@ class Daqbuf(Source):
                             timestamp = tss[i] if len(tss)>i else None
                             pulse_id = pulses[i] if len(pulses)>i else None
                             value = values[i]
+                            if enums:
+                                value = valuestrings[i]
                             self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
                             current_channel_name = channel
                     if rangeFinal:
@@ -125,6 +129,26 @@ class Daqbuf(Source):
             if current_channel_name:
                 self.on_channel_completed(current_channel_name)
 
+    def check_response(self, response, channel):
+        if type(response) == http.client.HTTPResponse:
+            status = response.status
+        else:
+            status = response.status_code
+        if status != 200:
+            try:
+                if type(response) == http.client.HTTPResponse:
+                    body = json.loads(response.read().decode('utf-8'))
+                else:
+                    body = response.json()
+                message = body["message"].capitalize()
+                requestid = body["requestid"]
+                if not message:
+                    raise Exception()
+                ex = RuntimeError(f"{message}\nChannel: {channel}\nRequest ID: {requestid}");
+            except:
+                ex = RuntimeError(f"Error retrieving data: {response.reason} [{status}]\nChannel: {channel}")
+            raise ex
+
     def run_channel(self, channel, cbor, bins=None, last=None, conn=None):
         query = dict()
         query["channelName"] = channel
@@ -139,8 +163,7 @@ class Daqbuf(Source):
             conn = http_data_query(query, self.url, method="GET", accept="application/cbor-framed", conn=conn)
             try:
                 response = conn.getresponse()
-                if response.status != 200:
-                    raise RuntimeError(f"Unable to retrieve data from server: {response.reason} [{response.status}]")
+                self.check_response(response, channel)
                 try:
                     self.read(io.BufferedReader(response), channel)
                 except Exception as e:
@@ -156,8 +179,7 @@ class Daqbuf(Source):
                 query["binCount"] = bins
                 response = requests.get(self.binned_url, query)
                 # Check for successful return of data
-                if response.status_code != 200:
-                    raise RuntimeError("Unable to retrieve data from server: ", response)
+                self.check_response(response, channel)
                 data = response.json()
                 nelm = len(data['avgs'])
                 for i in range(nelm):
@@ -178,9 +200,7 @@ class Daqbuf(Source):
                     self.receive_channel(channel, value, timestamp, None, check_changes=False, check_types=True, metadata={"bins":bins}, **args)
             else:
                 response = requests.get(self.url, query)
-                # Check for successful return of data
-                if response.status_code != 200:
-                    raise RuntimeError("Unable to retrieve data from server: ", response)
+                self.check_response(response, channel)
                 data = response.json()
                 nelm = len(data['values'])
                 for i in range(nelm):
