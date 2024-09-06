@@ -1,7 +1,7 @@
 import logging
 import time
 import numpy as np
-from datahub import Consumer
+from datahub import Consumer, Enum
 from datahub.utils.timing import string_to_timestamp
 from datahub import str_to_bool
 from datahub.utils.plot import PlotClient
@@ -101,8 +101,10 @@ class PShell(Consumer):
                         timestamp = string_to_timestamp(timestamp)
                     if isinstance(value, np.floating):  # Different scalar float types don't change header
                         value = float(value)
-                    if isinstance(value, np.integer):  # Different scalar int types don't change header
+                    elif isinstance(value, np.integer):  # Different scalar int types don't change header
                         value = int(value)
+                    elif isinstance(value, Enum):
+                        value = value.id
                     pc.append_line_series_data(series, timestamp, value, None)
                 elif len(shape) == 1:
                     pc.set_line_series_data(series, xdata, value.tolist(),  None)

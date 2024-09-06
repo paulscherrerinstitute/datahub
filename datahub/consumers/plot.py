@@ -3,7 +3,7 @@ import sys
 import traceback
 
 import numpy as np
-from datahub import Consumer
+from datahub import Consumer, Enum
 from datahub.utils.timing import string_to_timestamp, convert_timestamp
 import multiprocessing
 import time
@@ -221,12 +221,14 @@ class Plot(Consumer):
                             return
                 if type(timestamp) == str:
                     timestamp = string_to_timestamp(timestamp)
-                if type(timestamp) == int:
+                elif type(timestamp) == int:
                     timestamp = float(timestamp)/10e9
                 if isinstance(value, np.floating):  # Different scalar float types don't change header
                     value = float(value)
-                if isinstance(value, np.integer):  # Different scalar int types don't change header
+                elif isinstance(value, np.integer):  # Different scalar int types don't change header
                     value = int(value)
+                elif isinstance(value, Enum):
+                    value = value.id
                 timestamp = timestamp - start
                 self.tx_queue.put(["REC", name, timestamp, value])
                 if self.min_interval:

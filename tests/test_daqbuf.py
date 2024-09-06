@@ -145,10 +145,20 @@ class DataBufferTest(unittest.TestCase):
             source.request(query)
 
     def test_enums(self):
-        with Daqbuf(backend=backend, cbor=True, parallel=False, time_type="str") as source:
+        with Daqbuf(backend="sf-archiver", cbor=True, parallel=False) as source:
             stdout = Stdout()
             source.add_listener(stdout)
-            source.req(["blabla"], -10, -9)
+            #plot = Plot()
+            plot = PShell()
+            source.add_listener(plot)
+            hdf5 = HDF5Writer(filename)
+            source.add_listener(hdf5)
+
+            table = Table()
+            source.add_listener(table)
+
+            source.req(["SOFTMPS:L1-MA-OK", "S10CB03-RHLA-JOBMON:VME-TEMP-AVG"], -100000.0, 0.0)
+            print (table.as_dataframe(Table.TIMESTAMP))
 
 if __name__ == '__main__':
     unittest.main()

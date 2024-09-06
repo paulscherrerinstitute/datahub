@@ -19,6 +19,15 @@ class ProtocolError(RuntimeError):
     def __init__(self):
         super().__init__("ProtocolError")
 
+class Enum():
+    def __init__(self, id, desc):
+        self.id = id
+        self.desc = desc
+        self.dtype = "enum"
+        self.shape = []
+    def __str__(self):
+        return f"{self.id}:{self.desc}"
+
 from datahub.utils.timing import *
 from datahub.utils.net import *
 from datahub.utils.compression import *

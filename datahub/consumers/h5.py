@@ -31,7 +31,7 @@ class HDF5Writer(Consumer):
             if self.file is None:
                 self.file = h5py.File(self.filename, "w")
                 now_date = datetime.datetime.now(datetime.timezone.utc)
-                self.file.attrs["creation"] = now_date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                self.file.attrs["creation"] = now_date.isoformat()
 
     def on_stop(self, source, exception):
         pass
@@ -65,7 +65,10 @@ class HDF5Writer(Consumer):
     def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         prefix, channel = self.get_path(source), self.get_group(source, name)
         has_id = metadata.get("has_id", True)
+        enum = typ == "enum"
+        dtype = numpy.int64 if enum else typ
         ts_ds = Dataset(prefix, channel, "timestamp", self.file, dtype=self._get_time_fmt(source), dataset_compression=self.metadata_compression)
+        ts_ds.enum = enum
         id_ds = Dataset(prefix, channel, "id", self.file, dtype=numpy.int64, dataset_compression=self.metadata_compression) if has_id else None
         data_ds_name = "value"
         if channel_compression and (not self.auto_decompress):
@@ -73,9 +76,9 @@ class HDF5Writer(Consumer):
                 raise RuntimeError(f"Compression not supported on scalars")
             if channel_compression != Compression.BITSHUFFLE_LZ4:
                 raise RuntimeError(f"Compression not supported: " + channel_compression)
-            val_ds = DirectChunkWriteDataset(prefix, channel, data_ds_name, self.file,shape, typ, channel_compression, dataset_compression=Compression.BITSHUFFLE_LZ4)
+            val_ds = DirectChunkWriteDataset(prefix, channel, data_ds_name, self.file,shape, dtype, channel_compression, dataset_compression=Compression.BITSHUFFLE_LZ4)
         else:
-            val_ds = Dataset(prefix, channel, data_ds_name, self.file, shape, typ, channel_compression, dataset_compression=self.default_compression)
+            val_ds = Dataset(prefix, channel, data_ds_name, self.file, shape, dtype, channel_compression, dataset_compression=self.default_compression)
             if metadata.get("bins", None):
                 min_ds = Dataset(prefix,  channel, "min", self.file, shape, typ, channel_compression, dataset_compression=self.default_compression)
                 max_ds = Dataset(prefix, channel, "max", self.file, shape, typ, channel_compression,dataset_compression=self.default_compression)
@@ -83,6 +86,9 @@ class HDF5Writer(Consumer):
                 start_ds = Dataset(prefix, channel, "start", self.file, dtype=self._get_time_fmt(source),dataset_compression=self.metadata_compression)
                 end_ds = Dataset(prefix, channel, "end", self.file, dtype=self._get_time_fmt(source),dataset_compression=self.metadata_compression)
                 val_ds = val_ds, min_ds, max_ds, cnt_ds, start_ds, end_ds
+            elif enum:
+                val_dstr = Dataset(prefix, channel, data_ds_name + "_string", self.file, shape, "str",channel_compression, dataset_compression=self.default_compression)
+                val_ds = val_ds, val_dstr
 
         if not self.datasets.get(source, None):
             self.datasets[source] = {}
@@ -95,7 +101,7 @@ class HDF5Writer(Consumer):
                 self.file[f"{prefix}"].attrs[key] = str(source.query[key])
         self.datasets[source][name] = [ts_ds, id_ds, val_ds]
         self.file[f"{prefix}/{channel}"].attrs["name"] = str(name)
-        self.file[f"{prefix}/{channel}"].attrs["type"] = str(type)
+        self.file[f"{prefix}/{channel}"].attrs["type"] = str(typ)
         self.file[f"{prefix}/{channel}"].attrs["byteOrder"] = str(byteOrder)
         self.file[f"{prefix}/{channel}"].attrs["shape"] = str(shape)
         self.file[f"{prefix}/{channel}"].attrs["compression"] = str(channel_compression)
@@ -115,6 +121,11 @@ class HDF5Writer(Consumer):
             cnt_ds.append(kwargs.get("count"))
             start_ds.append(kwargs.get("start"))
             end_ds.append(kwargs.get("end"))
+        #elif type(val_ds) is tuple:
+        if ts_ds.enum:
+            val_ds, val_dstr = val_ds
+            val_dstr.append(value.desc)
+            value = value.id
         val_ds.append(value)
 
     def on_channel_completed(self, source, name):
@@ -147,7 +158,7 @@ class HDF5Writer(Consumer):
         try:
             if self.file:
                 now_date = datetime.datetime.now(datetime.timezone.utc)
-                self.file.attrs["conclusion"] = now_date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                self.file.attrs["conclusion"] = now_date.isoformat()
                 self.file.close()
         except Exception as ex:
             _logger.exception("Error closing file: %s " % str(self.file_name))

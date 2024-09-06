@@ -111,7 +111,7 @@ class Daqbuf(Source):
                             pulse_id = pulses[i] if len(pulses)>i else None
                             value = values[i]
                             if enums:
-                                value = valuestrings[i]
+                                value = Enum(value,valuestrings[i])
                             self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
                             current_channel_name = channel
                     if rangeFinal:
