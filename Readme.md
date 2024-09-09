@@ -130,21 +130,9 @@ for actual data to be available in daqbuf backend.
 
 The argument documentation is available in the help message for the 'datahub' command: 
 ```
-usage: main.py [-h] [-j JSON] [-f [filename default_compression='gzip' auto_decompress=False path=None metadata_compression='gzip']] [-x [folder]] [-p]
-               [-m [channels=None colormap='viridis' color=None marker_size=None line_width=None max_count=None max_rate=None]]
-               [-ps [channels=None address='localhost' port=7777 timeout=3.0 layout='vertical' context=None style=None colormap='viridis' color=None marker_size=3 line_width=None max_count=None max_rate=None]]
-               [-v] [-s START] [-e END] [-i] [-t] [-c CHANNELS] [-u URL] [-b BACKEND] [-tt TIMESTAMP] [-cp COMPRESSION] [-dc] [-pl] [-px] [-pt PATH] [-sr] [-di INTERVAL]
-               [-dm MODULO] [--epics [channels url=None path=None start=None end=None]]
-               [--bsread [channels url='https://dispatcher-api.psi.ch/sf-databuffer' mode='SUB' path=None start=None end=None]]
-               [--pipeline [channels url='http://sf-daqsync-01:8889' name=None mode='SUB' path=None start=None end=None]]
-               [--camera [channels url='http://sf-daqsync-01:8888' name=None mode='SUB' path=None start=None end=None]]
-               [--databuffer [channels url='https://data-api.psi.ch/sf-databuffer' backend='sf-databuffer' path=None delay=1.0 start=None end=None]]
-               [--retrieval [channels url='https://data-api.psi.ch/api/1' backend='sf-databuffer' path=None delay=1.0 start=None end=None]]
-               [--dispatcher [channels path=None start=None end=None]]
-               [--daqbuf [channels url='https://data-api.psi.ch/api/4' backend='sf-databuffer' path=None delay=1.0 cbor=True parallel=False start=None end=None]]
-               [--array10 [channels url=None mode='SUB' path=None reshape=False start=None end=None]]
+usage: datahub [--GLOBAL_ARG_1 VALUE]...[--GLOBAL_ARG_N VALUE] [--<SOURCE 1>] [SOURCE_1_ARG_1 VALUE]...[SOURCE_1_ARG_N VALUE]...[--<SOURCE M>] [SOURCE_M_ARG_1 VALUE]...[SOURCE_M_ARG_N VALUE]
 
-Command line interface for DataHub 1.0.0
+Command line interface for DataHub
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -157,33 +145,37 @@ optional arguments:
                         plot options
   -ps, --pshell [channels=None address='localhost' port=7777 timeout=3.0 layout='vertical' context=None style=None colormap='viridis' color=None marker_size=3 line_width=None max_count=None max_rate=None ]
                         pshell options
-  -v, --verbose         Displays complete search results, not just channels names
   -s, --start START     Relative or absolute start time or ID
   -e, --end END         Relative or absolute end time or ID
   -i, --id              Force query by id
   -t, --time            Force query by time
   -c, --channels CHANNELS
                         Channel list (comma-separated)
+  -n, --bins BINS       Number of data bins
+  -r, --filter FILTER   Sets a filter for data
+  -l, --last            Include last value before range
+  -di, --interval INTERVAL
+                        Downsampling interval between samples in seconds
+  -dm, --modulo MODULO  Downsampling modulo of the samples
   -u, --url URL         URL of default source
   -b, --backend BACKEND
-                        Backend of default source
+                        Backend of default source (use "null" for all backends)
   -tt, --timestamp TIMESTAMP
                         Timestamp type: nano/int (default), sec/float or str
   -cp, --compression COMPRESSION
                         Compression: gzip (default), szip, lzf, lz4 or none
   -dc, --decompress     Auto-decompress compressed images
-  -pl, --parallel       Parallelize query if possible
   -px, --prefix         Add source ID to channel names
+  -pl, --parallel       Parallelize query if possible
   -pt, --path PATH      Path to data in the file
+  -a, --align           Merge sources aligning the message ids
   -sr, --search         Search channel names given a pattern (instead of fetching data)
-  -di, --interval INTERVAL
-                        Downsampling interval between samples in seconds
-  -dm, --modulo MODULO  Downsampling modulo of the samples
+  -v, --verbose         Displays complete search results, not just channels names
   --epics [channels url=None path=None start=None end=None]
                         epics query arguments
   --bsread [channels url='https://dispatcher-api.psi.ch/sf-databuffer' mode='SUB' path=None start=None end=None]
                         bsread query arguments
-  --pipeline [channels url='http://sf-daqsync-01:8889' name=None mode='SUB' path=None start=None end=None]
+  --pipeline [channels url='http://sf-daqsync-01:8889' name=None config=None mode='SUB' path=None start=None end=None]
                         pipeline query arguments
   --camera [channels url='http://sf-daqsync-01:8888' name=None mode='SUB' path=None start=None end=None]
                         camera query arguments
@@ -197,6 +189,10 @@ optional arguments:
                         daqbuf query arguments
   --array10 [channels url=None mode='SUB' path=None reshape=False start=None end=None]
                         array10 query arguments
+  --redis [channels url='sf-daqsync-18:6379' backend='0' path=None start=None end=None]
+                        redis query arguments
+  --stddaq [channels url='sf-daq-6.psi.ch:6379' name=None mode='SUB' path=None start=None end=None]
+                        stddaq query arguments
 ```
 
 
