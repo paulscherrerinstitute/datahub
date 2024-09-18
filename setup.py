@@ -4,12 +4,13 @@ from setuptools import setup, find_packages
 
 PACKAGE_PREFIX = "psi-"
 PACKAGE_NAME = "datahub"
+VERSION_FILE = "package_version.txt"
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 def version():
-    p = pathlib.Path(__file__).parent.joinpath(PACKAGE_NAME).joinpath("package_version.txt")
+    p = pathlib.Path(__file__).parent.joinpath(PACKAGE_NAME).joinpath(VERSION_FILE)
     with open(p, "r") as f1:
         return f1.read()[:-1]
 
@@ -27,13 +28,19 @@ setup(
     long_description=read('Readme.md'),
     long_description_content_type="text/markdown",
     install_requires=[
+        "numpy",
+        "requests",
+        "h5py",
     ],
     entry_points={
         'console_scripts': [
             f'{PACKAGE_NAME} = {PACKAGE_NAME}.main:main',
         ],
     },
-    data_files=[
-        (f"{PACKAGE_NAME}", [f"{PACKAGE_NAME}/package_version.txt"])
-    ]
+    # Include the non-code file (package_version.txt) in the package folder
+    include_package_data=True,
+    package_data={
+        # Include the text file in the package directory
+        PACKAGE_NAME: [VERSION_FILE],
+    },
 )
