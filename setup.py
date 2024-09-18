@@ -28,9 +28,6 @@ setup(
     long_description=read('Readme.md'),
     long_description_content_type="text/markdown",
     install_requires=[
-        "numpy",
-        "requests",
-        "h5py",
     ],
     entry_points={
         'console_scripts': [
