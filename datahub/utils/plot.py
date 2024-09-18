@@ -1,5 +1,8 @@
 import sys
-import zmq
+try:
+    import zmq
+except:
+    zmq = None
 import json
 import base64
 import threading
@@ -11,6 +14,8 @@ class PlotClient:
     """
 
     def __init__(self, address="localhost", port=7777, context=None, timeout=None):
+        if zmq is None:
+            raise Exception("pyzmq library not available")
         self.set_context(context)
         self.context = zmq.Context()
         self.url = "tcp://" + address + (":%s" % port)
