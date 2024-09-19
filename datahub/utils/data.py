@@ -1,7 +1,9 @@
 import secrets
 import string
 import collections
-import pickle
+#import pickle
+import cbor2
+import numpy as np
 
 class MaxLenDict(collections.OrderedDict):
     def __init__(self, *args, **kwds):
@@ -26,9 +28,27 @@ def generate_random_string(length=16):
 
 
 def decode(data):
-    obj = pickle.loads(data)
-    return obj
+    #return pickle.loads(data)
+    obj = cbor2.loads(data)
+    if type(obj)!=dict:
+        return None
+    data = obj.get("data")
+    shape = obj.get("shape", None)
+    dtype = obj.get("dtype", None)
+    if shape is not None:
+        data = np.frombuffer(data, dtype=np.dtype(dtype))
+        data = data.reshape(shape)
+    return data
 
 def encode(obj):
-    value_serialized = pickle.dumps(obj)
-    return value_serialized
+    #return pickle.dumps(obj)
+    if type(obj) == np.ndarray:
+        obj = {
+            'shape': obj.shape,
+            'dtype': str(obj.dtype),
+            'data': obj.tobytes()
+        }
+    else:
+        obj = {"data": obj}
+    ret = cbor2.dumps(obj)
+    return ret
