@@ -11,7 +11,12 @@ class Align():
         self.set_channels(channels)
         self.size_buffer = size_buffer
         self.aligned_data = MaxLenDict(maxlen=int(size_buffer*1.2))
-        self.partial_msg=partial_msg
+        if partial_msg == "after":
+            self.partial_after = True
+            self.partial_msg = False
+        else:
+            self.partial_after = False
+            self.partial_msg=partial_msg
         self.on_msg=callback
         self.range = range
         self.filter = filter
@@ -54,6 +59,9 @@ class Align():
                 break
             msg = self.aligned_data.pop(id)
             if complete or self.partial_msg:
+                if self.partial_after and not self.partial_msg:
+                    self.partial_msg = True
+
                 if self.sent_id >= id:
                     _logger.warning(f"Invalid ID {id} - last sent ID {self.sent_id}")
                 else:

@@ -97,12 +97,13 @@ class BsreadStream(Bsread):
         Bsread.__init__(self, **kwargs)
         self.message_buffer = collections.deque(maxlen=queue_size)
         self.condition = threading.Condition()
-        self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True)
+        self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True, **kwargs)
 
     def close(self):
         Bsread.close(self)
 
     def on_msg(self, id, timestamp, msg, format_changed):
+        timestamp = self.convert_time(timestamp)
         with self.condition:
             self.message_buffer.append((id, timestamp, msg))
             self.condition.notify()

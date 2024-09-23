@@ -27,32 +27,9 @@ class Redis(Source):
         Source.__init__(self, url=url, backend=backend, path=path, **kwargs)
         if redis is None:
             raise Exception("redis library not available")
-        self.consumer_name = 'datahub'
         self.host, self.port = get_host_port_from_stream_address(self.url)
         self.db = self.backend
         self.messages = []
-
-
-    def create_group(self, r, channels):
-        group_name = generate_random_string(16)
-        try:
-            pipeline = r.pipeline()
-            for channel in channels:
-                pipeline.xgroup_create(channel, group_name, mkstream=False)
-            pipeline.execute()
-        except Exception as e:
-            _logger.warning(f"Error creating stream group: {str(e)}")
-
-        return group_name
-
-    def destroy_group(self, r, channels, group_name):
-        try:
-            pipeline = r.pipeline()
-            for channel in channels:
-                pipeline.xgroup_destroy(channel, group_name)
-            pipeline.execute()
-        except Exception as e:
-            _logger.warning(f"Error destroying stream group: {str(e)}")
 
     def run(self, query):
         partial_msg = query.get("partial_msg", True)
@@ -63,28 +40,25 @@ class Redis(Source):
         align = Align(self.on_msg, channels, self.range, filter , partial_msg=partial_msg, size_buffer=size_buffer, utc_timestamp=utc_timestamp)
 
         with redis.Redis(host=self.host, port=self.port, db=self.db, decode_responses=False) as r:
-            group_name = self.create_group(r, channels)
             try:
-                streams = {channel : ">" for channel in channels}
+                ID = "0-0" #from beggining of stream
+                ID = "$"  # new messages
+                streams = {channel : ID for channel in channels}
                 while not self.range.has_ended() and not self.aborted:
-                    entries = r.xreadgroup(group_name, self.consumer_name, streams, count=5 * len(channels), block=100)
+                    entries = r.xread(streams, count=1, block=10)
                     if entries:
                         for stream, messages in entries:
-                            processed_ids = []
-                            try:
-                                for message_id, message_data in messages:
-                                    channel = message_data[b'channel'].decode('utf-8')
-                                    timestamp = int(message_data[b'timestamp'].decode('utf-8'))
-                                    id = int(message_data[b'id'].decode('utf-8'))
-                                    data = message_data[b'value']
-                                    value = decode(data)
-                                    align.add(id, timestamp, channel, value)
-                                    processed_ids.append(message_id)
-                            finally:
-                                r.xack(stream, group_name, *processed_ids)
-                        align.process()
+                            for message_id, message_data in messages:
+                                streams[stream.decode('utf-8')] = message_id
+                                channel = message_data[b'channel'].decode('utf-8')
+                                timestamp = int(message_data[b'timestamp'].decode('utf-8'))
+                                id = int(message_data[b'id'].decode('utf-8'))
+                                data = message_data[b'value']
+                                value = decode(data)
+                                align.add(id, timestamp, channel, value)
+                                #print (id, channel, value)
+                            align.process()
             finally:
-                self.destroy_group(r, channels, group_name)
                 self.close_channels()
 
     def on_msg(self, id, timestamp, msg):
@@ -120,12 +94,13 @@ class RedisStream(Redis):
         Redis.__init__(self, **kwargs)
         self.message_buffer = collections.deque(maxlen=queue_size)
         self.condition = threading.Condition()
-        self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True)
+        self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True, **kwargs)
 
     def close(self):
         Redis.close(self)
 
     def on_msg(self, id, timestamp, msg):
+        timestamp = self.convert_time(timestamp)
         with self.condition:
             self.message_buffer.append((id, timestamp, msg))
             self.condition.notify()
