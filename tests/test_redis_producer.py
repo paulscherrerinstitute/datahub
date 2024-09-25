@@ -9,7 +9,7 @@ DEFAULT_URL = os.environ.get("REDIS_DEFAULT_URL", 'sf-daqsync-18:6379')
 #DEFAULT_URL = "std-daq-build:6379"
 HOST, PORT = get_host_port_from_stream_address(DEFAULT_URL)
 
-def ingest(r, stream, data, max_stream_lenght=500):
+def ingest(r, stream, data, max_stream_lenght=100):
     if not isinstance(stream, (list, tuple)):
         stream, data = [stream], [data]
     if len(stream) == 1:
@@ -20,7 +20,7 @@ def ingest(r, stream, data, max_stream_lenght=500):
             pipeline.xadd(stream[i], data[i], maxlen=max_stream_lenght)
         pipeline.execute()
 
-def ingest_bsdata(r, pulse_id, timestamp, data, max_stream_lenght=500):
+def ingest_bsdata(r, pulse_id, timestamp, data, max_stream_lenght=100):
     channels = list(data.keys())
     data = [{'channel': channel, 'timestamp': timestamp, 'value': encode(data[channel]), 'id': pulse_id} for channel in channels]
     ingest(r, channels, data, max_stream_lenght)
