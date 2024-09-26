@@ -10,7 +10,7 @@ class Daqbuf(Source):
     """
     Retrieves data from a Daqbuf service (new retrieval).
     """
-
+    API_VERSION = "1.0"
     DEFAULT_URL = os.environ.get("DAQBUF_DEFAULT_URL", "https://data-api.psi.ch/api/4")
     DEFAULT_BACKEND = os.environ.get("DAQBUF_DEFAULT_BACKEND", "sf-databuffer")
 
@@ -33,6 +33,7 @@ class Daqbuf(Source):
         self.delay = delay
         self.cbor = str_to_bool(str(cbor))
         self.parallel = str_to_bool(str(parallel))
+        self.add_headers = {   "daqbuf-api-version":Daqbuf.API_VERSION }
         if self.cbor:
             try:
                 import cbor2
@@ -160,7 +161,7 @@ class Daqbuf(Source):
 
         if cbor:
             create_connection = conn is None
-            conn = http_data_query(query, self.url, method="GET", accept="application/cbor-framed", conn=conn)
+            conn = http_data_query(query, self.url, method="GET", accept="application/cbor-framed", conn=conn, add_headers=self.add_headers)
             try:
                 response = conn.getresponse()
                 self.check_response(response, channel)
@@ -177,7 +178,9 @@ class Daqbuf(Source):
             import requests
             if bins:
                 query["binCount"] = bins
-                response = requests.get(self.binned_url, query)
+                headers = get_default_header()
+                headers.update(self.add_headers)
+                response = requests.get(self.binned_url, query, headers=headers)
                 # Check for successful return of data
                 self.check_response(response, channel)
                 data = response.json()

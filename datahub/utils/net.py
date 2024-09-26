@@ -54,15 +54,22 @@ def http_req(method, url, conn=None):
     return conn
 
 
-def http_data_query(query, url, method = "POST", content_type="application/json", accept="application/octet-stream", conn=None):
-    headers = {
-        "Content-Type": content_type,
-        "Accept": accept,
-        "X-PythonDataAPIPackageVersion": datahub.version(),
-        "X-PythonDataAPIModule": __name__,
-        "X-PythonVersion": re.sub(r"[\t\n]", " ", str(sys.version)),
-        "X-PythonVersionInfo": str(sys.version_info),
-    }
+
+def get_default_header():
+    return {   "User-Agent": datahub.package_name(),
+               "Accept-Encoding": "gzip, deflate, br",
+               "Accept": "*/*",
+               "Content-Type": "application/json",
+               "Connection": "keep-alive",
+            }
+
+
+def http_data_query(query, url, method = "POST", content_type="application/json", accept="application/octet-stream", add_headers={}, conn=None):
+    headers = get_default_header()
+    headers["Content-Type"] = content_type
+    headers["Accept"] = accept
+    headers.update(add_headers)
+
     up = urllib.parse.urlparse(url)
     if conn is None:
         conn = create_http_conn(up)

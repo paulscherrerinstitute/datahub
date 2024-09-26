@@ -3,7 +3,10 @@ import os
 
 def version():
     with resource_stream(__name__, "package_version.txt") as res:
-        return res.read()[:-1].decode()
+        return res.read()[:-1].decode().strip()
+
+def package_name():
+    return f"DataHub {datahub.version()}"
 
 def str_to_bool(str):
     if str.lower() in ('true', 'yes', '1'):

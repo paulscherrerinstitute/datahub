@@ -289,7 +289,7 @@ def parse_args():
                 return action.metavar or default_metavar
 
     usage = "datahub [--GLOBAL_ARG_1 VALUE]...[--GLOBAL_ARG_N VALUE] [--<SOURCE 1>] [SOURCE_1_ARG_1 VALUE]...[SOURCE_1_ARG_N VALUE]...[--<SOURCE M>] [SOURCE_M_ARG_1 VALUE]...[SOURCE_M_ARG_N VALUE]"
-    desc='Command line interface for DataHub  ' + datahub.version()
+    desc='Command line interface for ' + datahub.package_name()
     epilog =f"Sources: {','.join(KNOWN_SOURCES.keys())}"
     epilog = epilog + f"\nConsumers: {','.join(KNOWN_CONSUMERS.keys())}"
     if DEFAULT_SOURCE:
@@ -353,7 +353,7 @@ def _split_list(list, separator):
     return result
 
 def print_help():
-    print(f"DataHub {datahub.version()}")
+    print(datahub.package_name())
     if DEFAULT_SOURCE:
         print("Default Source (can be set by the env var DEFAULT_DATA_SOURCE):")
         print(f"\t{DEFAULT_SOURCE}")
