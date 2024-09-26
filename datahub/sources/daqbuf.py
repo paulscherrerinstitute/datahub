@@ -149,12 +149,12 @@ class Daqbuf(Source):
                 ex = RuntimeError(f"Error retrieving data: {response.reason} [{status}]\nChannel: {channel}")
             raise ex
 
-    def run_channel(self, channel, cbor, bins=None, last=None, conn=None):
+    def run_channel(self, channel, backend, cbor, bins=None, last=None, conn=None):
         query = dict()
         query["channelName"] = channel
         query["begDate"] = self.range.get_start_str_iso()
         query["endDate"] = self.range.get_end_str_iso()
-        query["backend"] = self.backend
+        query["backend"] = backend
         if last is not None:
             query["oneBeforeRange"] = "true" if last else "false"
 
@@ -181,16 +181,25 @@ class Daqbuf(Source):
                 # Check for successful return of data
                 self.check_response(response, channel)
                 data = response.json()
-                nelm = len(data['avgs'])
+                avgs = data['avgs']
+                nelm = len(avgs)
+                tsAnchor = data['tsAnchor']
+                ts1Ms = data['ts1Ms']
+                ts2Ms = data['ts2Ms']
+                ts1Ns = data['ts1Ns']
+                ts2Ns = data['ts2Ns']
+                maxs = data['maxs']
+                mins = data['mins']
+                counts= data['counts']
                 for i in range(nelm):
-                    secs1 = data['tsAnchor'] + float(data['ts1Ms'][i]) / 1000.0
-                    timestamp1 = create_timestamp(secs1, data['ts1Ns'][i])
-                    secs2 = data['tsAnchor'] + float(data['ts2Ms'][i]) / 1000.0
-                    timestamp2 = create_timestamp(secs2, data['ts2Ns'][i])
-                    avg = data['avgs'][i]
-                    max = self.adjust_type(data['maxs'][i])
-                    min = self.adjust_type(data['mins'][i])
-                    count = self.adjust_type(data['counts'][i])
+                    secs1 = tsAnchor + float(ts1Ms[i]) / 1000.0
+                    secs2 = tsAnchor + float(ts2Ms[i]) / 1000.0
+                    timestamp1 = create_timestamp(secs1, 0.0 if (ts1Ns is None) else ts1Ns[i])
+                    timestamp2 = create_timestamp(secs2,  0.0 if (ts2Ns is None) else ts2Ns[i])
+                    avg = avgs[i]
+                    max = self.adjust_type(maxs[i])
+                    min = self.adjust_type(mins[i])
+                    count = self.adjust_type(counts[i])
                     start = self.convert_time(timestamp1)
                     end = self.convert_time(timestamp2)
 
@@ -217,6 +226,7 @@ class Daqbuf(Source):
         channels = query.get("channels", [])
         bins = query.get("bins", None)
         last = query.get("last", None)
+        backend = query.get("backend", self.backend)
         cbor = self.cbor and not bins
         if isinstance(channels, str):
             channels = [channels, ]
@@ -225,7 +235,7 @@ class Daqbuf(Source):
         try:
             if self.parallel:
                 for channel in channels:
-                    thread = Thread(target=self.run_channel, args=(channel, cbor, bins, last))
+                    thread = Thread(target=self.run_channel, args=(channel, backend, cbor, bins, last))
                     thread.setDaemon(True)
                     thread.start()
                     threads.append(thread)
@@ -235,7 +245,7 @@ class Daqbuf(Source):
                 if cbor:
                     conn = create_http_conn(self.url)
                 for channel in channels:
-                    self.run_channel(channel, cbor, bins, last, conn)
+                    self.run_channel(channel, backend, cbor, bins, last, conn)
         finally:
             if conn:
                 conn.close()

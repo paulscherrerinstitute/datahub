@@ -11,8 +11,8 @@ start = "2024-02-15T12:41:00Z"
 end = "2024-02-15T12:42:00Z"
 
 channels = ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"]
-start = "2024-06-14 09:00:00"
-end = "2024-06-14 10:00:00"
+start = "2024-09-15 09:00:00"
+end = "2024-09-15 10:00:00"
 
 query = {
     "channels": channels,
@@ -116,9 +116,13 @@ class DataBufferTest(unittest.TestCase):
         with Daqbuf(backend=backend, cbor=True, parallel=False) as source:
             table = Table()
             source.add_listener(table)
-            source.request(query)
+            #source.request(query)
+            #source.req(["S10BC01-DBPM010:Q1",],"2024-09-15 09:00", "2024-09-15 10:00", bins=100)
+            #source.req(["ARS05-RCIR-0060:Water-Flow",],"2024-09-15 09:00", "2024-09-15 10:00", bins=100, backend="sls-archiver")
+            #source.req(["SARFE10-PSSS059:FIT-COM",],"2024-09-26 08:57:57.510", "2024-09-26 09:57:57.510", bins=100)
+            source.req(["SARFE10-PSSS059:FIT-COM", ], "2024-09-26 08:57:57.510", "2024-09-26 09:00:57.510")
             df = table.as_dataframe(Table.TIMESTAMP)
-            df.reindex(sorted(df.columns), axis=1)
+            #df.reindex(sorted(df.columns), axis=1)
             print(df)
 
     def test_binned2(self):
@@ -159,6 +163,28 @@ class DataBufferTest(unittest.TestCase):
 
             source.req(["SOFTMPS:L1-MA-OK", "S10CB03-RHLA-JOBMON:VME-TEMP-AVG"], -100000.0, 0.0)
             print (table.as_dataframe(Table.TIMESTAMP))
+
+    def test_enums_2(self):
+        query = {
+            "channels": ["SOFTMPS:L1-MA-OK", "SOFTMPS:L1-AR-OK", "SOFTMPS:L1-AT-OK"],
+            "start": "2024-09-05 08:00:00.000",
+            "end": "2024-09-05 11:30:00.000"
+        }
+        with Daqbuf(backend="sf-archiver") as source:
+            table = Table()
+            source.add_listener(table)
+            source.request(query)
+            print(table.as_dataframe())
+
+
+    def test_erik(self):
+        query = {'start': '2024-09-16 10:14:25', 'end': '2024-09-16 10:40', 'channels': ['S10BC01-DBPM050:Q2', 'S10BC01-DBPM050:Q2-VALID']}
+        with Daqbuf(backend="sf-databuffer") as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.request(query)
+            #print(table.as_dataframe())
+
 
 if __name__ == '__main__':
     unittest.main()
