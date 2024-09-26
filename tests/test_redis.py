@@ -1,16 +1,16 @@
 import unittest
 import os
-#os.environ["REDIS_DEFAULT_URL"] = "std-daq-build:6379"
+os.environ["REDIS_DEFAULT_URL"] = "std-daq-build:6379"
 from datahub import *
 import time
-channels = ['channel1', 'channel2', 'channel3']
+channels = ['channel1', 'channel2', 'channel3',  'array1',  'array2']
 
 class DataBufferTest(unittest.TestCase):
 
     def test_redis_print(self):
             #with Plot() as plot:
             with Stdout() as stdout:
-                with HDF5Writer("/Users/gobbo_a/dev/back/redis.h5") as h5:
+            #with HDF5Writer("/Users/gobbo_a/dev/back/redis.h5") as h5:
                     with Redis(time_type="str") as source:
                         #src_ch = source.search("chann");
                         #src_db = source.search();
@@ -58,7 +58,7 @@ class DataBufferTest(unittest.TestCase):
                 rec = source.receive(1.0)
                 if rec:
                     buf.append(rec[0])
-                    if len(rec[2]) != 3:
+                    if len(rec[2]) != len(channels):
                         print(
                             f"Partial message on {time.time() - start} at index {len(buf)} id:{buf[-1]} - keys: {rec[2].keys()}")
                 else:
@@ -78,7 +78,7 @@ class DataBufferTest(unittest.TestCase):
         with Redis(time_type="str") as stream1:
             with Redis(time_type="str") as stream2:
                 stdout =Stdout()
-                merger=Merger(filter = "channel1>0.5")
+                merger=Merger(filter="channel1>0.5")
 
                 stream1.add_listener(merger)
                 stream2.add_listener(merger)

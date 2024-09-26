@@ -42,7 +42,7 @@ class Redis(Source):
         with redis.Redis(host=self.host, port=self.port, db=self.db, decode_responses=False) as r:
             try:
                 ID = "0-0" #from beggining of stream
-                ID = "$"  # new messages
+                #ID = "$"  # new messages
                 streams = {channel : ID for channel in channels}
                 while not self.range.has_ended() and not self.aborted:
                     entries = r.xread(streams, count=1, block=10)
