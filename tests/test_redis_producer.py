@@ -60,7 +60,7 @@ def produce_batch(channels):
                 #data =[{'channel': channel, 'timestamp': timestamp, 'value': encode(random.random()), 'id': id} for channel in channels]
                 #ingest(r, channels, data)
                 data = {channel: random.random() for channel in channels}
-                data["array1"] =  np.array([1, 2, 3, 4, 5])
+                data["array1"] = np.array([1, 2, 3, 4, 5])
                 data["array2"] = np.array([[1, 2, 3], [4, 5, 6]])
                 ingest_bsdata(r, id, timestamp, data)
                 id, timestamp = wait_new_id(id)

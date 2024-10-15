@@ -118,7 +118,16 @@ datahub --file <FILE_NAME> --start <START> --end <END> --<SOURCE_1> <option_1> <
 datahub --print --hdf5 ~/.data.h5  --start "2024-02-14 08:50:00.000" --end "2024-02-14 08:50:10.000" --channels S10BC01-DBPM010:Q1,S10BC01-DBPM010:X1 
 ```
 
-- A single run can retrieve data simultaneously from multiple sources.
+
+- This example demonstrates how to:
+  - Change the default backend with the --backend option
+  - Print timestamps as strings with the --timestamp option
+  - Use predefined range strings to define the query interval using the --range option
+```bash
+datahub --print --backend sf-archiver -c SLAAR-CSOC-DLL3-PYIOC:AMP_CH1 --range "Last 1min"
+```
+
+- A single run can retrieve data simultaneously from multiple sources:
 ```bash
 datahub -p --epics s 0.0 e 2.0 c S10BC01-DBPM010:X1 --daqbuf s 0.0 e 2.0 c S10BC01-DBPM010:Q1 delay 30.0 
 ```

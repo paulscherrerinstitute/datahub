@@ -3,8 +3,11 @@ import time
 
 from datahub import is_null_str
 from datahub.utils.timing import *
+from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
+
 
 class QueryRange():
     """
@@ -17,12 +20,18 @@ class QueryRange():
 
     Optionally parameters "start_id", end_id", "start_tm" and end_tm" can be used to avoid type errors,
     """
+    RANGE_STR_OPTIONS = ["Last 1min", "Last 10min", "Last 1h", "Last 12h", "Last 24h", "Last 7d", "Yesterday", "Today",
+                     "Last Week", "This Week", "Last Month", "This Month"]
     RANGE_DEFAULTS_PULSE_ID = -(5 * 365 * 24 * 3600), (365 * 24 * 3600)  #From 5 years ago to one year from now
 
     def __init__(self, query, source=None):
         now = time.time()
-        self.start = self._check_str(query.get("start", None))
-        self.end = self._check_str(query.get("end", None))
+        range = query.get("range", None)
+        if range:
+            self.start, self.end = QueryRange.get_range(range)
+        else:
+            self.start = self._check_str(query.get("start", None))
+            self.end = self._check_str(query.get("end", None))
         self.source = source
         range_defaults_pulse_id = self.time_to_id(now + QueryRange.RANGE_DEFAULTS_PULSE_ID[0]), \
                                   self.time_to_id(now + QueryRange.RANGE_DEFAULTS_PULSE_ID[1])
@@ -223,6 +232,52 @@ class QueryRange():
             except Exception as ex:
                 _logger.error(ex)
         return date
+
+    def get_range(value, time_fmt = "%Y-%m-%d %H:%M:%S"):
+        range_options = QueryRange.RANGE_STR_OPTIONS
+        now = datetime.now()
+        start = None
+        end = now
+        if value == range_options[0]:
+            start = now - timedelta(minutes=1)
+        elif value == range_options[1]:
+            start = now - timedelta(minutes=10)
+        elif value == range_options[2]:
+            start = now - timedelta(hours=1)
+        elif value == range_options[3]:
+            start = now - timedelta(hours=12)
+        elif value == range_options[4]:
+            start = now - timedelta(hours=24)
+        elif value == range_options[5]:
+            start = now - timedelta(days=7)
+        elif value == range_options[6]:
+            yesterday_date = now.date() - timedelta(days=1)
+            start = datetime.combine(yesterday_date, datetime.min.time())
+            end = datetime.combine(yesterday_date, datetime.max.time())
+        elif value == range_options[7]:
+            start = datetime.combine(now.date(), datetime.min.time())
+        elif value == range_options[8]:
+            start_of_current_week = now.date() - timedelta(days=now.weekday())
+            end_of_last_week = start_of_current_week - timedelta(days=1)
+            start_of_last_week = end_of_last_week - timedelta(days=6)
+            start = datetime.combine(start_of_last_week, datetime.min.time())
+            end = datetime.combine(end_of_last_week, datetime.max.time())
+        elif value == range_options[9]:
+            start = datetime.combine(now.date() - timedelta(days=now.weekday()), datetime.min.time())
+        elif value == range_options[10]:
+            previous_month = now - relativedelta(months=1)
+            first_day_of_previous_month = previous_month.replace(day=1)
+            last_day_of_previous_month = previous_month.replace(day=1) + relativedelta(months=1) - timedelta(days=1)
+            start = datetime.combine(first_day_of_previous_month, datetime.min.time())
+            end = datetime.combine(last_day_of_previous_month, datetime.max.time())
+        elif value == range_options[11]:
+            first_day_of_current_month = now.replace(day=1)
+            start = datetime.combine(first_day_of_current_month, datetime.min.time())
+        else:
+            raise Exception("Invalid query range: " + str(value))
+        start = start.strftime(time_fmt)
+        end = end.strftime(time_fmt)
+        return start, end
 
     def __str__(self):
        return f"Range from {self.get_start_str()} ({self.get_start_id()}) to {self.get_end_str()} ({self.get_end_id()})"

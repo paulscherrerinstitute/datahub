@@ -305,12 +305,13 @@ def parse_args():
 
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
     parser.add_argument("-e", "--end", help="Relative or absolute end time or ID", required=False)
+    parser.add_argument("-r", "--range", help="Range definitions: " + str(QueryRange.RANGE_STR_OPTIONS), required=False)
     parser.add_argument("-i", "--id", action='store_true', help="Force query by id", required=False)
     parser.add_argument("-t", "--time", action='store_true', help="Force query by time", required=False)
     parser.add_argument("-c", "--channels", help="Channel list (comma-separated)", required=False)
     parser.add_argument("-n", "--bins", help="Number of data bins", required=False)
-    parser.add_argument("-r", "--filter", help="Sets a filter for data", required=False)
     parser.add_argument("-l", "--last",  action='store_true', help="Include last value before range", required=False)
+    parser.add_argument("-fi", "--filter", help="Sets a filter for data", required=False)
     parser.add_argument("-di", "--interval", help="Downsampling interval between samples in seconds", required=False)
     parser.add_argument("-dm", "--modulo", help="Downsampling modulo of the samples", required=False)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
@@ -400,10 +401,13 @@ def main():
                 task["plot"] = parse_arg_dict(parser, args.plot)
             if args.pshell is not None:
                 task["pshell"] = parse_arg_dict(parser, args.pshell)
-            if args.start:
-                task["start"] = args.start
-            if args.end:
-                task["end"] = args.end
+            if args.range:
+                task["start"], task["end"] = QueryRange.get_range(args.range)
+            else:
+                if args.start:
+                    task["start"] = args.start
+                if args.end:
+                    task["end"] = args.end
             if args.id:
                 task["id"] = bool(args.id)
             if args.time:
