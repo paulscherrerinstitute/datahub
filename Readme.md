@@ -124,7 +124,7 @@ datahub --print --hdf5 ~/.data.h5  --start "2024-02-14 08:50:00.000" --end "2024
   - Print timestamps as strings with the --timestamp option
   - Use predefined range strings to define the query interval using the --range option
 ```bash
-datahub --print --backend sf-archiver -c SLAAR-CSOC-DLL3-PYIOC:AMP_CH1 --range "Last 1min"
+datahub --print --backend sf-archiver --channels SLAAR-CSOC-DLL3-PYIOC:AMP_CH1 --range "Last 1min"
 ```
 
 - A single run can retrieve data simultaneously from multiple sources:
@@ -156,13 +156,14 @@ optional arguments:
                         pshell options
   -s, --start START     Relative or absolute start time or ID
   -e, --end END         Relative or absolute end time or ID
+  -r, --range RANGE     Range definitions: ['Last 1min', 'Last 10min', 'Last 1h', 'Last 12h', 'Last 24h', 'Last 7d', 'Yesterday', 'Today', 'Last Week', 'This Week', 'Last Month', 'This Month']
   -i, --id              Force query by id
   -t, --time            Force query by time
   -c, --channels CHANNELS
                         Channel list (comma-separated)
   -n, --bins BINS       Number of data bins
-  -r, --filter FILTER   Sets a filter for data
   -l, --last            Include last value before range
+  -fi, --filter FILTER  Sets a filter for data
   -di, --interval INTERVAL
                         Downsampling interval between samples in seconds
   -dm, --modulo MODULO  Downsampling modulo of the samples
