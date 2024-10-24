@@ -293,6 +293,9 @@ class Source():
             listener.close()
         self.listeners.clear()
 
+    def receiving_channel(self, channel_name):
+        return channel_name in self.channel_formats
+
     #Utility methods to manage automatically calling on_channel_header on the first stream value
     def receive_channel(self, channel_name, value, timestamp, id, check_changes=False, check_types=False, metadata={}, **kwargs):
         existing = channel_name in self.channel_formats

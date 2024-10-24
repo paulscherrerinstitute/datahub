@@ -33,7 +33,11 @@ class Daqbuf(Source):
         self.delay = delay
         self.cbor = str_to_bool(str(cbor))
         self.parallel = str_to_bool(str(parallel))
-        self.add_headers = {   "daqbuf-api-version":Daqbuf.API_VERSION }
+        self.json_streamed = kwargs.get("streamed", True)
+        self.add_headers = {"daqbuf-api-version":Daqbuf.API_VERSION }
+        self.headers = get_default_header()
+        self.headers.update(self.add_headers)
+
         if self.cbor:
             try:
                 import cbor2
@@ -66,10 +70,8 @@ class Daqbuf(Source):
             _logger.exception(e)
             return []
 
-    def read(self, stream, channel):
+    def read_cbor(self, stream, channel):
         try:
-            current_channel_name = None
-
             while True:
                 bytes_read = stream.read(4)
                 if len(bytes_read) != 4:
@@ -83,26 +85,26 @@ class Daqbuf(Source):
                 bytes_read = stream.read(length)
                 if len(bytes_read) != length:
                     raise RuntimeError("unexpected EOF")
-                parsed_data = self.cbor.loads(bytes_read)
+                data = self.cbor.loads(bytes_read)
 
                 padding = padding = (8 - (length % 8)) % 8
                 bytes_read = stream.read(padding) #PADDING
                 if len(bytes_read) != padding:
                     break
 
-                if type(parsed_data) != dict:
-                    raise RuntimeError("Invalid cbor frame: " + str(type(parsed_data)))
+                if type(data) != dict:
+                    raise RuntimeError("Invalid cbor frame: " + str(type(data)))
 
-                if parsed_data.get("error", None) :
-                    raise Exception(parsed_data.get("error"))
+                if data.get("error", None) :
+                    raise Exception(data.get("error"))
 
-                if not parsed_data.get ("type","") == 'keepalive':
-                    values = parsed_data.get('values', [])
-                    tss = parsed_data.get('tss', [])
-                    pulses = parsed_data.get('pulses', [])
-                    scalar_type = parsed_data.get('scalar_type', None)
-                    rangeFinal = parsed_data.get('rangeFinal', False)
-                    valuestrings = parsed_data.get('valuestrings', [])
+                if not data.get ("type","") == 'keepalive':
+                    values = data.get('values', [])
+                    tss = data.get('tss', [])
+                    pulses = data.get('pulses', [])
+                    scalar_type = data.get('scalar_type', None)
+                    rangeFinal = data.get('rangeFinal', False)
+                    valuestrings = data.get('valuestrings', [])
                     enums = len(valuestrings) == len(values)
 
                     if scalar_type:
@@ -114,11 +116,10 @@ class Daqbuf(Source):
                             if enums:
                                 value = Enum(value,valuestrings[i])
                             self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
-                            current_channel_name = channel
                     if rangeFinal:
                         break
                     elif not scalar_type:
-                        raise RuntimeError("Invalid cbor frame keys: " + str(parsed_data.keys()))
+                        raise RuntimeError("Invalid cbor frame keys: " + str(data.keys()))
 
                     if not self.is_running() or self.is_aborted():
                         raise RuntimeError("Query has been aborted")
@@ -126,9 +127,71 @@ class Daqbuf(Source):
         except IncompleteRead:
             _logger.error("Unexpected end of input")
             raise ProtocolError()
-        finally:
-            if current_channel_name:
-                self.on_channel_completed(current_channel_name)
+
+
+    def read_json(self, stream, channel, bins=None):
+        try:
+            while True:
+                length = stream.readline()
+                if len(length) == 0:
+                    break
+                length = int(length)
+                bytes_read = stream.read(length)
+                if len(bytes_read) != length:
+                    raise RuntimeError("unexpected EOF")
+                _ = stream.read(1) #newline
+                data = json.loads(bytes_read)
+
+                if not data.get ("type","") == 'keepalive':
+                    rangeFinal = data.get('rangeFinal', False)
+                    self.read_json_single(data, channel, bins)
+                    if rangeFinal:
+                        break
+                    if not self.is_running() or self.is_aborted():
+                        raise RuntimeError("Query has been aborted")
+
+        except IncompleteRead:
+            _logger.error("Unexpected end of input")
+            raise ProtocolError()
+
+    def read_json_single(self, data, channel, bins=None):
+        if bins:
+            avgs = data['avgs']
+            nelm = len(avgs)
+            tsAnchor = data['tsAnchor']
+            ts1Ms = data['ts1Ms']
+            ts2Ms = data['ts2Ms']
+            ts1Ns = data['ts1Ns']
+            ts2Ns = data['ts2Ns']
+            maxs = data['maxs']
+            mins = data['mins']
+            counts = data['counts']
+            for i in range(nelm):
+                secs1 = tsAnchor + float(ts1Ms[i]) / 1000.0
+                secs2 = tsAnchor + float(ts2Ms[i]) / 1000.0
+                timestamp1 = create_timestamp(secs1, 0.0 if (ts1Ns is None) else ts1Ns[i])
+                timestamp2 = create_timestamp(secs2, 0.0 if (ts2Ns is None) else ts2Ns[i])
+                avg = avgs[i]
+                max = self.adjust_type(maxs[i])
+                min = self.adjust_type(mins[i])
+                count = self.adjust_type(counts[i])
+                start = self.convert_time(timestamp1)
+                end = self.convert_time(timestamp2)
+
+                value = avg
+                timestamp = int((timestamp1 + timestamp2) / 2)
+                args = {"bins": bins, "min": numpy.float64(min), "max": numpy.float64(max), "count": numpy.int64(count),
+                        "start": start, "end": end}
+                self.receive_channel(channel, value, timestamp, None, check_changes=False, check_types=True,
+                                     metadata={"bins": bins}, **args)
+        else:
+            nelm = len(data['values'])
+            for i in range(nelm):
+                secs = data['tsAnchor'] + float(data['tsMs'][i]) / 1000.0
+                timestamp = create_timestamp(secs, data['tsNs'][i])
+                pulse_id = data['pulseAnchor'] + data['pulseOff'][i]
+                value = data['values'][i]
+                self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
 
     def check_response(self, response, channel):
         if type(response) == http.client.HTTPResponse:
@@ -158,71 +221,62 @@ class Daqbuf(Source):
         query["backend"] = backend
         if last is not None:
             query["oneBeforeRange"] = "true" if last else "false"
-
-        if cbor:
-            create_connection = conn is None
-            conn = http_data_query(query, self.url, method="GET", accept="application/cbor-framed", conn=conn, add_headers=self.add_headers)
-            try:
+        if bins:
+            query["binCount"] = bins
+        streamed = self.json_streamed or cbor
+        create_connection = streamed and (conn is None)
+        url = self.binned_url if bins else self.url
+        if streamed:
+            conn = http_data_query(query, url,method="GET",
+                                   accept="application/cbor-framed" if cbor else "application/json-framed",
+                                   conn=conn,
+                                   add_headers=self.add_headers)
+        try:
+            if cbor:
                 response = conn.getresponse()
                 self.check_response(response, channel)
                 try:
-                    self.read(io.BufferedReader(response), channel)
+                    self.read_cbor(io.BufferedReader(response), channel)
                 except Exception as e:
                     _logger.exception(e)
                     raise
-            finally:
-                if create_connection:
-                    conn.close()
-
-        else:
-            import requests
-            if bins:
-                query["binCount"] = bins
-                headers = get_default_header()
-                headers.update(self.add_headers)
-                response = requests.get(self.binned_url, query, headers=headers)
-                # Check for successful return of data
-                self.check_response(response, channel)
-                data = response.json()
-                avgs = data['avgs']
-                nelm = len(avgs)
-                tsAnchor = data['tsAnchor']
-                ts1Ms = data['ts1Ms']
-                ts2Ms = data['ts2Ms']
-                ts1Ns = data['ts1Ns']
-                ts2Ns = data['ts2Ns']
-                maxs = data['maxs']
-                mins = data['mins']
-                counts= data['counts']
-                for i in range(nelm):
-                    secs1 = tsAnchor + float(ts1Ms[i]) / 1000.0
-                    secs2 = tsAnchor + float(ts2Ms[i]) / 1000.0
-                    timestamp1 = create_timestamp(secs1, 0.0 if (ts1Ns is None) else ts1Ns[i])
-                    timestamp2 = create_timestamp(secs2,  0.0 if (ts2Ns is None) else ts2Ns[i])
-                    avg = avgs[i]
-                    max = self.adjust_type(maxs[i])
-                    min = self.adjust_type(mins[i])
-                    count = self.adjust_type(counts[i])
-                    start = self.convert_time(timestamp1)
-                    end = self.convert_time(timestamp2)
-
-                    value = avg
-                    timestamp = int((timestamp1 + timestamp2)/2)
-                    args = {"bins":bins, "min":numpy.float64(min), "max":numpy.float64(max), "count":numpy.int64(count), "start":start, "end": end}
-                    self.receive_channel(channel, value, timestamp, None, check_changes=False, check_types=True, metadata={"bins":bins}, **args)
             else:
-                response = requests.get(self.url, query)
-                self.check_response(response, channel)
-                data = response.json()
-                nelm = len(data['values'])
-                for i in range(nelm):
-                    secs = data['tsAnchor'] + float(data['tsMs'][i]) / 1000.0
-                    timestamp = create_timestamp(secs, data['tsNs'][i])
-                    pulse_id = data['pulseAnchor'] + data['pulseOff'][i]
-                    value = data['values'][i]
-                    self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
-            self.on_channel_completed(channel)
-
+                if bins:
+                    if self.json_streamed:
+                        response = conn.getresponse()
+                        self.check_response(response, channel)
+                        try:
+                            self.read_json(io.BufferedReader(response), channel, bins)
+                        except Exception as e:
+                            _logger.exception(e)
+                            raise
+                    else:
+                        import requests
+                        response = requests.get(url , query, headers=self.headers)
+                        # Check for successful return of data
+                        self.check_response(response, channel)
+                        data = response.json()
+                        self.read_json_single(data, channel, bins)
+                else:
+                    if self.json_streamed:
+                        response = conn.getresponse()
+                        self.check_response(response, channel)
+                        try:
+                            self.read_json(io.BufferedReader(response), channel)
+                        except Exception as e:
+                            _logger.exception(e)
+                            raise
+                    else:
+                        import requests
+                        response = requests.get(url , query, headers=self.headers)
+                        self.check_response(response, channel)
+                        data = response.json()
+                        self.read_json_single(data, channel)
+        finally:
+            if self.receiving_channel(channel):
+                self.on_channel_completed(channel)
+            if create_connection and conn:
+                conn.close()
 
     def run(self, query):
         self.range.wait_end(delay=self.delay)
@@ -231,6 +285,7 @@ class Daqbuf(Source):
         last = query.get("last", None)
         backend = query.get("backend", self.backend)
         cbor = self.cbor and not bins
+        streamed = self.json_streamed or cbor
         if isinstance(channels, str):
             channels = [channels, ]
         conn = None
@@ -245,8 +300,8 @@ class Daqbuf(Source):
                 for thread in threads:
                     thread.join()
             else:
-                if cbor:
-                    conn = create_http_conn(self.url)
+                if streamed:
+                    conn = create_http_conn(self.binned_url if bins else self.url)
                 for channel in channels:
                     self.run_channel(channel, backend, cbor, bins, last, conn)
         finally:
