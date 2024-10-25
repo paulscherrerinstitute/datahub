@@ -147,7 +147,7 @@ def run_json(task):
                 if "bins" in query.keys():
                     query["bins"] = int(query["bins"])
             except Exception as ex:
-                del query["bins"]
+                pass
 
             try:
                 if "last" in query.keys():
@@ -309,7 +309,7 @@ def parse_args():
     parser.add_argument("-i", "--id", action='store_true', help="Force query by id", required=False)
     parser.add_argument("-t", "--time", action='store_true', help="Force query by time", required=False)
     parser.add_argument("-c", "--channels", help="Channel list (comma-separated)", required=False)
-    parser.add_argument("-n", "--bins", help="Number of data bins", required=False)
+    parser.add_argument("-n", "--bins", help="Number of data bins (integer) or bin width(ending with s, m, h or d)", required=False)
     parser.add_argument("-l", "--last",  action='store_true', help="Include last value before range", required=False)
     parser.add_argument("-fi", "--filter", help="Sets a filter for data", required=False)
     parser.add_argument("-di", "--interval", help="Downsampling interval between samples in seconds", required=False)

@@ -141,7 +141,10 @@ class Daqbuf(Source):
                     raise RuntimeError("unexpected EOF")
                 _ = stream.read(1) #newline
                 data = json.loads(bytes_read)
-
+                if type(data) == str:
+                    raise RuntimeError ("Error: " + data)
+                if data.get("error", None) :
+                    raise Exception(data.get("error"))
                 if not data.get ("type","") == 'keepalive':
                     rangeFinal = data.get('rangeFinal', False)
                     self.read_json_single(data, channel, bins)
@@ -222,7 +225,11 @@ class Daqbuf(Source):
         if last is not None:
             query["oneBeforeRange"] = "true" if last else "false"
         if bins:
-            query["binCount"] = bins
+            if (type(bins) == str) and len(bins)>1 and bins[-1].isalpha():
+                query["binWidth"] = bins
+            else:
+                query["binCount"] = int(bins)
+
         streamed = self.streamed or cbor
         create_connection = streamed and (conn is None)
         url = self.binned_url if bins else self.url

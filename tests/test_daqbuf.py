@@ -117,7 +117,7 @@ class DataBufferTest(unittest.TestCase):
             stout = Stdout()
             source.add_listener(stout)
             #source.request(query)
-            source.req(["S10BC01-DBPM010:Q1","S10BC01-DBPM010:X1",],None, None, range="Last Month",  bins=None)
+            source.req(["S10BC01-DBPM010:Q1","S10BC01-DBPM010:X1",],None, None, range="Last 1min",  bins=100)
             #source.req(["ARS05-RCIR-0060:Water-Flow",],"2024-09-15 09:00", "2024-09-15 10:00", bins=100, backend="sls-archiver")
             #source.req(["SARFE10-PSSS059:FIT-COM",],"2024-09-26 08:57:57.510", "2024-09-26 09:57:57.510", bins=100)
             #source.req(["SARFE10-PSSS059:FIT-COM", ], "2024-09-26 08:57:57.510", "2024-09-26 09:00:57.510")
