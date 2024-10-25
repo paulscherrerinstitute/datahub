@@ -14,7 +14,7 @@ class Daqbuf(Source):
     DEFAULT_URL = os.environ.get("DAQBUF_DEFAULT_URL", "https://data-api.psi.ch/api/4")
     DEFAULT_BACKEND = os.environ.get("DAQBUF_DEFAULT_BACKEND", "sf-databuffer")
 
-    def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, path=None, delay=1.0, cbor=True, parallel=False, **kwargs):
+    def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, path=None, delay=1.0, cbor=True, parallel=False, streamed=True, **kwargs):
         """
         url (str, optional): Daqbuf URL. Default value can be set by the env var DAQBUF_DEFAULT_URL.
         backend (str, optional): Daqbuf backend. Default value can be set by the env var DAQBUF_DEFAULT_BACKEND.
@@ -33,7 +33,7 @@ class Daqbuf(Source):
         self.delay = delay
         self.cbor = str_to_bool(str(cbor))
         self.parallel = str_to_bool(str(parallel))
-        self.json_streamed = kwargs.get("streamed", True)
+        self.streamed = streamed
         self.add_headers = {"daqbuf-api-version":Daqbuf.API_VERSION }
         self.headers = get_default_header()
         self.headers.update(self.add_headers)
@@ -223,7 +223,7 @@ class Daqbuf(Source):
             query["oneBeforeRange"] = "true" if last else "false"
         if bins:
             query["binCount"] = bins
-        streamed = self.json_streamed or cbor
+        streamed = self.streamed or cbor
         create_connection = streamed and (conn is None)
         url = self.binned_url if bins else self.url
         if streamed:
@@ -242,7 +242,7 @@ class Daqbuf(Source):
                     raise
             else:
                 if bins:
-                    if self.json_streamed:
+                    if self.streamed:
                         response = conn.getresponse()
                         self.check_response(response, channel)
                         try:
@@ -258,7 +258,7 @@ class Daqbuf(Source):
                         data = response.json()
                         self.read_json_single(data, channel, bins)
                 else:
-                    if self.json_streamed:
+                    if self.streamed:
                         response = conn.getresponse()
                         self.check_response(response, channel)
                         try:
@@ -285,7 +285,7 @@ class Daqbuf(Source):
         last = query.get("last", None)
         backend = query.get("backend", self.backend)
         cbor = self.cbor and not bins
-        streamed = self.json_streamed or cbor
+        streamed = self.streamed or cbor
         if isinstance(channels, str):
             channels = [channels, ]
         conn = None
