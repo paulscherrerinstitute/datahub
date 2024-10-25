@@ -233,44 +233,48 @@ class QueryRange():
                 _logger.error(ex)
         return date
 
+    def get_range_str_for_compare(str):
+        return str.replace(" ", "").lower()
+
     def get_range(value, time_fmt = "%Y-%m-%d %H:%M:%S"):
         range_options = QueryRange.RANGE_STR_OPTIONS
         now = datetime.now()
         start = None
         end = now
-        if value == range_options[0]:
+        value = QueryRange.get_range_str_for_compare(value)
+        if value == QueryRange.get_range_str_for_compare(range_options[0]):
             start = now - timedelta(minutes=1)
-        elif value == range_options[1]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[1]):
             start = now - timedelta(minutes=10)
-        elif value == range_options[2]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[2]):
             start = now - timedelta(hours=1)
-        elif value == range_options[3]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[3]):
             start = now - timedelta(hours=12)
-        elif value == range_options[4]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[4]):
             start = now - timedelta(hours=24)
-        elif value == range_options[5]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[5]):
             start = now - timedelta(days=7)
-        elif value == range_options[6]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[6]):
             yesterday_date = now.date() - timedelta(days=1)
             start = datetime.combine(yesterday_date, datetime.min.time())
             end = datetime.combine(yesterday_date, datetime.max.time())
-        elif value == range_options[7]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[7]):
             start = datetime.combine(now.date(), datetime.min.time())
-        elif value == range_options[8]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[8]):
             start_of_current_week = now.date() - timedelta(days=now.weekday())
             end_of_last_week = start_of_current_week - timedelta(days=1)
             start_of_last_week = end_of_last_week - timedelta(days=6)
             start = datetime.combine(start_of_last_week, datetime.min.time())
             end = datetime.combine(end_of_last_week, datetime.max.time())
-        elif value == range_options[9]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[9]):
             start = datetime.combine(now.date() - timedelta(days=now.weekday()), datetime.min.time())
-        elif value == range_options[10]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[10]):
             previous_month = now - relativedelta(months=1)
             first_day_of_previous_month = previous_month.replace(day=1)
             last_day_of_previous_month = previous_month.replace(day=1) + relativedelta(months=1) - timedelta(days=1)
             start = datetime.combine(first_day_of_previous_month, datetime.min.time())
             end = datetime.combine(last_day_of_previous_month, datetime.max.time())
-        elif value == range_options[11]:
+        elif value == QueryRange.get_range_str_for_compare(range_options[11]):
             first_day_of_current_month = now.replace(day=1)
             start = datetime.combine(first_day_of_current_month, datetime.min.time())
         else:
