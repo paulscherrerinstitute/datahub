@@ -1,0 +1,265 @@
+export EPICS_CA_ADDR_LIST="127.0.0.1:54321"
+export EPICS_CA_AUTO_ADDR_LIST=NO
+export EPICS_CA_MAX_ARRAY_BYTES=40000000
+export PYTHONUNBUFFERED=1
+export PYEPICS_LIBCA=~/Documents/Presentations/Icalepcs2023/live_demo/lib/epics/lib/darwin-aarch64/libca.4.14.2.dylib
+
+
+SHOW_HELP=true
+SHOW_SEARCH=true
+SHOW_CHOOSE_BACKEND=true
+SHOW_PLOTS=true
+SHOW_FILES=true
+SHOW_RANGE=true
+SHOW_PID=true
+SHOW_SOURCES=true
+SHOW_MULTI=true
+SHOW_OPTIONS=true
+
+
+run() {
+  CLR_CMT=90
+  CLR_CMD=35
+  CLR_STD=0
+  STR_CMT="################################################################################"
+  printf "\n\e[%dm%s\e[%dm" "$CLR_CMT" "$STR_CMT" "$CLR_STD"
+  printf "\n\e[%dm# $1\e[%dm" "$CLR_CMT" "$CLR_STD"
+  printf "\n\e[%dm%s\e[%dm" "$CLR_CMT" "$STR_CMT" "$CLR_STD"
+  shift
+
+  #export cmd="$*"
+  #Rebuild the command by iterating over all arguments and preserving quotes
+  #so that we don't need to escape the quotes in commands
+  cmd=""
+  for arg in "$@"; do
+    # Check if the argument contains spaces or special characters
+    if [[ "$arg" =~ \  ]]; then
+      # If it does, wrap the argument in quotes
+      cmd="$cmd\"$arg\" "
+    else
+      cmd="$cmd$arg "
+    fi
+  done
+
+  printf "\n\e[%dm> %s\e[%dm" "$CLR_CMD" "$cmd" "$CLR_SDT"
+  read -p ""
+  eval "$cmd"
+  read -p ""
+}
+
+if [ "$SHOW_HELP" = true ]; then
+run "Datahub - Source and Consumer" \
+datahub
+
+run "Help - command argumants" \
+datahub -h
+
+run "Source specific help" \
+datahub --daqbuf
+fi
+
+if [ "$SHOW_SEARCH" = true ]; then
+run "Channel search" \
+datahub --search AVG
+
+run "Channel search in a specific backend" \
+datahub -b sf-archiver --search AVG
+
+run "Normal search (Pandas dataframe)" \
+datahub --search VMCC-1550:PRESSURE
+
+run "Verbose search (JSON returned by server)" \
+datahub --search VMCC-1550:PRESSURE -v
+fi
+
+if [ "$SHOW_CHOOSE_BACKEND" = true ]; then
+run "Print simple query to stdout - Invalid default backend" \
+datahub -c ARS09-VMCC-1550:PRESSURE -r "Last 1min" -p
+
+run "Print simple query to stdout - Excplicit backend" \
+datahub -b sls-archiver -c ARS09-VMCC-1550:PRESSURE -r "Last 1min" -p
+
+run "Print simple query to stdout - Checking default backend" \
+datahub --daqbuf
+
+run "Print simple query to stdout - Setting default backend" \
+export DAQBUF_DEFAULT_BACKEND=sls-archiver
+
+run "Print simple query to stdout - Valid default backend" \
+datahub -c ARS09-VMCC-1550:PRESSURE -r "Last 1min" -p
+fi
+
+if [ "$SHOW_PLOTS" = true ]; then
+run "Plot simple query to matplotlib" \
+datahub -c ARS09-VMCC-1550:PRESSURE -r "Last 10min" -m
+
+
+if lsof -iTCP:7777 -sTCP:LISTEN > /dev/null 2>&1; then
+  echo "Plotter is started"
+else
+  run "Start Plotter" \
+  pshell -plot &
+  read -p "Started Plotter"
+fi
+
+run "Plot simple query to PShell plotter" \
+datahub -c ARS09-VMCC-1550:PRESSURE -r "Last 1h" -ps
+
+run "Plot simple query binned" \
+datahub -c ARS09-VMCC-1550:PRESSURE -r "Last 1h" -n 25 -p -ps
+
+run "Timestamps as string" \
+datahub -c ARS09-VMCC-1550:PRESSURE -r "Last 1min" -p -ps -tt=str
+
+run "Timestamps as millis - plot Time axis" \
+datahub -c ARS09-VMCC-1550:PRESSURE -r "Last 1h" -n 25 -p -ps -tt=millis
+
+run "Multiple channels - binned" \
+datahub -c ARS08-VMCC-1550:PRESSURE,ARS09-VMCC-1550:PRESSURE -r "Last 1h" -n 25 -p -ps
+
+run "Multiple channels - unbinned" \
+datahub -c ARS08-VMCC-1550:PRESSURE,ARS09-VMCC-1550:PRESSURE -r "Last 12h" -p -ps
+
+run "Multiple channels - parallel" \
+datahub -c ARS08-VMCC-1550:PRESSURE,ARS09-VMCC-1550:PRESSURE -r "Last 12h" -ps -pl
+fi
+
+if [ "$SHOW_FILES" = true ]; then
+
+run "Save to hdf5 (overwrite)" \
+datahub -c ARS08-VMCC-1550:PRESSURE,ARS09-VMCC-1550:PRESSURE -r "Last 1h" -tt millis -ps -f ~/tst.h5
+
+run "Open hdf5" \
+pshell -dtpn -f=~/tst.h5
+
+run "Save to hdf5 - change data group" \
+datahub -c ARS08-VMCC-1550:PRESSURE,ARS09-VMCC-1550:PRESSURE -r "Last 1h" -ps -f ~/tst.h5 --path data
+
+run "Open hdf5" \
+pshell -dtpn -f=~/tst.h5
+
+run "Save to txt" \
+datahub -c ARS08-VMCC-1550:PRESSURE,ARS09-VMCC-1550:PRESSURE -r "Last 1h" -ps -x ~/tst_txt
+
+run "Open data folder" \
+open ~/tst_txt
+
+fi
+
+
+if [ "$SHOW_RANGE" = true ]; then
+
+run "Range: past 60 seconds" \
+datahub -c ARS09-VMCC-1550:PRESSURE -s -60 -e 0 -tt millis -ps -p
+
+run "Range: next 5 seconds" \
+datahub -c ARS09-VMCC-1550:PRESSURE -s 0 -e 5 -tt millis -ps -p
+
+run "Range: absolute interval " \
+ datahub -c ARS09-VMCC-1550:PRESSURE -s "2025-01-28 00:00:00" -e "2025-01-29 00:00:00" -n 50 -p -tt str -ps
+
+run "Range: absolute interval with partial strings" \
+datahub -c ARS09-VMCC-1550:PRESSURE -s "2025-01-28" -e "2025-01-29 09:00" -n 50 -p -tt str -ps
+
+run "Range: absolute interval in UTC with millis" \
+datahub -c ARS09-VMCC-1550:PRESSURE -s "2025-01-28T00:00:00.000Z" -e "2025-01-29T00:00:00.000Z" -n 100 -tt millis -ps
+
+fi
+
+if [ "$SHOW_PID" = true ]; then
+export DAQBUF_DEFAULT_BACKEND=sf-databuffer
+
+run "Query on absolute time range" \
+datahub -c SINEG01-DBPM340:Q1 -s "2025-01-28 15:00:00" -e "2025-01-28 15:00:00.300" -ps -p
+
+run "Same query on absolute ID range" \
+datahub -c SINEG01-DBPM340:Q1 -i -s 23311700677 -e 23311700706 -ps -p
+
+run "Plotting against ID: Save to H5" \
+datahub -c SINEG01-DBPM340:Q1 -i -s 23311700677 -e 23311700706 -p -f ~/tst.h5
+
+run "Plotting against ID: Open H5" \
+pshell -dtpn -f=~/tst.h5
+
+run "Query on relative ID range - From 10 min ago for 10s (appears to have a bug in cur ID)" \
+datahub -c SINEG01-DBPM340:Q1 -i -s -60000 -e -59000 -ps -p -tt millis
+fi
+
+
+if [ "$SHOW_SOURCES" = true ]; then
+
+run "EPICS - Stream source (only future values)" \
+datahub --epics -c TESTIOC:TESTSINUS:SinCalc -s 0 -e 2 -ps -p -tt millis
+
+run "EPICS with given address list" \
+datahub --epics -c TESTIOC:TESTSINUS:SinCalc -s 0 -e 2 -ps -p -tt millis --url 127.0.0.1:54321
+
+run "BSREAD - Stream source (only future values)" \
+datahub --bsread --url tcp://127.0.0.1:9999 -s 0 -e 1 -p -ps
+
+run "BSREAD - Given socket type and channels" \
+datahub --bsread mode PULL --url tcp://127.0.0.1:9999 -c UInt8Scalar,Float64Scalar -s 0 -e 8.0 -ps
+
+run "BSREAD - Filter condition" \
+datahub --bsread mode PULL --url tcp://127.0.0.1:9999 -c UInt8Scalar,Float64Scalar --filter "UInt8Scalar\<10" -s 0 -e 8.0 -ps
+
+run "Dispatcher (BSREAD)" \
+echo datahub --dispatcher -c SINEG01-DBPM340:Q1 -s 0 -e 3 -p -ps
+
+run "Pipeline (CamServer) - Scalar, Waveform and Image data" \
+echo datahub --pipeline name simulation_sp -s 0 -e 3 -ps
+
+run "Pipeline (CamServer) -with given socket type" \
+echo datahub --pipeline name SLG-LCAM-C111_proc mode PULL -s 0 -e 5 -ps
+
+run "Camera (CamServer)" \
+echo datahub --camera name SLG-LCAM-C111  -s 0 -e 0.5 -ps
+
+run "Daqbuf Query" \
+datahub --daqbuf -b sf-databuffer -c SINEG01-DBPM340:Q1 -s "2025-01-30 10:00:00" -e "2025-01-30 10:00:00.25" -ps -p
+
+run "Databuffer (API1): same query" \
+datahub --databuffer -b sf-databuffer -c SINEG01-DBPM340:Q1 -s "2025-01-30 10:00:00" -e "2025-01-30 10:00:00.25" -ps -p
+
+run "Retrieval (API3): same query" \
+datahub --retrieval -b sf-databuffer -c SINEG01-DBPM340:Q1 -s "2025-01-30 10:00:00" -e "2025-01-30 10:00:00.25" -ps -p
+
+run "Other sources" \
+echo redis, array10, stddaq
+
+fi
+
+if [ "$SHOW_MULTI" = true ]; then
+
+run "Channel from multiple sources with same interval" \
+datahub --databuffer c SINEG01-DBPM340:Q1 --daqbuf b sf-archiver c SINEG01-DBPM340:Q1 -s "2025-01-30 10:00" -e "2025-01-30 10:05" -ps -px
+
+run "Channel from multiple sources with different interval" \
+datahub --databuffer c SINEG01-DBPM340:Q1 s "2025-01-30 10:00:00" e "2025-01-30 10:00:00.25" --daqbuf b sf-archiver c SINEG01-DBPM340:Q1 s "2025-01-30 10:00" e "2025-01-30 10:10" -ps -px
+
+run "EPICS and archiver" \
+echo datahub --daqbuf c SINEG01-DBPM340:Q1 --epics c SINEG01-DBPM340:Q1 -s 0 -e 5 -px -ps
+
+run "EPICS and archiver - given archiver delay" \
+echo datahub --daqbuf c SINEG01-DBPM340:Q1 delay 20.0 --epics c SINEG01-DBPM340:Q1 -s 0 -e 5 -px -ps
+
+fi
+
+if [ "$SHOW_OPTIONS" = true ]; then
+
+run "Query options" \
+datahub -b sf-databuffer -c SINEG01-DBPM340:Q1,SINEG01-DBPM340:X1 -s -60 -e -50 -ps -pl
+
+run "Query options - subsampling (modulo) - also '-di' for sampling interval on streamed sources" \
+datahub -b sf-databuffer -c SINEG01-DBPM340:Q1,SINEG01-DBPM340:X1 -s -60 -e -50 -ps -pl -dm 10
+
+run "Query options - include last before interval" \
+datahub -b sf-archiver -c SINEG01-DBPM340:Q1 -s "2025-01-30 10:00:00" -e "2025-01-30 10:00:01" -ps
+
+run "Query options - include last before interval" \
+datahub -b sf-archiver -c SINEG01-DBPM340:Q1 -s "2025-01-30 10:00:00" -e "2025-01-30 10:00:01" -ps -l
+
+run "Other options" \
+echo "--compression (gzip (default), szip, lzf, lz4 or none),  --decompress (auto-decompress images), --align"
+
+fi
