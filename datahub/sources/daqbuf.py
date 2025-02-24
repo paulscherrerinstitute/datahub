@@ -218,7 +218,10 @@ class Daqbuf(Source):
 
     def run_channel(self, channel, backend, cbor, bins=None, last=None, conn=None):
         query = dict()
-        query["channelName"] = channel
+        if channel.isdigit():
+            query["seriesId"] = channel
+        else:
+            query["channelName"] = channel
         query["begDate"] = self.range.get_start_str_iso()
         query["endDate"] = self.range.get_end_str_iso()
         query["backend"] = backend

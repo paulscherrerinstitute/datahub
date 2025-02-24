@@ -194,5 +194,19 @@ class DataBufferTest(unittest.TestCase):
             source.add_listener(stdout)
             source.request(query)
 
+    def test_erik3(self):
+        queries = [
+            {'start': '2025-02-24 10:33:18', 'end': '2025-02-24 10:33:28', 'channels': ['SARFE10-PSSS059:FIT-RES', 'SARFE10-PSSS059:FIT-RMS', '9014575066011828102']},
+            #{'start': '2025-02-24 10:33:18', 'end': '2025-02-24 10:33:28', 'channels': ['SARFE10-PSSS059:FIT-RMS']} ,
+            #{'start': '2025-02-24 10:33:18', 'end': '2025-02-24 10:33:28', 'channels': ['#9014575066011828102']}
+        ]
+        with Daqbuf(backend="sf-archiver") as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            for query in queries:
+                source.request(query)
+
+
+
 if __name__ == '__main__':
     unittest.main()
