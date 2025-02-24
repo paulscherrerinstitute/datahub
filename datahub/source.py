@@ -369,7 +369,9 @@ class Source():
         except:
             return None
 
-    def time_to_pulse_id(self, tm=time.time()):
+    def time_to_pulse_id(self, tm=None):
+        if not tm:
+            tm = time.time()
         return timing.time_to_pulse_id(tm)
 
     def pulse_id_to_time(self, id):

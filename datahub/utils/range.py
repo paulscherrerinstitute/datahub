@@ -126,7 +126,9 @@ class QueryRange():
             raise Exception("Invalid parameter value: " + str(par))
         return sec, st, id, typ
 
-    def time_to_id(self, tm=time.time()):
+    def time_to_id(self, tm=None):
+        if not tm:
+            tm = time.time()
         if self.source is not None:
             return self.source.time_to_pulse_id(tm)
         return time_to_pulse_id(tm)

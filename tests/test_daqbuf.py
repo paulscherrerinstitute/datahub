@@ -112,7 +112,7 @@ class DataBufferTest(unittest.TestCase):
 
 
     def test_binned(self):
-        with Daqbuf(backend=backend, cbor=False, parallel=True) as source:
+        with Daqbuf(backend=backend, cbor=False, parallel=True,  time_type="str") as source:
             #table = Table()
             stout = Stdout()
             source.add_listener(stout)
@@ -151,6 +151,7 @@ class DataBufferTest(unittest.TestCase):
     def test_enums(self):
         with Daqbuf(backend="sf-archiver", cbor=True, parallel=False) as source:
             stdout = Stdout()
+            source.search("SOFTMPS:L1-MA-OK")
             source.add_listener(stdout)
             #plot = Plot()
             plot = PShell()
@@ -178,13 +179,20 @@ class DataBufferTest(unittest.TestCase):
 
 
     def test_erik(self):
-        query = {'start': '2024-09-16 10:14:25', 'end': '2024-09-16 10:40', 'channels': ['S10BC01-DBPM050:Q2', 'S10BC01-DBPM050:Q2-VALID']}
+        query = {'start': '2024-01-16 10:14:25', 'end': '2024-01-16 10:40', 'channels': ['S10BC01-DBPM050:Q2', 'S10BC01-DBPM050:Q2-VALID']}
         with Daqbuf(backend="sf-databuffer") as source:
             stdout = Stdout()
             source.add_listener(stdout)
             source.request(query)
             #print(table.as_dataframe())
 
+    def test_erik2(self):
+        query = {'start': '2024-01-16 10:14:25', 'end': '2024-01-16 10:40',
+                 'channels': ['S10BC01-DBPM050:Q2', 'S10BC01-DBPM050:Q2-VALID']}
+        with DataBuffer(backend="sf-databuffer") as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.request(query)
 
 if __name__ == '__main__':
     unittest.main()

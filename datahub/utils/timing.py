@@ -29,11 +29,13 @@ def convert_timestamp(timestamp, type="nano"):
         return int(timestamp/1000000)
     return timestamp
 
-def time_to_pulse_id(tm=time.time()):
+def time_to_pulse_id(tm=None):
+    if not tm:
+        tm = time.time()
     tm = tm - get_utc_offset()
     offset = tm - PULSE_ID_START_TIME
-    id = int(offset / PULSE_ID_INTERVAL)
-    return id
+    pid = int(offset / PULSE_ID_INTERVAL)
+    return pid
 
 def pulse_id_to_time(id):
     offset = float(id) * PULSE_ID_INTERVAL
@@ -42,7 +44,9 @@ def pulse_id_to_time(id):
     return round(ret, PULSE_ID_INTERVAL_DEC)
 
 
-def timestamp_to_string(seconds=time.time(), utc=True):
+def timestamp_to_string(seconds=None, utc=True):
+    if not seconds:
+        seconds = time.time()
     if utc:
         dt = datetime.utcfromtimestamp(seconds)
         return dt.strftime('%Y-%m-%d %H:%M:%S.%f') + 'Z'
