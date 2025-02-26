@@ -17,6 +17,7 @@ requirements:
     - python
     - requests
     - h5py
+    - python-dateutil
     - numpy
 
 #Optional requirements
