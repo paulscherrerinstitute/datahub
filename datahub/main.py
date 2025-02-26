@@ -56,10 +56,11 @@ def run_json(task):
 
         valid_sources = {}
         for name in KNOWN_SOURCES.keys():
-            _name = name
-            exec(f"{name} = task.get('{name}', None)")
-            exec(f"no = 0 if {name} is None else len({name})")
-            exec(f"for i in range(no): \n   if {name}[i] is not None: valid_sources['{name}_'+str(i)] = ({name}[i], KNOWN_SOURCES['{name}'])")
+            value = task.get(name, None)
+            no = 0 if value is None else len(value)
+            for i in range(no):
+                if value[i] is not None:
+                    valid_sources[f"{name}_{i}"] = (value[i], KNOWN_SOURCES[name])
 
         consumers = []
         if hdf5 is not None:
@@ -198,12 +199,17 @@ def run_json(task):
         if len(valid_sources)==0:
             if channels or (search!=None):
                 # Add default source
-                valid_sources[DEFAULT_SOURCE+ "_0"] = ({},KNOWN_SOURCES[DEFAULT_SOURCE])
+                valid_sources[DEFAULT_SOURCE+ "_0"] = ({}, KNOWN_SOURCES[DEFAULT_SOURCE])
 
         for name, (cfg,source) in valid_sources.items():
-            exec(f"{name} = cfg")
-            constructor = eval("get_source_constructor(" + source.__name__ + ", '" + name + "')")
-            exec('if ' + name + ' is not None: add_source(' + name + ', ' + constructor + ')')
+            if cfg is not None:
+                local_vars = {name: cfg}
+                # Get the source constructor expression as a string
+                constructor_expr = get_source_constructor(source, name)  # This returns a string
+                instance = eval(constructor_expr, globals(), local_vars)
+                if instance is not None:
+                    add_source(cfg, instance)
+
         for source in sources:
             if verbose is not None:
                 source.verbose = verbose
@@ -483,6 +489,8 @@ if __name__ == '__main__':
     args = ["-h"]
     sys.argv = sys.argv + args
     args = ["--daqbuf"]
+    sys.argv = sys.argv + args
+    args = ["--search", "S10CB01-RILK-RFDET:BLANKTIME"]
     sys.argv = sys.argv + args
     """
     main()
