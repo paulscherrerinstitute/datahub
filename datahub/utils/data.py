@@ -2,7 +2,10 @@ import secrets
 import string
 import collections
 #import pickle
-import cbor2
+try:
+    import cbor2
+except:
+    cbor2 = None
 import numpy as np
 
 class MaxLenDict(collections.OrderedDict):
@@ -29,6 +32,8 @@ def generate_random_string(length=16):
 
 def decode(data):
     #return pickle.loads(data)
+    if cbor2 is None:
+        raise Exception("cbor2 library not available")
     obj = cbor2.loads(data)
     if type(obj)!=dict:
         return None
@@ -41,6 +46,8 @@ def decode(data):
     return data
 
 def encode(obj):
+    if cbor2 is None:
+        raise Exception("cbor2 library not available")
     #return pickle.dumps(obj)
     if type(obj) == np.ndarray:
         obj = {
