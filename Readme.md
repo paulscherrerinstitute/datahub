@@ -161,7 +161,7 @@ optional arguments:
   -t, --time            Force query by time
   -c, --channels CHANNELS
                         Channel list (comma-separated)
-  -n, --bins BINS       Number of data bins
+  -n, --bins BINS       Number of data bins (integer) or bin width(ending with s, m, h or d)
   -l, --last            Include last value before range
   -fi, --filter FILTER  Sets a filter for data
   -di, --interval INTERVAL
@@ -178,7 +178,7 @@ optional arguments:
   -px, --prefix         Add source ID to channel names
   -pl, --parallel       Parallelize query if possible
   -pt, --path PATH      Path to data in the file
-  -a, --align           Merge sources aligning the message ids
+  -a, --align ALIGN     Merge sources aligning the message ids: complete(default) or partial
   -sr, --search         Search channel names given a pattern (instead of fetching data)
   -v, --verbose         Displays complete search results, not just channels names
   --epics [channels url=None path=None start=None end=None]
@@ -195,7 +195,7 @@ optional arguments:
                         retrieval query arguments
   --dispatcher [channels path=None start=None end=None]
                         dispatcher query arguments
-  --daqbuf [channels url='https://data-api.psi.ch/api/4' backend='sf-databuffer' path=None delay=1.0 cbor=True parallel=False start=None end=None]
+  --daqbuf [channels url='https://data-api.psi.ch/api/4' backend='sf-databuffer' path=None delay=1.0 cbor=True parallel=False streamed=True start=None end=None]
                         daqbuf query arguments
   --array10 [channels url=None mode='SUB' path=None reshape=False start=None end=None]
                         array10 query arguments
