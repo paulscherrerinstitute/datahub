@@ -184,7 +184,7 @@ class Dataset:
             dtype = int
         elif dtype == "str":
             dtype = str
-        self.is_value = type(dtype) is type
+        self.is_value = type(dtype) is type or numpy.issubdtype(dtype, numpy.number) or numpy.issubdtype(dtype, numpy.bool_)
         if dtype == str:
             self.dtype = Dataset.STRING_TYPE
         else:
@@ -223,7 +223,8 @@ class Dataset:
             v = decompress(v, self.channel, self.channel_compression, self.shape, self.dtype)
         else:
             if not self.is_value:
-                v = numpy.reshape(numpy.frombuffer(v, dtype=self.dtype), self.shape)
+                if v is not None:
+                    v = numpy.reshape(numpy.frombuffer(v, dtype=self.dtype), self.shape)
         if self.nbuf >= len(self.buf):
             self.flush()
         self.buf[self.nbuf] = v
