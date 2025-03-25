@@ -232,7 +232,7 @@ def run_json(task):
                     logger.exception(f"Error searching source: {str(source)}")
         else:
             if align:
-                merger = Merger(filter = filter)
+                merger = Merger(filter=filter, partial_msg=False)
                 src = merger.to_source()
                 for source in sources:
                     source.add_listener(merger)
