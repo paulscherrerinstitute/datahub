@@ -475,31 +475,5 @@ def main():
         logger.error(e)
     return 0
 if __name__ == '__main__':
-    """
-    json_str = '{' \
-               '"file": "/Users/gobbo_a/dev/back/json.h5", ' \
-               '"print": true, ' \
-               '"epics": {"url": null, "query":{"start":null, "end":3.0, "channels": ["TESTIOC:TESTCALCOUT:Input", "TESTIOC:TESTSINUS:SinCalc", "TESTIOC:TESTWF2:MyWF"]}},' \
-               '"bsread": {"url": "tcp://localhost:9999", "mode":"PULL", "query":{"start":null, "end":3.0, "channels":  ["UInt8Scalar", "Float32Scalar"]}}' \
-               '}'
-    args = ["--json", json_str]
-    sys.argv=sys.argv + args
-    """
-    """
-    args = ["--search", "SARFE10-PSSS059:SPECTRUM_X", "--databuffer"]
-    sys.argv = sys.argv + args
-    """
-    """
-    args = ["-h"]
-    sys.argv = sys.argv + args
-    args = ["--daqbuf"]
-    sys.argv = sys.argv + args
-    args = ["--search", "S10CB01-RILK-RFDET:BLANKTIME"]
-    sys.argv = sys.argv + args
-    """
-    #args = ["--daqbuf"]
-    #args = ["--daqbuf", "c", "S10BC01-DBPM010:Q1", "--daqbuf", "c", "S10BC01-DBPM010:X1", "b", "sf-databuffer", "-s", "-100", "-e", "-99.9", "-p"]
-    #args = ["--daqbuf", "c", "S10BC01-DBPM010:Q1", "/", "c", "S10BC01-DBPM010:X1", "b", "sf-databuffer", "-s","-100", "-e", "-99.9", "-p"]
-    #sys.argv = sys.argv + args
     main()
 
