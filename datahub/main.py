@@ -232,7 +232,7 @@ def run_json(task):
                     logger.exception(f"Error searching source: {str(source)}")
         else:
             if align:
-                merger = Merger(filter=filter, partial_msg=(align=="partial"))
+                merger = Merger(filter=filter, partial_msg=False)
                 src = merger.to_source()
                 for source in sources:
                     source.add_listener(merger)
@@ -328,7 +328,7 @@ def parse_args():
     parser.add_argument("-px", "--prefix", action='store_true', help="Add source ID to channel names", required=False)
     parser.add_argument("-pl", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
     parser.add_argument("-pt", "--path", help="Path to data in the file", required=False)
-    parser.add_argument("-a", "--align", help="Merge sources aligning the message ids: complete(default) or partial",required=False)
+    parser.add_argument("-a", "--align", action='store_true', help="Merge sources aligning the message ids",required=False)
     parser.add_argument("-sr", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
     parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
 
