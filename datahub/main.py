@@ -335,7 +335,7 @@ def parse_args():
     for name, source in KNOWN_SOURCES.items():
         meta = eval("get_meta(" + source.__name__ + ")")
         meta = f"channels {meta}start=None end=None"
-        eval(f'parser.add_argument("--{name}", metavar="{meta}", help="{name} query arguments", required=False, nargs="*")')
+        eval(f'parser.add_argument("--{name}", metavar="{meta}", help="{name} query arguments", action="append", required=False, nargs="*")')
     args = parser.parse_args()
     return parser, args
 
@@ -454,17 +454,21 @@ def main():
                 task["url"] = args.url
 
             for source in KNOWN_SOURCES.keys():
-                source_str = eval("args." + source)
-                if type(source_str) == list:
-                    if len(source_str) == 1:
-                        task[source] = json.loads(source_str[0])
+                source_entries = eval("args." + source)
+                if source_entries:
+                    if len(source_entries) == 1 and type(source_entries[0]) == list and len(source_entries[0]) == 0:
+                        task[source] = EMPTY_SOURCE
                     else:
                         task[source] = []
-                        sources = _split_list(source_str, SOURCE_SEPARATOR)
-                        if sources == []:
-                            task[source] = EMPTY_SOURCE #if source is entered with no arguments, print help for it
-                        for src in sources:
-                            task[source].append(parse_arg_dict(parser, src))
+                        for source_str in source_entries:
+                            if type(source_str) == list:
+                                if len(source_str) == 1:
+                                    task[source].append(json.loads(source_str[0]))
+                                else:
+                                    sources = _split_list(source_str, SOURCE_SEPARATOR)
+                                    for src in sources:
+                                        task[source].append(parse_arg_dict(parser, src))
+
             run_json(task)
 
     except RuntimeError as e:
@@ -493,5 +497,9 @@ if __name__ == '__main__':
     args = ["--search", "S10CB01-RILK-RFDET:BLANKTIME"]
     sys.argv = sys.argv + args
     """
+    #args = ["--daqbuf"]
+    #args = ["--daqbuf", "c", "S10BC01-DBPM010:Q1", "--daqbuf", "c", "S10BC01-DBPM010:X1", "b", "sf-databuffer", "-s", "-100", "-e", "-99.9", "-p"]
+    #args = ["--daqbuf", "c", "S10BC01-DBPM010:Q1", "/", "c", "S10BC01-DBPM010:X1", "b", "sf-databuffer", "-s","-100", "-e", "-99.9", "-p"]
+    #sys.argv = sys.argv + args
     main()
 
