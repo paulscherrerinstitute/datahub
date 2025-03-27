@@ -225,9 +225,7 @@ class Source():
             except:
                 raise RuntimeError("Invalid interval: ", self.interval)
         self.downsample = self.interval or self.modulo
-        self.query_index = Source.query_index.get(self.type, -1) + 1
-        Source.query_index[self.type]=self.query_index
-        self.query_id = f"{self.type}_{self.query_index}"
+        self.create_query_id()
 
         prefix = self.query.get("prefix", None)
         if prefix:
@@ -248,6 +246,11 @@ class Source():
         else:
             self.processing_thread = None
             self.do_run(query)
+
+    def create_query_id(self):
+        self.query_index = Source.query_index.get(self.type, -1) + 1
+        Source.query_index[self.type]=self.query_index
+        self.query_id = f"{self.type}_{self.query_index}"
 
     def join(self, timeout=None):
         if self.is_thread_running():

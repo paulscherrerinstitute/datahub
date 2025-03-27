@@ -29,9 +29,13 @@ class HDF5Writer(Consumer):
     def on_start(self, source):
         with self.lock:
             if self.file is None:
-                self.file = h5py.File(self.filename, "w")
-                now_date = datetime.datetime.now(datetime.timezone.utc)
-                self.file.attrs["creation"] = now_date.isoformat()
+                try:
+                    self.file = h5py.File(self.filename, "w")
+                    now_date = datetime.datetime.now(datetime.timezone.utc)
+                    self.file.attrs["creation"] = now_date.isoformat()
+                except Exception as ex:
+                    _logger.exception("Error creating file: %s " % str(self.filename))
+
 
     def on_stop(self, source, exception):
         pass
@@ -63,6 +67,9 @@ class HDF5Writer(Consumer):
             return numpy.int64
 
     def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
+        if self.file is None:
+            self.on_start(source)
+
         prefix, channel = self.get_path(source), self.get_group(source, name)
         has_id = metadata.get("has_id", True)
         enum = typ == "enum"
@@ -97,8 +104,9 @@ class HDF5Writer(Consumer):
             self.file[f"{prefix}"].attrs["url"] = str(source.url)
             self.file[f"{prefix}"].attrs["query_index"] = str(source.query_index)
             self.file[f"{prefix}"].attrs["name"] = str(source.get_name())
-            for key in source.query.keys():
-                self.file[f"{prefix}"].attrs[key] = str(source.query[key])
+            if source.query is not None:
+                for key in source.query.keys():
+                    self.file[f"{prefix}"].attrs[key] = str(source.query[key])
         self.datasets[source][name] = [ts_ds, id_ds, val_ds]
         self.file[f"{prefix}/{channel}"].attrs["name"] = str(name)
         self.file[f"{prefix}/{channel}"].attrs["type"] = str(typ)
@@ -161,7 +169,7 @@ class HDF5Writer(Consumer):
                 self.file.attrs["conclusion"] = now_date.isoformat()
                 self.file.close()
         except Exception as ex:
-            _logger.exception("Error closing file: %s " % str(self.file_name))
+            _logger.exception("Error closing file: %s " % str(self.filename))
         self.file = None
 
 
