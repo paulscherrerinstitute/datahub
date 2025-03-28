@@ -17,8 +17,8 @@ class HDF5Writer(Consumer):
         self.auto_decompress = auto_decompress
         self.metadata_compression = metadata_compression
         self.in_channel = False
-        self.path = ""
         self.file = None
+        self.path = ""
         if path:
             if not path.startswith("/"):
                 path = "/" + path
@@ -30,7 +30,7 @@ class HDF5Writer(Consumer):
         with self.lock:
             if self.file is None:
                 try:
-                    self.file = h5py.File(self.filename, "w")
+                    self.file = h5py.File(self.filename, "a" if self.append else "w")
                     now_date = datetime.datetime.now(datetime.timezone.utc)
                     self.file.attrs["creation"] = now_date.isoformat()
                 except Exception as ex:

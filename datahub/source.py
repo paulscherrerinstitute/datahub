@@ -39,7 +39,7 @@ class Source():
         self.aborted = False
         self.running = False
         self.verbose = False
-        self.parallel = False
+        self.parallel = True
         self.downsample = False
         self.name = name
         self.auto_decompress = auto_decompress

@@ -3,9 +3,10 @@ from datahub.utils.timing import convert_timestamp
 class Consumer:
     instances = set()
 
-    def __init__(self, timetype=None, **kwargs):
+    def __init__(self, timetype=None, append=False, **kwargs):
         Consumer.instances.add(self)
         self.time_type = timetype
+        self.append = append
 
     def on_start(self, source):
         pass

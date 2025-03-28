@@ -48,7 +48,8 @@ class PShell(Consumer):
         source_context = str_to_bool(str(self.context))==True
         pc = PlotClient(address=self.address, port=self.port, context=source.get_id() if source_context else self.context, timeout=self.timeout)
         self.clients[source] = pc
-        pc.clear_plots()
+        if not self.append:
+            pc.clear_plots()
         pc.set_context_attrs(quality=None, layout=self.layout)
         pc.set_progress(None)
         pc.set_status("Idle")

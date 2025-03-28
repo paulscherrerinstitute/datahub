@@ -32,7 +32,6 @@ def run_json(task):
         path = task.get("path", None)
         decompress = task.get("decompress", False)
         compression = task.get("compression", Compression.GZIP)
-        parallel = task.get("parallel", None)
         interval = task.get("interval", None)
         bins = task.get("bins", None)
         last = task.get("last", None)
@@ -41,6 +40,7 @@ def run_json(task):
         search = task.get("search", None)
         verbose = task.get("verbose", None)
         prefix = task.get("prefix", None)
+        append = task.get("append", None)
         query_id = task.get("id", False)
         query_time = task.get("time", False)
         time_type = task.get("timetype", None)
@@ -63,16 +63,18 @@ def run_json(task):
 
         consumers = []
         if hdf5 is not None:
-            consumers.append(HDF5Writer(hdf5, default_compression=compression, timetype=time_type))
+            consumers.append(HDF5Writer(hdf5, default_compression=compression, timetype=time_type,  append=append))
         if txt is not None:
-            consumers.append(TextWriter(txt, timetype=time_type))
+            consumers.append(TextWriter(txt, timetype=time_type, append=append))
         if prnt is not None:
             consumers.append(Stdout(timetype=time_type))
         try:
             if pshell is not None:
                 if pshell==True:
                     pshell={}
-                consumers.append(PShell(**pshell))
+                ps = PShell(**pshell)
+                ps.append = append
+                consumers.append(ps)
         except Exception as ex:
             logger.exception(ex)
         try:
@@ -221,8 +223,6 @@ def run_json(task):
         for source in sources:
             if verbose is not None:
                 source.verbose = verbose
-            if parallel is not None:
-                source.parallel = parallel
             if path is not None:
                 if source.path is None:
                     source.path = path
@@ -327,18 +327,18 @@ def parse_args():
     parser.add_argument("-c", "--channels", help="Channel list (comma-separated)", required=False)
     parser.add_argument("-n", "--bins", help="Number of data bins (integer) or bin width(ending with s, m, h or d)", required=False)
     parser.add_argument("-l", "--last",  action='store_true', help="Include last value before range", required=False)
+    parser.add_argument("-a", "--align", help="Merge sources aligning the message ids: complete(default) or partial",required=False, nargs="?", const=True)
+    parser.add_argument("-u", "--url", help="URL of default source", required=False)
+    parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
     parser.add_argument("-fi", "--filter", help="Sets a filter for data", required=False)
     parser.add_argument("-di", "--interval", help="Downsampling interval between samples in seconds", required=False)
     parser.add_argument("-dm", "--modulo", help="Downsampling modulo of the samples", required=False)
-    parser.add_argument("-u", "--url", help="URL of default source", required=False)
-    parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
     parser.add_argument("-tt", "--timetype", help="Timestamp type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-cp", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-dc", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
     parser.add_argument("-px", "--prefix", action='store_true', help="Add source ID to channel names", required=False)
-    parser.add_argument("-pl", "--parallel", action='store_true', help="Parallelize query if possible",required=False)
     parser.add_argument("-pt", "--path", help="Path to data in the file", required=False)
-    parser.add_argument("-a", "--align", help="Merge sources aligning the message ids: complete(default) or partial",required=False, nargs="?", const=True)
+    parser.add_argument("-ap", "--append", action='store_true', help="Appends data to existing files", required=False)
     parser.add_argument("-sr", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
     parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
 
@@ -422,8 +422,6 @@ def main():
                 task["decompress"] = bool(args.decompress)
             if args.compression:
                 task["compression"] = args.compression
-            if args.parallel:
-                task["parallel"] = args.parallel
             if args.interval:
                 task["interval"] = args.interval
             if args.bins:
@@ -442,6 +440,8 @@ def main():
                 task["align"] = args.align
             if args.prefix is not None:
                 task["prefix"] = args.prefix
+            if args.append is not None:
+                task["append"] = args.append
             if args.channels is not None:
                 task["channels"] = args.channels
             if args.backend is not None:

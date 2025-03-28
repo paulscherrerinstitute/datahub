@@ -163,22 +163,22 @@ optional arguments:
                         Channel list (comma-separated)
   -n, --bins BINS       Number of data bins (integer) or bin width(ending with s, m, h or d)
   -l, --last            Include last value before range
+  -a, --align ALIGN     Merge sources aligning the message ids: complete(default) or partial
+  -u, --url URL         URL of default source
+  -b, --backend BACKEND
+                        Backend of default source (use "null" for all backends)
   -fi, --filter FILTER  Sets a filter for data
   -di, --interval INTERVAL
                         Downsampling interval between samples in seconds
   -dm, --modulo MODULO  Downsampling modulo of the samples
-  -u, --url URL         URL of default source
-  -b, --backend BACKEND
-                        Backend of default source (use "null" for all backends)
-  -tt, --timetype TIMESTAMP
+  -tt, --timetype TIMETYPE
                         Timestamp type: nano/int (default), sec/float or str
   -cp, --compression COMPRESSION
                         Compression: gzip (default), szip, lzf, lz4 or none
   -dc, --decompress     Auto-decompress compressed images
   -px, --prefix         Add source ID to channel names
-  -pl, --parallel       Parallelize query if possible
   -pt, --path PATH      Path to data in the file
-  -a, --align ALIGN     Merge sources aligning the message ids: complete(default) or partial
+  -ap, --append         Appends data to existing files
   -sr, --search         Search channel names given a pattern (instead of fetching data)
   -v, --verbose         Displays complete search results, not just channels names
   --epics [channels url=None path=None start=None end=None]
@@ -195,7 +195,7 @@ optional arguments:
                         retrieval query arguments
   --dispatcher [channels path=None start=None end=None]
                         dispatcher query arguments
-  --daqbuf [channels url='https://data-api.psi.ch/api/4' backend='sf-databuffer' path=None delay=1.0 cbor=True parallel=False streamed=True start=None end=None]
+  --daqbuf [channels url='https://data-api.psi.ch/api/4' backend='sf-archiver' path=None delay=1.0 cbor=True parallel=True streamed=True start=None end=None]
                         daqbuf query arguments
   --array10 [channels url=None mode='SUB' path=None reshape=False start=None end=None]
                         array10 query arguments

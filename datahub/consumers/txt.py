@@ -7,7 +7,7 @@ _logger = logging.getLogger(__name__)
 
 class TextWriter(Consumer):
 
-    def __init__(self, folder: str, **kwargs):
+    def __init__(self, folder: str,  **kwargs):
         Consumer.__init__(self, **kwargs)
         self.folder = folder
         self.files = {}
@@ -25,12 +25,16 @@ class TextWriter(Consumer):
             pass
 
     def get_path(self, source, name):
-        return f"{self.folder}/{name}"
+        prefix = ""
+        if source.get_path():
+            prefix = f"{source.get_path()}/"
+            os.makedirs( f"{self.folder}/{prefix}", exist_ok=True)
+        return f"{self.folder}/{prefix}{name}"
 
     def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):
         if len(shape)<2:
-            filename = self.get_path(source, name)
-            self.files[source][name] = open(filename, 'a')
+            path = self.get_path(source, name)
+            self.files[source][name] = open(path, "a" if self.append else "w")
 
     def on_channel_record(self, source, name, timestamp, pulse_id, value, **kwargs):
         file = self.files[source].get(name, None)
