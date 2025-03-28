@@ -1,4 +1,5 @@
 from datahub.utils.timing import convert_timestamp
+from datahub import str_to_bool
 
 class Consumer:
     instances = set()
@@ -6,7 +7,7 @@ class Consumer:
     def __init__(self, timetype=None, append=False, **kwargs):
         Consumer.instances.add(self)
         self.time_type = timetype
-        self.append = append
+        self.append = str_to_bool(append)
 
     def on_start(self, source):
         pass

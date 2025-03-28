@@ -3,7 +3,7 @@ import h5py
 import numpy
 import datetime
 import threading
-from datahub import Consumer, Compression, bitshuffle_compression_lz4, decompress
+from datahub import Consumer, Compression, bitshuffle_compression_lz4, decompress, str_to_bool
 
 _logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class HDF5Writer(Consumer):
         self.nbytes_read = 0
         self.filename = filename
         self.default_compression = default_compression
-        self.auto_decompress = auto_decompress
+        self.auto_decompress = str_to_bool(auto_decompress)
         self.metadata_compression = metadata_compression
         self.in_channel = False
         self.file = None

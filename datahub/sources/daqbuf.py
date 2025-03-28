@@ -31,9 +31,9 @@ class Daqbuf(Source):
         self.binned_url = self.base_url + "/binned"
         self.known_backends = self.get_backends()
         self.delay = delay
-        self.cbor = str_to_bool(str(cbor))
-        self.parallel = str_to_bool(str(parallel))
-        self.streamed = streamed
+        self.cbor = str_to_bool(cbor)
+        self.parallel = str_to_bool(parallel)
+        self.streamed = str_to_bool(streamed)
         self.add_headers = {"daqbuf-api-version":Daqbuf.API_VERSION }
         self.headers = get_default_header()
         self.headers.update(self.add_headers)

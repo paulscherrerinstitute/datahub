@@ -42,7 +42,7 @@ class Source():
         self.parallel = True
         self.downsample = False
         self.name = name
-        self.auto_decompress = auto_decompress
+        self.auto_decompress = str_to_bool(auto_decompress)
         self.prefix = ""
         Source.instances.add(self)
 

@@ -8,10 +8,10 @@ def version():
 def package_name():
     return f"DataHub {datahub.version()}"
 
-def str_to_bool(str):
-    if str.lower() in ('true', 'yes', '1'):
+def str_to_bool(value):
+    if str(value).lower() in ('true', 'yes', '1'):
         return True
-    if str.lower() in ('false', 'no', '0'):
+    if str(value).lower() in ('false', 'no', '0'):
         return False
     return None
 

@@ -1,10 +1,11 @@
-from datahub import Consumer, Source
+from datahub import Consumer, Source, str_to_bool
 from datahub.utils.align import *
 
 class Merger (Consumer):
     def __init__(self,  callback=None, filter=None, partial_msg=True, **kwargs):
         Consumer.__init__(self, **kwargs)
         self.channels = {}
+        partial_msg = str_to_bool(partial_msg)
         self.align = Align(self.on_received_message, None, range=None, filter=filter, partial_msg=partial_msg)
         self.callback_on_message = callback
         self.callback_on_start = kwargs.get("on_start")
