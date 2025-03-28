@@ -11,7 +11,6 @@ from datahub.utils.reflection import get_meta
 
 logger = logging.getLogger(__name__)
 
-SOURCE_SEPARATOR = "/"
 CHANNEL_SEPARATOR = ","
 EMPTY_SOURCE = [{}]
 
@@ -356,20 +355,6 @@ def get_full_argument_name(parser, abbr):
             return action.dest
     return None
 
-def _split_list(list, separator):
-    result = []
-    sublist = []
-    for item in list:
-        if item == separator:
-            if sublist:
-                result.append(sublist)
-                sublist = []
-        else:
-            sublist.append(item)
-    if sublist:
-        result.append(sublist)
-    return result
-
 def print_help():
     print(datahub.package_name())
     if DEFAULT_SOURCE:
@@ -476,9 +461,7 @@ def main():
                                 if len(source_str) == 1:
                                     task[source].append(json.loads(source_str[0]))
                                 else:
-                                    sources = _split_list(source_str, SOURCE_SEPARATOR)
-                                    for src in sources:
-                                        task[source].append(parse_arg_dict(parser, src))
+                                    task[source].append(parse_arg_dict(parser, source_str))
 
             run_json(task)
 
