@@ -9,9 +9,10 @@ _logger = logging.getLogger(__name__)
 class Source():
     query_index = {}
     instances = set()
+    TIMESTAMP_ARGS = "start", "end"
 
-    def __init__(self, url=None, backend=None, query_path=None, search_path=None, auto_decompress=False, path=None,
-                 known_backends=[], time_type="nano", name=None, **kwargs):
+    def __init__(self, url=None, backend=None, query_path=None, search_path=None, auto_decompress=False,
+                 path=None, known_backends=[], name=None, **kwargs):
         self.url = url
         if query_path is not None:
             if not url.endswith(query_path):
@@ -28,14 +29,6 @@ class Source():
         self.listeners = []
         self.set_backend(backend)
         self.known_backends= known_backends
-        if time_type.lower() in ["str", "string"]:
-            self.time_type = "str"
-        elif time_type.lower() in ["sec", "secs", "seconds"]:
-            self.time_type = "sec"
-        elif time_type.lower() in ["milli", "millis", "milliseconds"]:
-            self.time_type = "milli"
-        else:
-            self.time_type = "nano"
         self.path = path
         self.query = None
         self.type = type(self).__name__.lower()
@@ -109,9 +102,6 @@ class Source():
             except Exception as e:
                 _logger.exception("Error creating channel on listener %s: %s" % (str(listener), str((name, typ, byteOrder, shape, channel_compression))))
 
-    def convert_time(self, timestamp):
-        return convert_timestamp(timestamp, self.time_type)
-
     def adjust_type(self, value):
         if type(value) == int:
             return numpy.int64(value)
@@ -144,8 +134,6 @@ class Source():
         if timestamp is None:
             timestamp = create_timestamp(time.time())
 
-        timestamp = self.convert_time(timestamp)
-
         if self.auto_decompress:
             [typ, byteOrder, shape, channel_compression, metadata] = self.channel_info[name]
             if channel_compression:
@@ -153,7 +141,15 @@ class Source():
 
         for listener in self.listeners:
             try:
-                listener.on_channel_record(self, name, timestamp, pulse_id, value, **kwargs)
+                ts = convert_timestamp(timestamp, listener.time_type, "nano")
+                if kwargs:
+                    args = kwargs.copy()
+                    for field in Source.TIMESTAMP_ARGS:
+                        if field in args:
+                            args[field] = convert_timestamp(args[field], listener.time_type, "nano")
+                else:
+                    args = kwargs
+                listener.on_channel_record(self, name,ts, pulse_id, value, **args)
             except Exception as e:
                 _logger.exception("Error appending record on listener %s: %s" % (str(listener), str((name, timestamp, pulse_id, value))))
 

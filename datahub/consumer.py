@@ -1,10 +1,11 @@
-import inspect
+from datahub.utils.timing import convert_timestamp
 
 class Consumer:
     instances = set()
 
-    def __init__(self, **kwargs):
+    def __init__(self, timetype=None, **kwargs):
         Consumer.instances.add(self)
+        self.time_type = timetype
 
     def on_start(self, source):
         pass
@@ -30,6 +31,8 @@ class Consumer:
     def __exit__(self, type, value, traceback):
         self.close()
 
+    def convert_time(self, timestamp, time_type):
+        return convert_timestamp(timestamp, time_type, self.time_type)
 
     def close(self):
         self.on_close()

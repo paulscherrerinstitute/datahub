@@ -2,7 +2,7 @@ import logging
 import time
 import numpy as np
 from datahub import Consumer, Enum
-from datahub.utils.timing import string_to_timestamp
+from datahub.utils.timing import convert_timestamp
 from datahub import str_to_bool
 from datahub.utils.plot import PlotClient
 
@@ -97,8 +97,7 @@ class PShell(Consumer):
                         if timespan < self.min_interval:
                             return
                 if len(shape) == 0:
-                    if type(timestamp) == str:
-                        timestamp = string_to_timestamp(timestamp)
+                    timestamp = convert_timestamp(timestamp, "milli", "nano")
                     if isinstance(value, np.floating):  # Different scalar float types don't change header
                         value = float(value)
                     elif isinstance(value, np.integer):  # Different scalar int types don't change header

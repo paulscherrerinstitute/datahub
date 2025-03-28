@@ -53,7 +53,7 @@ class Daqbuf(Source):
             raise RuntimeError("Unable to retrieve data from server: ", response)
         data = response.text
         nanos = int(data)
-        secs = convert_timestamp(nanos, "sec")
+        secs = convert_timestamp(nanos, "sec", "nano")
         ret = round(secs, PULSE_ID_INTERVAL_DEC)
         return ret
 
@@ -178,13 +178,11 @@ class Daqbuf(Source):
                 max = self.adjust_type(maxs[i])
                 min = self.adjust_type(mins[i])
                 count = self.adjust_type(counts[i])
-                start = self.convert_time(timestamp1)
-                end = self.convert_time(timestamp2)
 
                 value = avg
                 timestamp = int((timestamp1 + timestamp2) / 2)
                 args = {"bins": bins, "min": numpy.float64(min), "max": numpy.float64(max), "count": numpy.int64(count),
-                        "start": start, "end": end}
+                        "start": timestamp1, "end": timestamp2}
                 self.receive_channel(channel, value, timestamp, None, check_changes=False, check_types=True,
                                      metadata={"bins": bins}, **args)
         else:

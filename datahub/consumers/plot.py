@@ -4,7 +4,7 @@ import traceback
 
 import numpy as np
 from datahub import Consumer, Enum
-from datahub.utils.timing import string_to_timestamp, convert_timestamp
+from datahub.utils.timing import convert_timestamp
 import multiprocessing
 import time
 
@@ -219,16 +219,14 @@ class Plot(Consumer):
                         timespan = time.time() - self.last_plotted_record.get(name, 0.0)
                         if timespan < self.min_interval:
                             return
-                if type(timestamp) == str:
-                    timestamp = string_to_timestamp(timestamp)
-                elif type(timestamp) == int:
-                    timestamp = float(timestamp)/10e9
+                timestamp = convert_timestamp(timestamp, "sec", "nano")
                 if isinstance(value, np.floating):  # Different scalar float types don't change header
                     value = float(value)
                 elif isinstance(value, np.integer):  # Different scalar int types don't change header
                     value = int(value)
                 elif isinstance(value, Enum):
                     value = value.id
+
                 timestamp = timestamp - start
                 self.tx_queue.put(["REC", name, timestamp, value])
                 if self.min_interval:

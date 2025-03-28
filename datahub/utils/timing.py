@@ -19,14 +19,56 @@ def create_timestamp(sec, nano=0):
     micros = int(sec * 1000000)
     return (micros * 1000) + nano
 
-def convert_timestamp(timestamp, type="nano"):
-    if type == "str":
-        secs = float(timestamp) / 1000000000.0
-        return timestamp_to_string(secs, False)[:-3]
-    elif type =="sec":
-        return float(timestamp) / 1000000000.0
-    elif type =="milli":
-        return int(timestamp/1000000)
+def adjust_time_type(type):
+    if type is not None:
+        if type.lower() in ["str", "string"]:
+            return "str"
+        elif type.lower()in ["sec", "secs", "seconds"]:
+            return "sec"
+        elif type.lower() in ["milli", "millis", "milliseconds"]:
+            return "milli"
+        else:
+            return "nano"
+
+def convert_timestamp(timestamp, type="nano", from_type=None):
+    if timestamp:
+        if type:
+            if not type:
+                if type(timestamp)==str:
+                    from_type = "str"
+                elif type(timestamp) == float:
+                    from_type = "sec"
+                elif timestamp < 100000000000000:
+                    from_type = "millis"
+                else:
+                    from_type ="nano"
+            if type != from_type:
+                if from_type == "str":
+                    timestamp = string_to_timestamp(timestamp)
+                    from_type = "sec"
+                if from_type == "nano":
+                    if type == "str":
+                        secs = float(timestamp) / 1000000000.0
+                        return timestamp_to_string(secs, False)[:-3]
+                    elif type == "sec":
+                        return float(timestamp) / 1000000000.0
+                    elif type == "milli":
+                        return int(timestamp/1000000)
+                elif from_type == "milli":
+                    if type == "str":
+                        secs = float(timestamp) / 1000.0
+                        return timestamp_to_string(secs, False)[:-3]
+                    elif type =="sec":
+                        return float(timestamp) / 1000.0
+                    elif type =="nano":
+                        return int(timestamp * 1000000)
+                elif from_type == "sec":
+                    if type == "str":
+                        return timestamp_to_string(timestamp , False)[:-3]
+                    elif type == "milli":
+                        return float(timestamp) * 1000.0
+                    elif type == "nano":
+                        return int(timestamp * 1000000000)
     return timestamp
 
 def time_to_pulse_id(tm=None):

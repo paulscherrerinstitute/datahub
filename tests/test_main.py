@@ -32,7 +32,7 @@ sys.argv = sys.argv + args
 #        "2025-03-22 02:00:00.000", "--bins", "2000", "--channels", "AGEBD-LIFETIME:LOSSRATIO", "--daqbuf", "-p"]
 
 #args = ["--camera", "name", "simulation", "u", "http://localhost:8888", "-s", "0", "-e", "1.0", "-p", "--hdf5", "/Users/gobbo_a/test.h5"]
-args = [ "-u", "http://localhost:8888", "--camera", "name", "simulation3", "--camera", "name", "simulation4", "-c", "image", "-s", "0", "-e", "1", "-px", "-p",  "--align", "partial", "-f", "./tst.h5", "-tt", "str"]
+args = [ "-u", "http://localhost:8888", "--camera", "name", "simulation3", "--camera", "name", "simulation4", "-c", "image", "-s", "0", "-e", "3", "-px", "-p",  "--align", "partial", "-f", "./tst.h5", "-tt", "str"]
 
 
 sys.argv = sys.argv + args

@@ -58,10 +58,10 @@ class HDF5Writer(Consumer):
                 break
         return name
 
-    def _get_time_fmt(self, source):
-        if source.time_type == "str":
+    def get_time_fmt(self):
+        if self.time_type == "str":
             return "str"
-        elif source.time_type == "sec":
+        elif self.time_type == "sec":
             return numpy.float64
         else:
             return numpy.int64
@@ -74,7 +74,8 @@ class HDF5Writer(Consumer):
         has_id = metadata.get("has_id", True)
         enum = typ == "enum"
         dtype = numpy.int64 if enum else typ
-        ts_ds = Dataset(prefix, channel, "timestamp", self.file, dtype=self._get_time_fmt(source), dataset_compression=self.metadata_compression)
+        time_fmt = self.get_time_fmt()
+        ts_ds = Dataset(prefix, channel, "timestamp", self.file, dtype=time_fmt, dataset_compression=self.metadata_compression)
         ts_ds.enum = enum
         id_ds = Dataset(prefix, channel, "id", self.file, dtype=numpy.int64, dataset_compression=self.metadata_compression) if has_id else None
         data_ds_name = "value"
@@ -87,11 +88,11 @@ class HDF5Writer(Consumer):
         else:
             val_ds = Dataset(prefix, channel, data_ds_name, self.file, shape, dtype, channel_compression, dataset_compression=self.default_compression)
             if metadata.get("bins", None):
-                min_ds = Dataset(prefix,  channel, "min", self.file, shape, typ, channel_compression, dataset_compression=self.default_compression)
-                max_ds = Dataset(prefix, channel, "max", self.file, shape, typ, channel_compression,dataset_compression=self.default_compression)
+                min_ds = Dataset(prefix, channel, "min", self.file, shape, typ, channel_compression, dataset_compression=self.default_compression)
+                max_ds = Dataset(prefix, channel, "max", self.file, shape, typ, channel_compression, dataset_compression=self.default_compression)
                 cnt_ds = Dataset(prefix, channel, "count", self.file, dtype=numpy.int64, dataset_compression=self.metadata_compression)
-                start_ds = Dataset(prefix, channel, "start", self.file, dtype=self._get_time_fmt(source),dataset_compression=self.metadata_compression)
-                end_ds = Dataset(prefix, channel, "end", self.file, dtype=self._get_time_fmt(source),dataset_compression=self.metadata_compression)
+                start_ds = Dataset(prefix, channel, "start", self.file, dtype=time_fmt, dataset_compression=self.metadata_compression)
+                end_ds = Dataset(prefix, channel, "end", self.file, dtype=time_fmt, dataset_compression=self.metadata_compression)
                 val_ds = val_ds, min_ds, max_ds, cnt_ds, start_ds, end_ds
             elif enum:
                 val_dstr = Dataset(prefix, channel, data_ds_name + "_string", self.file, shape, "str",channel_compression, dataset_compression=self.default_compression)

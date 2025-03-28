@@ -45,6 +45,7 @@ class Merger (Consumer):
 
     def add_source(self, source):
         self.sources.append(source)
+        source.time_type = "nano"  #Make all sources use nanos for timestamp
         source.add_listener(self)
 
     def to_source(self):

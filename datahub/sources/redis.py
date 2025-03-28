@@ -100,7 +100,6 @@ class RedisStream(Redis):
         Redis.close(self)
 
     def on_msg(self, id, timestamp, msg):
-        timestamp = self.convert_time(timestamp)
         with self.condition:
             self.message_buffer.append((id, timestamp, msg))
             self.condition.notify()

@@ -121,10 +121,10 @@ datahub --print --hdf5 ~/.data.h5  --start "2024-02-14 08:50:00.000" --end "2024
 
 - This example demonstrates how to:
   - Change the default backend with the --backend option
-  - Print timestamps as strings with the --timestamp option
+  - Print timestamps as strings with the --timetype option
   - Use predefined range strings to define the query interval using the --range option
 ```bash
-datahub --print --backend sf-archiver --channels SLAAR-CSOC-DLL3-PYIOC:AMP_CH1 --range "Last 1min"
+datahub --print --backend sf-archiver --channels SLAAR-CSOC-DLL3-PYIOC:AMP_CH1 --range "Last 1min" --timetype str
 ```
 
 - A single run can retrieve data simultaneously from multiple sources:
@@ -170,7 +170,7 @@ optional arguments:
   -u, --url URL         URL of default source
   -b, --backend BACKEND
                         Backend of default source (use "null" for all backends)
-  -tt, --timestamp TIMESTAMP
+  -tt, --timetype TIMESTAMP
                         Timestamp type: nano/int (default), sec/float or str
   -cp, --compression COMPRESSION
                         Compression: gzip (default), szip, lzf, lz4 or none

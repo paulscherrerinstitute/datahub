@@ -44,7 +44,7 @@ def run_json(task):
         prefix = task.get("prefix", None)
         query_id = task.get("id", False)
         query_time = task.get("time", False)
-        time_type = task.get("timestamp", "nano")
+        time_type = task.get("timetype", None)
         channels = task.get("channels", None)
         backend = task.get("backend", None)
         url = task.get("url", None)
@@ -64,11 +64,11 @@ def run_json(task):
 
         consumers = []
         if hdf5 is not None:
-            consumers.append(HDF5Writer(hdf5, default_compression=compression))
+            consumers.append(HDF5Writer(hdf5, default_compression=compression, timetype=time_type))
         if txt is not None:
-            consumers.append(TextWriter(txt))
+            consumers.append(TextWriter(txt, timetype=time_type))
         if prnt is not None:
-            consumers.append(Stdout())
+            consumers.append(Stdout(timetype=time_type))
         try:
             if pshell is not None:
                 if pshell==True:
@@ -79,7 +79,7 @@ def run_json(task):
         try:
             if plot is not None:
                 if plot==True:
-                    plot={}
+                    plot = {}
                 consumers.append(Plot(**plot))
         except Exception as ex:
             logger.exception(ex)
@@ -166,7 +166,7 @@ def run_json(task):
             sources.append(src)
 
         #Create source removing constructor parameters from the query dictionary
-        def get_source_constructor(cls, typ):
+        def get_source_constructor(cls, typ, cfg):
             nonlocal backend, url
             signature = inspect.signature(cls)
             pars = signature.parameters
@@ -192,7 +192,16 @@ def run_json(task):
                     index = index + 1
             if index > 0:
                 ret = ret + ", "
-            ret = ret + f"auto_decompress={str(decompress)}, time_type='{str(time_type)}', prefix='{str(prefix)}'"
+            ret = ret + f"auto_decompress={str(decompress)}, prefix='{str(prefix)}'"
+
+            #Source class additional arguments
+            if cfg:
+                 source_pars = inspect.signature(Source).parameters
+                 for name, par in cfg.items():
+                     #Aliases
+                     if not name in pars.keys() and name in source_pars:
+                         ret = ret + ", " + name + "='" + str(par) + "'" #Only accept string  as arguments
+
             ret = ret + ")"
             return ret
 
@@ -205,7 +214,7 @@ def run_json(task):
             if cfg is not None:
                 local_vars = {name: cfg}
                 # Get the source constructor expression as a string
-                constructor_expr = get_source_constructor(source, name)  # This returns a string
+                constructor_expr = get_source_constructor(source, name, cfg)  # This returns a string
                 instance = eval(constructor_expr, globals(), local_vars)
                 if instance is not None:
                     add_source(cfg, instance)
@@ -324,7 +333,7 @@ def parse_args():
     parser.add_argument("-dm", "--modulo", help="Downsampling modulo of the samples", required=False)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
-    parser.add_argument("-tt", "--timestamp", help="Timestamp type: nano/int (default), sec/float or str", required=False)
+    parser.add_argument("-tt", "--timetype", help="Timestamp type: nano/int (default), sec/float or str", required=False)
     parser.add_argument("-cp", "--compression", help="Compression: gzip (default), szip, lzf, lz4 or none", required=False)
     parser.add_argument("-dc", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
     parser.add_argument("-px", "--prefix", action='store_true', help="Add source ID to channel names", required=False)
@@ -420,8 +429,8 @@ def main():
                 task["id"] = bool(args.id)
             if args.time:
                 task["time"] = bool(args.time)
-            if args.timestamp:
-                task["timestamp"] = args.timestamp
+            if args.timetype:
+                task["timetype"] = args.timetype
             if args.path:
                 task["path"] = args.path
             if args.decompress:
