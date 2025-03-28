@@ -72,9 +72,7 @@ def run_json(task):
             if pshell is not None:
                 if pshell==True:
                     pshell={}
-                ps = PShell(**pshell)
-                ps.append = append
-                consumers.append(ps)
+                consumers.append(PShell(**pshell))
         except Exception as ex:
             logger.exception(ex)
         try:
