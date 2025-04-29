@@ -317,13 +317,14 @@ class Daqbuf(Source):
                 conn.close()
             self.close_channels()
 
-    def search(self, regex):
+    def search(self, regex, case_sensitive=True):
         import requests
         if not regex:
             return self.get_backends()
         else:
             cfg = {
-                "nameRegex": regex
+                "nameRegex": regex,
+                "icase" : "false" if case_sensitive else "true"
             }
             if self.backend:
                 cfg["backend"] = self.backend

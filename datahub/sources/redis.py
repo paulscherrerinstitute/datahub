@@ -70,22 +70,23 @@ class Redis(Source):
     def close(self):
         Source.close(self)
 
-    def search(self, regex=None):
+    def search(self, regex=None, case_sensitive=True):
         with redis.Redis(host=self.host, port=self.port, db=self.db, decode_responses=True) as r:
             if not regex:
-                #return r.config_get('databases')
+                # return r.config_get('databases')
                 return r.info('keyspace')
             else:
-                cursor = '0'
+                pattern = re.compile(f".*{re.escape(regex)}.*", 0 if case_sensitive else re.IGNORECASE)
+                cursor = 0
                 streams = []
-                match = f'*{regex}*' if regex else '*'
-                while cursor != 0:
-                    cursor, keys = r.scan(cursor=cursor, match=match)
+
+                while True:
+                    cursor, keys = r.scan(cursor=cursor)
                     for key in keys:
-                        if regex in key and r.type(key) == 'stream':
-                                if type(key)!=str:
-                                    key = key.decode('utf-8')
-                                streams.append(key)
+                        if r.type(key) == 'stream' and pattern.match(key):
+                            streams.append(key)
+                    if cursor == 0:
+                        break
                 return sorted(streams)
 
 class RedisStream(Redis):

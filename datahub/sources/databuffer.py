@@ -106,13 +106,15 @@ class DataBuffer(Source):
                 check_changes = False
         self.close_channels()
 
-    def search(self, regex):
+    def search(self, regex, case_sensitive=True):
         import requests
+        #Always case insensitive
         cfg = {
             "regex": regex,
             "ordering": "asc",
             "reload": "true"
         }
+
         if self.backend is not None:
             cfg["backends"] = [self.backend]
         response = requests.post(self.search_url, json=cfg)

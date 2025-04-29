@@ -206,6 +206,10 @@ class DataBufferTest(unittest.TestCase):
             for query in queries:
                 source.request(query)
 
+    def test_search(self):
+        with Daqbuf(backend="sf-archiver", cbor=True, parallel=False) as source:
+            print (source.search("", case_sensitive=False))
+
 
 
 if __name__ == '__main__':

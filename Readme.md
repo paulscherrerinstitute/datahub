@@ -180,6 +180,7 @@ optional arguments:
   -pt, --path PATH      Path to data in the file
   -ap, --append         Appends data to existing files
   -sr, --search         Search channel names given a pattern (instead of fetching data)
+  -ic, --icase          Case-insensitive search
   -v, --verbose         Displays complete search results, not just channels names
   --epics [channels url=None path=None start=None end=None]
                         epics query arguments

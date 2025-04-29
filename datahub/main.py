@@ -39,6 +39,7 @@ def run_json(task):
         filter = task.get("filter", None)
         search = task.get("search", None)
         verbose = task.get("verbose", None)
+        icase = task.get("icase", None)
         prefix = task.get("prefix", None)
         append = task.get("append", None)
         query_id = task.get("id", False)
@@ -233,7 +234,7 @@ def run_json(task):
                 source.set_backend(backend)
                 try:
                     for regex in search:
-                        source.print_search(regex)
+                        source.print_search(regex, False if icase else True)
                 except:
                     logger.exception(f"Error searching source: {str(source)}")
         else:
@@ -338,6 +339,7 @@ def parse_args():
     parser.add_argument("-pt", "--path", help="Path to data in the file", required=False)
     parser.add_argument("-ap", "--append", action='store_true', help="Appends data to existing files", required=False)
     parser.add_argument("-sr", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
+    parser.add_argument("-ic", "--icase", action='store_true', help="Case-insensitive search", required=False)
     parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
 
     for name, source in KNOWN_SOURCES.items():
@@ -434,6 +436,8 @@ def main():
                 task["search"] = args.search
             if args.verbose is not None:
                 task["verbose"] = args.verbose
+            if args.icase is not None:
+                task["icase"] = args.icase
             if args.align is not None:
                 task["align"] = args.align
             if args.prefix is not None:

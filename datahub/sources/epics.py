@@ -71,7 +71,7 @@ class Epics(Source):
                 channel.close()
 
 
-    def search(self, pattern):
+    def search(self, pattern, case_sensitive=True):
         #If backend given that tread as facility, Otherwise search the environment
         import requests
         facility = self.get_backend()
@@ -79,6 +79,8 @@ class Epics(Source):
             facility = os.environ.get("SYSDB_ENV", None)
         api_base_address = "http://iocinfo.psi.ch/api/v2"
         pattern = ".*" + pattern + ".*"  #No regex
+        if not case_sensitive:
+            pattern = "(?i)" + pattern
         parameters = {"pattern": pattern}
         if facility:
             parameters["facility"] = facility

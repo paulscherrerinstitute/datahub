@@ -53,6 +53,8 @@ class DataBufferTest(unittest.TestCase):
         dataframe = table.as_dataframe()
         self.source.close_listeners()
 
+    def test_search(self):
+        print (self.source.search("S10CB01-RBOC-DCP10:FOR-AMPLT-AVG", case_sensitive=False))
 
 if __name__ == '__main__':
     unittest.main()

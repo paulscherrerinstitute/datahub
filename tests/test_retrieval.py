@@ -59,6 +59,8 @@ class RetrivalTest(unittest.TestCase):
         self.assertEqual(list(dataframe.keys()), channels)
         self.source.close_listeners()
 
+    def test_search(self):
+        print (self.source.search("average", case_sensitive=False))
 
 if __name__ == '__main__':
     unittest.main()

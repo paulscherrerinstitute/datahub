@@ -1,3 +1,4 @@
+import datahub
 from datahub import *
 try:
     import redis
@@ -32,20 +33,6 @@ class Stddaq(Bsread):
             return ret.decode('utf-8').strip()   if ret else ret
 
 
-    def search(self, regex):
-        with redis.Redis(host=self.host, port=self.port, db=self.db) as r:
-            if not regex:
-                #return r.config_get('databases')
-                return r.info('keyspace')
-            else:
-                cursor = '0'
-                streams = []
-                match = f'*{regex}*' if regex else '*'
-                while cursor != 0:
-                    cursor, keys = r.scan(cursor=cursor, match=match)
-                    for key in keys:
-                        if r.type(key) == b'string':
-                            if type(key) != str:
-                                key = key.decode('utf-8')
-                            streams.append(key)
-                return sorted(streams)
+    def search(self, regex=None, case_sensitive=True):
+        redis_source = datahub.Redis(url=self.address, backend=self.db)
+        return redis_source.search(regex, case_sensitive)

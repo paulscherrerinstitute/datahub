@@ -344,11 +344,11 @@ class Source():
     def run(self, query):
         pass
 
-    def search(self, regex):
+    def search(self, regex, case_sensitive=True):
         raise Exception(f"Search not implemented in {self.type}")
 
-    def print_search(self, regex):
-        search = self.search(regex)
+    def print_search(self, regex, case_sensitive=True):
+        search = self.search(regex, case_sensitive)
         if type(search) == str:
             print(search)
         elif search is None:

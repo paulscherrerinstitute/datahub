@@ -91,6 +91,12 @@ class CamserverTest(unittest.TestCase):
             source.add_listener(stdout)
             source.req(start = 0.0, end=2.0, channels = ["width", "height"])
 
+    def test_search(self):
+        with Pipeline(url=url_pipeline_server) as source:
+                print(source.search("SIMU", case_sensitive=False))
+        print ("---")
+        with Camera(url=url_camera_server) as source:
+                print(source.search("SIMU", case_sensitive=False))
 
 if __name__ == '__main__':
     unittest.main()

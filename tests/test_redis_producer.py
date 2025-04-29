@@ -8,6 +8,7 @@ import numpy as np
 
 DEFAULT_URL = os.environ.get("REDIS_DEFAULT_URL", 'sf-daqsync-18:6379')
 #DEFAULT_URL = "std-daq-build:6379"
+DEFAULT_URL = "localhost:6379"
 HOST, PORT = get_host_port_from_stream_address(DEFAULT_URL)
 
 def ingest(r, stream, data, max_stream_lenght=100):

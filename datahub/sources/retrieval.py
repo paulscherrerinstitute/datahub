@@ -287,9 +287,10 @@ class Retrieval(Source):
             if length_check != length:
                 raise RuntimeError(f"corrupted file reading {length} {length_check}")
 
-    def search(self, regex):
+    def search(self, regex, case_sensitive=True):
         import requests
-        res = requests.get(self.search_url, {"regex": regex})
+        #Does not support case_sensitive
+        res = requests.post(self.search_url, json={"regex": regex})
         res.raise_for_status()
         ret = res.json()
         return ret

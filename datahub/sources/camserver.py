@@ -97,11 +97,13 @@ class Pipeline(Bsread):
         rest_endpoint = "/api/v1/pipeline"
         return get_response(self.address+rest_endpoint)["pipelines"]
 
-    def search(self, regex):
+    def search(self, regex, case_sensitive=True):
         ret = self.get_instances()
-        print(ret)
         if regex:
-            ret = [element for element in ret if regex in element]
+            if case_sensitive:
+                ret = [element for element in ret if regex in element]
+            else:
+                ret = [element for element in ret if regex.lower() in element.lower()]
         pd = self._get_pandas()
         if pd:
             if len(ret) == 0:
@@ -139,10 +141,13 @@ class Camera(Bsread):
         rest_endpoint = "/api/v1/cam"
         return get_response(self.address+rest_endpoint)["cameras"]
 
-    def search(self, regex):
+    def search(self, regex, case_sensitive=True):
         ret = self.get_instances()
         if regex:
-            ret = [element for element in ret if regex in element]
+            if case_sensitive:
+                ret = [element for element in ret if regex in element]
+            else:
+                ret = [element for element in ret if regex.lower() in element.lower()]
         pd = self._get_pandas()
         if pd:
             if len(ret) == 0:
