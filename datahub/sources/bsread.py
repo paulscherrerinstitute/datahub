@@ -45,13 +45,16 @@ class Bsread(Source):
 
         with bsread.source(host=host, port=port, mode=mode, receive_timeout=receive_timeout, channels=stream_channels) as stream:
             self.context = stream.stream.context
-            while not self.range.has_ended() and not self.aborted:
+            pulse_id = -1
+            while not self.range.has_ended(id=pulse_id+1) and not self.aborted:
                 data = stream.receive()
+                pulse_id = data.data.pulse_id
                 if not data:
                     raise Exception("Received None message.")
-                if self.range.has_started():
+                if self.range.has_ended(id=pulse_id):
+                    break
+                if self.range.has_started(id = pulse_id):
                     timestamp = create_timestamp(data.data.global_timestamp, data.data.global_timestamp_offset)
-                    pulse_id = data.data.pulse_id
                     format_changed = data.data.format_changed
                     data=data.data.data
 

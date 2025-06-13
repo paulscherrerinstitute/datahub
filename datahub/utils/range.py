@@ -150,20 +150,24 @@ class QueryRange():
     def wait_end(self, delay=0.0):
         self.wait_time(self.get_end_sec() + delay)
 
-    def has_started(self, tm=None):
+    def has_started(self, tm=None, id=None):
+        if id is not None and self.is_start_by_id():
+            return id >= self.start_id
         if tm is None:
             tm = time.time()
         return tm >= self.get_start_sec()
 
-    def has_ended(self, tm=None):
+    def has_ended(self, tm=None, id=None):
+        if id is not None and self.is_end_by_id():
+            return id > self.end_id
         if tm is None:
             tm = time.time()
         return tm > self.get_end_sec()
 
-    def is_running(self, tm=None):
+    def is_running(self, tm=None, id=None):
         if tm is None:
             tm = time.time()
-        return self.has_started(tm) and not self.has_ended(tm)
+        return self.has_started(tm, id) and not self.has_ended(tm, id)
 
     def get_start(self):
         return self.start

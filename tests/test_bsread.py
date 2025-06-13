@@ -2,8 +2,8 @@ import time
 import unittest
 from datahub import *
 
-url = "tcp://localhost:9999"
-mode = "PULL"
+url = "tcp://localhost:8888"
+mode = "SUB"
 filename = "/Users/gobbo_a/dev/back/bsread.h5"
 channels = None
 channels = ["UInt8Scalar", "Float32Scalar"]
@@ -48,7 +48,13 @@ class BsreadTest(unittest.TestCase):
     def test_bsread_no_channels(self):
         stdout = Stdout()
         self.source.add_listener(stdout)
-        self.source.req(None, 0.0, 1.0)
+        self.source.req(None, 0.0, 0.1)
+
+    def test_bsread_id(self):
+        stdout = Stdout()
+        self.source.add_listener(stdout)
+        self.source.req(["UInt8Scalar"], 174980289797, 174980289799)
+        #self.source.req(["UInt8Scalar"], 0, 1)
 
 if __name__ == '__main__':
     unittest.main()
