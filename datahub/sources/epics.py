@@ -5,31 +5,32 @@ except:
 
 from datahub import *
 
-GENERATE_ID = False
-
 _logger = logging.getLogger(__name__)
 
 class Channel:
-    def __init__(self, name, source):
+    def __init__(self, name, source, generate_id):
         if epics is None:
             raise Exception("pyepics library not available")
         self.name = name
         self.channel = epics.PV(name, auto_monitor=True)
         self.id = 0
         self.source = source
+        self.generate_id = generate_id
         # channel.wait_for_connection(config.EPICS_TIMEOUT)
 
     def start(self):
         def callback(value, timestamp, status, **kwargs):
             channel_name =self.name
             timestamp = create_timestamp(timestamp)
-            self.source.receive_channel(self.name, value, timestamp, self.pulse_id if GENERATE_ID else None, check_types=True)
+            self.source.receive_channel(self.name, value, timestamp, self.get_id(), check_types=True)
             self.id = self.id + 1
         self.channel.add_callback(callback)
 
     def stop(self):
         self.channel.clear_callbacks()
 
+    def get_id(self):
+        return self.id if self.generate_id else None
 
     def close(self):
         try:
@@ -55,14 +56,15 @@ class Epics(Source):
         channels_names = query.get("channels", [])
         channels = []
         for name in channels_names:
-            channel = Channel(name, self)
+            channel = Channel(name, self, generate_id = self.range.is_by_id())
             channels.append(channel)
         try:
             self.range.wait_start()
             for channel in channels:
                 channel.start()
-            while self.range.is_running() and not self.aborted:
-                time.sleep(0.1)
+            if len(channels)>0:
+                while self.range.is_running(id=channels[0].get_id()) and not self.aborted:
+                    time.sleep(0.1)
             for channel in channels:
                 channel.stop()
             self.close_channels()

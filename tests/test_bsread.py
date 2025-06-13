@@ -53,7 +53,13 @@ class BsreadTest(unittest.TestCase):
     def test_bsread_id(self):
         stdout = Stdout()
         self.source.add_listener(stdout)
-        self.source.req(["UInt8Scalar"], 174980289797, 174980289799)
+        self.source.req(["UInt8Scalar"], 174980447218, 174980447228)
+        #self.source.req(["UInt8Scalar"], 0, 1)
+
+    def test_bsread_id_rel(self):
+        stdout = Stdout()
+        self.source.add_listener(stdout)
+        self.source.req(["UInt8Scalar"], 0, 0)
         #self.source.req(["UInt8Scalar"], 0, 1)
 
 if __name__ == '__main__':

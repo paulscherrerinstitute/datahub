@@ -5,7 +5,6 @@ except:
 
 from datahub import *
 
-GENERATE_ID = False
 _logger = logging.getLogger(__name__)
 
 class Array10(Source):
@@ -29,10 +28,12 @@ class Array10(Source):
         self.receiver = None
         self.pid = -1
         self.reshape = str_to_bool(str(reshape))
+        self.generate_id = False
 
     def run(self, query):
         channels = query.get("channels", None)
         channel = channels[0] if (channels and len(channels)>0) else None
+        self.generate_id = self.range.is_by_id()
         try:
             self.connect()
             while not self.range.has_ended() and not self.aborted:
@@ -43,7 +44,7 @@ class Array10(Source):
                     pulse_id, array = data
                     name = channel if channel else (self.source if self.source else "Array10")
                     metadata = {} if self.reshape else {"width": self.shape[1], "height": self.shape[1]}
-                    self.receive_channel(name, array, None, pulse_id if GENERATE_ID else None, check_changes=True, metadata=metadata)
+                    self.receive_channel(name, array, None, pulse_id if self.generate_id else None, check_changes=True, metadata=metadata)
         finally:
             self.close_channels()
             self.disconnect()

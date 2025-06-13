@@ -203,6 +203,10 @@ class Source():
         if self.verbose:
             print (f"Requesting from {self.url}: ", query)
 
+        channels = query.get("channels", None)
+        if type(channels) == str:
+            query["channels"] = channels.split(",")
+
         self.aborted = False
         self.query = query
         self.range = QueryRange(self.query, self)

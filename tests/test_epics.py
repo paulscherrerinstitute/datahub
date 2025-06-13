@@ -16,7 +16,7 @@ query = {
 
 class EpicsTest(unittest.TestCase):
     def setUp(self):
-        self.source = Epics()
+        self.source = Epics(url=url)
 
     def tearDown(self):
         cleanup()
@@ -36,6 +36,17 @@ class EpicsTest(unittest.TestCase):
         if channels:
             self.assertEqual(list(dataframe.keys()), channels)
 
+    def test_rel_tm(self):
+        stdout = Stdout()
+        #self.source.set_id("bsread")
+        self.source.add_listener(stdout)
+        self.source.req("TESTIOC:TESTSINUS:SinCalc", 0.0, 1.0)
+
+    def test_rel_id(self):
+        stdout = Stdout()
+        #self.source.set_id("bsread")
+        self.source.add_listener(stdout)
+        self.source.req("TESTIOC:TESTSINUS:SinCalc", 0, 1)
 
 if __name__ == '__main__':
     unittest.main()

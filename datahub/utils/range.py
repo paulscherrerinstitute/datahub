@@ -22,7 +22,6 @@ class QueryRange():
     """
     RANGE_STR_OPTIONS = ["Last 1min", "Last 10min", "Last 1h", "Last 12h", "Last 24h", "Last 7d", "Yesterday", "Today",
                      "Last Week", "This Week", "Last Month", "This Month"]
-    RANGE_DEFAULTS_PULSE_ID = -(5 * 365 * 24 * 3600), (365 * 24 * 3600)  #From 5 years ago to one year from now
 
     def __init__(self, query, source=None):
         now = time.time()
@@ -33,14 +32,16 @@ class QueryRange():
             self.start = self._check_str(query.get("start", None))
             self.end = self._check_str(query.get("end", None))
         self.source = source
-        range_defaults_pulse_id = self.time_to_id(now + QueryRange.RANGE_DEFAULTS_PULSE_ID[0]), \
-                                  self.time_to_id(now + QueryRange.RANGE_DEFAULTS_PULSE_ID[1])
-        if type(self.start) == float: #timestamp
-            if range_defaults_pulse_id[0] < self.start <range_defaults_pulse_id[1]:
-                self.start = int(self.start) #assumes pulse id
-        if type(self.end) == float: #timestamp
-            if range_defaults_pulse_id[0] < self.end <range_defaults_pulse_id[1]:
-                self.end = int(self.end) #assumes pulse id
+
+        #RANGE_DEFAULTS_PULSE_ID = -(5 * 365 * 24 * 3600), (365 * 24 * 3600)  # From 5 years ago to one year from now
+        #range_defaults_pulse_id = self.time_to_id(now + RANGE_DEFAULTS_PULSE_ID[0]), \
+        #                          self.time_to_id(now + RANGE_DEFAULTS_PULSE_ID[1])
+        #if type(self.start) == float: #timestamp
+        #    if range_defaults_pulse_id[0] < self.start <range_defaults_pulse_id[1]:
+        #        self.start = int(self.start) #assumes pulse id
+        #if type(self.end) == float: #timestamp
+        #    if range_defaults_pulse_id[0] < self.end <range_defaults_pulse_id[1]:
+        #        self.end = int(self.end) #assumes pulse id
 
         start_id = query.get("start_id", None)
         if start_id is not None:
@@ -73,12 +74,18 @@ class QueryRange():
         #import pytz
         #self.utc_tz = pytz.utc
         #self.local_tz = pytz.timezone('Europe/Zurich')
-        self.max_relative_time = 1000000.0 #in secs ~=11 days
-        self.max_relative_id = 100000000
+        self.max_relative_time = 100000.0 #in secs ~=1  day
+        self.max_relative_id = 10000000   #at 100Hz ~=1 day
+
+        self.relative_start= None
+        self.relative_end = None
+        self.init_id = 0
 
         #Seconds
-        self.start_sec, self.start_str, self.start_id, self.start_type = self._parse_par(self.start, now, True)
-        self.end_sec, self.end_str, self.end_id, self.end_type = self._parse_par(self.end, now, False)
+        self.start_sec, self.start_str, self.start_id, self.start_type, self.relative_start = self._parse_par(self.start, now, True)
+        self.end_sec, self.end_str, self.end_id, self.end_type, self.relative_end = self._parse_par(self.end, now, False)
+
+        self.set_init_id(0)
 
         if self.start_sec > self.end_sec:
             raise Exception("Invalid query range: %s to %s" % (self.start, self.end))
@@ -97,11 +104,13 @@ class QueryRange():
         return par
 
     def _parse_par(self, par, now, start):
+        rel = None
         if par is None: #Absent parameters mean the current time
             par = 0.0
         if type(par) == float:
             sec = par
             if par <= self.max_relative_time:
+                rel = sec
                 sec = sec + now
             st = self.seconds_to_string(sec)
             id = None
@@ -116,6 +125,7 @@ class QueryRange():
         elif type(par) == int:
             id = par
             if par <= self.max_relative_id:
+                rel = id
                 id = id + self.time_to_id()
             sec = self.id_to_time(id)
             offset = PULSE_ID_INTERVAL/2
@@ -124,7 +134,7 @@ class QueryRange():
             typ = "id"
         else:
             raise Exception("Invalid parameter value: " + str(par))
-        return sec, st, id, typ
+        return sec, st, id, typ, rel
 
     def time_to_id(self, tm=None):
         if not tm:
@@ -144,6 +154,9 @@ class QueryRange():
             time.sleep(target_time - current_time)
             current_time = time.time()
 
+    def set_init_id(self, init_id):
+        self.init_id = init_id
+
     def wait_start(self, delay=0.0):
         self.wait_time(self.get_start_sec() + delay)
 
@@ -152,6 +165,8 @@ class QueryRange():
 
     def has_started(self, tm=None, id=None):
         if id is not None and self.is_start_by_id():
+            if self.relative_start is not None:
+                return id >= self.relative_start + self.init_id
             return id >= self.start_id
         if tm is None:
             tm = time.time()
@@ -159,6 +174,8 @@ class QueryRange():
 
     def has_ended(self, tm=None, id=None):
         if id is not None and self.is_end_by_id():
+            if self.relative_end is not None:
+                return id > self.relative_end + self.init_id
             return id > self.end_id
         if tm is None:
             tm = time.time()
@@ -217,6 +234,9 @@ class QueryRange():
 
     def is_end_by_id(self):
         return self.end_id is not None
+
+    def is_by_id(self):
+        return self.is_end_by_id() or self.is_start_by_id()
 
     def seconds_to_string(self, seconds, utc=True):
         return timestamp_to_string(seconds, utc)
