@@ -218,7 +218,7 @@ class Source():
         self.modulo = self.query.get("modulo", None)
         if type(self.modulo) is str:
             try:
-                self.modulo= int (self.modulo)
+                self.modulo= int(self.modulo)
             except:
                 raise RuntimeError("Invalid modulo: ", self.modulo)
 

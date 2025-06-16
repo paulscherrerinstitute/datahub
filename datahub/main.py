@@ -42,8 +42,8 @@ def run_json(task):
         icase = task.get("icase", None)
         prefix = task.get("prefix", None)
         append = task.get("append", None)
-        query_id = task.get("id", False)
-        query_time = task.get("time", False)
+        query_id = task.get("id", None)
+        query_time = task.get("time", None)
         time_type = task.get("timetype", None)
         channels = task.get("channels", None)
         backend = task.get("backend", None)
@@ -122,11 +122,24 @@ def run_json(task):
                     query["last"] = last
 
             force_id = False
-            query_by_id = query_id
+            if type (query_id)== str:
+                try:
+                    QueryRange.MAX_REL_ID = int(float(query_id))
+                except:
+                    pass
+
+            if type(query_time) == str:
+                if type(query_id) == str:
+                    try:
+                        QueryRange.MAX_REL_TIME = int(float(query_time))
+                    except:
+                        pass
+
+            query_by_id = query_id is not None
             if "id" in query:
                 force_id = query_by_id = str_to_bool(str(query["id"]))
 
-            query_by_time = False if force_id else query_time
+            query_by_time = False if force_id else query_time is not None
             if "time" in query:
                 query_by_time = str_to_bool(str(query["time"]))
                 if query_by_time:
@@ -321,12 +334,14 @@ def parse_args():
     parser.add_argument("-s", "--start", help="Relative or absolute start time or ID", required=False)
     parser.add_argument("-e", "--end", help="Relative or absolute end time or ID", required=False)
     parser.add_argument("-r", "--range", help="Range definitions: " + str(QueryRange.RANGE_STR_OPTIONS), required=False)
-    parser.add_argument("-i", "--id", action='store_true', help="Force query by id", required=False)
-    parser.add_argument("-t", "--time", action='store_true', help="Force query by time", required=False)
+    #parser.add_argument("-i", "--id", action='store_true', help="Force query by id", required=False)
+    #parser.add_argument("-t", "--time", action='store_true', help="Force query by time", required=False)
+    parser.add_argument("-i", "--id", help="Force query by id - options: [maximum relative value]", required=False, nargs="?", const=True)
+    parser.add_argument("-t", "--time", help="Force query by time - options: [maximum relative value]", required=False, nargs="?", const=True)
     parser.add_argument("-c", "--channels", help="Channel list (comma-separated)", required=False)
     parser.add_argument("-n", "--bins", help="Number of data bins (integer) or bin width(ending with s, m, h or d)", required=False)
     parser.add_argument("-l", "--last",  action='store_true', help="Include last value before range", required=False)
-    parser.add_argument("-a", "--align", help="Merge sources aligning the message ids: complete(default) or partial",required=False, nargs="?", const=True)
+    parser.add_argument("-a", "--align", help="Merge sources aligning the message ids - options: [complete(default) or partial]",required=False, nargs="?", const=True)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
     parser.add_argument("-fi", "--filter", help="Sets a filter for data", required=False)
@@ -410,10 +425,14 @@ def main():
                     task["start"] = args.start
                 if args.end:
                     task["end"] = args.end
+            #if args.id:
+            #    task["id"] = bool(args.id)
+            #if args.time:
+            #    task["time"] = bool(args.time)
             if args.id:
-                task["id"] = bool(args.id)
+                task["id"] = args.id
             if args.time:
-                task["time"] = bool(args.time)
+                task["time"] = args.time
             if args.timetype:
                 task["timetype"] = args.timetype
             if args.path:

@@ -14,4 +14,4 @@ def get_meta(cls, separator=" "):
                 else:
                     dflt = str(par.default)
                 ret = ret + name + "=" + dflt + separator
-    return ret
+    return ret.rstrip()

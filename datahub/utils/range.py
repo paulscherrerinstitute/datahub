@@ -22,8 +22,11 @@ class QueryRange():
     """
     RANGE_STR_OPTIONS = ["Last 1min", "Last 10min", "Last 1h", "Last 12h", "Last 24h", "Last 7d", "Yesterday", "Today",
                      "Last Week", "This Week", "Last Month", "This Month"]
+    MAX_REL_TIME = 100000.0 # ~=1 day at 100Hz (s)
+    MAX_REL_ID = 10000000 # ~=1 day  (100Hz)
 
-    def __init__(self, query, source=None):
+
+    def __init__(self, query, source=None):  #max_rel ~=1 day at 100Hz
         now = time.time()
         range = query.get("range", None)
         if range:
@@ -74,8 +77,8 @@ class QueryRange():
         #import pytz
         #self.utc_tz = pytz.utc
         #self.local_tz = pytz.timezone('Europe/Zurich')
-        self.max_relative_time = 100000.0 #in secs ~=1  day
-        self.max_relative_id = 10000000   #at 100Hz ~=1 day
+        self.max_relative_time = QueryRange.MAX_REL_TIME
+        self.max_relative_id = QueryRange.MAX_REL_ID
 
         self.relative_start= None
         self.relative_end = None
@@ -109,9 +112,10 @@ class QueryRange():
             par = 0.0
         if type(par) == float:
             sec = par
-            if par <= self.max_relative_time:
-                rel = sec
-                sec = sec + now
+            if self.max_relative_time and self.max_relative_time > 0:
+                if par <= self.max_relative_time:
+                    rel = sec
+                    sec = sec + now
             st = self.seconds_to_string(sec)
             id = None
             typ = "time"
@@ -124,9 +128,10 @@ class QueryRange():
         #ID
         elif type(par) == int:
             id = par
-            if par <= self.max_relative_id:
-                rel = id
-                id = id + self.time_to_id()
+            if self.max_relative_id and self.max_relative_id > 0:
+                if par <= self.max_relative_id:
+                    rel = id
+                    id = id + self.time_to_id()
             sec = self.id_to_time(id)
             offset = PULSE_ID_INTERVAL/2
             sec = sec + (-offset if start else offset)
