@@ -5,7 +5,7 @@ try:
 except:
     redis = None
 
-class Stddaq(Bsread):
+class Stddaq(Array10):
     """
     Retrieves data from CamServer cameras.
     """
@@ -27,9 +27,9 @@ class Stddaq(Bsread):
         self.db = '0'
         mode = "PULL" if replay else "SUB"
         if name:
-            name = "REPLAY-" + self.name if replay else self.name
+            name = self.name + ":REPLAY-STREAM" if replay else self.name + ":LIVE-STREAM"
             url = self.get_instance_stream(name)
-        Bsread.__init__(self, url=url, mode=mode, name=self.name, **kwargs)
+        Array10.__init__(self, url=url, mode=mode, name=self.name, **kwargs)
 
     def get_instance_stream(self, name):
         with redis.Redis(host=self.host, port=self.port, db=self.db) as r:
@@ -40,7 +40,7 @@ class Stddaq(Bsread):
         if self.replay:
             #Start query
             pass
-        Bsread.run(self, query=query)
+        Array10.run(self, query=query)
 
     def search(self, regex=None, case_sensitive=True):
         redis_source = datahub.Redis(url=self.address, backend=self.db)
