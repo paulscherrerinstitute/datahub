@@ -12,14 +12,14 @@ class Array10(Source):
     Retrieves data from an Array10 stream.
     """
     DEFAULT_URL = os.environ.get("ARRAY10_DEFAULT_URL", None)
-    def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, reshape=False, **kwargs):
+    def __init__(self, url=DEFAULT_URL, mode="SUB", reshape=False, **kwargs):
         """
         url (str, optional): Stream URL. Default value can be set by the env var ARRAY10_DEFAULT_URL.
         mode (str, optional): "SUB" or "PULL"
         path (str, optional): hint for the source location in storage or displaying.
         reshape (bool, optional): if True reshapes receiving array into 2d arrays/
         """
-        Source.__init__(self, url=url, path=path, **kwargs)
+        Source.__init__(self, url=url, **kwargs)
         if zmq is None:
             raise Exception("pyzmq library not available")
         if not url.startswith("tcp://"):

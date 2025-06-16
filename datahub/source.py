@@ -12,7 +12,11 @@ class Source():
     TIMESTAMP_ARGS = "start", "end"
 
     def __init__(self, url=None, backend=None, query_path=None, search_path=None, auto_decompress=False,
-                 path=None, known_backends=[], name=None, **kwargs):
+                 known_backends=[], name=None,
+                 path=None, **kwargs):
+        """
+        path(str, optional): hint for the data location in storage or displaying.
+        """
         self.url = url
         if query_path is not None:
             if not url.endswith(query_path):
@@ -388,7 +392,8 @@ class Source():
             print (f"\t{self.__class__.__doc__.strip()}")
         print(f"Arguments: \n\t[channels {meta}start=None end=None ...]")
         if (self.__class__.__init__.__doc__):
-            print (self.__class__.__init__.__doc__)
+            print(self.__class__.__init__.__doc__.rstrip())
+            print(Source.__init__.__doc__.lstrip('\n'))
         default_url = self.get_default_url()
         default_backend = self.get_default_backend()
         if default_url:

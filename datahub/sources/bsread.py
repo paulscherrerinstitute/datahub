@@ -17,13 +17,12 @@ class Bsread(Source):
 
     DEFAULT_URL = os.environ.get("BSREAD_DEFAULT_URL", None if (bsread is None) else bsread.DEFAULT_DISPATCHER_URL)
 
-    def __init__(self, url=DEFAULT_URL, mode="SUB", path=None, **kwargs):
+    def __init__(self, url=DEFAULT_URL, mode="SUB", **kwargs):
         """
         url (str, optional): Stream URL. Default value can be set by the env var BSREAD_DEFAULT_URL.
         mode (str, optional): "SUB" or "PULL"
-        path (str, optional): hint for the source location in storage or displaying.
         """
-        Source.__init__(self, url=url, path=path, **kwargs)
+        Source.__init__(self, url=url, **kwargs)
         if bsread is None:
             raise Exception("bsread library not available")
         self.mode = mode

@@ -1,4 +1,4 @@
-import datahub
+
 from datahub import *
 try:
     import redis
@@ -11,13 +11,12 @@ class Stddaq(Bsread):
     """
     DEFAULT_URL = os.environ.get("STDDAQ_DEFAULT_URL", "sf-daq-6.psi.ch:6379")
 
-    def __init__(self, url=DEFAULT_URL, name=None, replay=False, path=None, **kwargs):
+    def __init__(self, url=DEFAULT_URL, name=None, replay=False, **kwargs):
         """
         url (str, optional): URL for Stddaq Redis repo.
         name (str): device name
         replay (str, optional): If True data is retrieved from the buffer (PULL).
                                 If False data is live streamed (SUB).
-        path (str, optional): hint for the source location in storage or displaying.
         """
         if redis is None:
             raise Exception("Redis library not available")
@@ -30,7 +29,7 @@ class Stddaq(Bsread):
         if name:
             name = "REPLAY-" + self.name if replay else self.name
             url = self.get_instance_stream(name)
-        Bsread.__init__(self, url=url, mode=mode, path=path, name=self.name, **kwargs)
+        Bsread.__init__(self, url=url, mode=mode, name=self.name, **kwargs)
 
     def get_instance_stream(self, name):
         with redis.Redis(host=self.host, port=self.port, db=self.db) as r:

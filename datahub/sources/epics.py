@@ -43,12 +43,11 @@ class Epics(Source):
     Retrieves data from the EPICS channels.
     """
     DEFAULT_URL = None
-    def __init__(self, url=DEFAULT_URL, path=None, **kwargs):
+    def __init__(self, url=DEFAULT_URL, **kwargs):
         """
         url (str, optional): if defined sets the EPICS_CA_ADDR_LIST.
-        path (str, optional): hint for the source location in storage or displaying.
         """
-        Source.__init__(self, url=url, path=path, **kwargs)
+        Source.__init__(self, url=url, **kwargs)
         if self.url:
             os.environ["EPICS_CA_ADDR_LIST"] = self.url
 

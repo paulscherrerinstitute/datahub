@@ -38,13 +38,12 @@ class Pipeline(Bsread):
     """
     DEFAULT_URL = os.environ.get("PIPELINE_DEFAULT_URL", "http://sf-daqsync-01:8889")
 
-    def __init__(self, url=DEFAULT_URL, name=None, config=None, mode="SUB", path=None, **kwargs):
+    def __init__(self, url=DEFAULT_URL, name=None, config=None, mode="SUB", **kwargs):
         """
         url (str, optional): PipelineServer URL. Default value can be set by the env var PIPELINE_DEFAULT_URL.
         name (str, optional): name of the instance and/or pipeline in the format: INSTANCE_NAME[PIPELINE_NAME]
         config (dict, optional): pipeline configuration (or additional configuration if pipeline name is defined)
         mode (str, optional): "SUB" or "PULL"
-        path (str, optional): hint for the source location in storage or displaying.
         """
         self.address = url
         if name or config:
@@ -65,7 +64,7 @@ class Pipeline(Bsread):
                     else:
                         url = self.create_stream_from_config(config, instance)
 
-        Bsread.__init__(self, url=url, mode=mode, path=path, name=name, **kwargs)
+        Bsread.__init__(self, url=url, mode=mode, name=name, **kwargs)
 
     def get_stream(self, instance_id):
         rest_endpoint = "/api/v1/pipeline/instance/%s" % instance_id
@@ -120,17 +119,16 @@ class Camera(Bsread):
     """
     DEFAULT_URL = os.environ.get("CAMERA_DEFAULT_URL", "http://sf-daqsync-01:8888")
 
-    def __init__(self, url=DEFAULT_URL, name=None, mode="SUB", path=None, **kwargs):
+    def __init__(self, url=DEFAULT_URL, name=None, mode="SUB",  **kwargs):
         """
         url (str, optional): CameraServer URL. Default value can be set by the env var CAMERA_DEFAULT_URL.
         name (str): camera name
         mode (str, optional): "SUB" or "PULL"
-        path (str, optional): hint for the source location in storage or displaying.
         """
         self.address = url
         if name:
             url = self.get_instance_stream(name)
-        Bsread.__init__(self, url=url, mode=mode, path=path, name=name, **kwargs)
+        Bsread.__init__(self, url=url, mode=mode, name=name, **kwargs)
 
 
     def get_instance_stream(self, instance_id):

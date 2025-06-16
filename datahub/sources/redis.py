@@ -18,13 +18,12 @@ class Redis(Source):
     DEFAULT_URL = os.environ.get("REDIS_DEFAULT_URL", 'sf-daqsync-18:6379')
     DEFAULT_BACKEND = os.environ.get("REDIS_DEFAULT_BACKEND", '0')
 
-    def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, path=None, **kwargs):
+    def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, **kwargs):
         """
         url (str, optional): Redis URL. Default value can be set by the env var REDIS_DEFAULT_URL.
         backend (str): Redis database. Default value can be set by the env var REDIS_DEFAULT_BACKEND.
-        path (str, optional): hint for the source location in storage or displaying.
         """
-        Source.__init__(self, url=url, backend=backend, path=path, **kwargs)
+        Source.__init__(self, url=url, backend=backend, **kwargs)
         if redis is None:
             raise Exception("redis library not available")
         self.host, self.port = get_host_port_from_stream_address(self.url)
