@@ -19,11 +19,11 @@ class Array10(Source):
         path (str, optional): hint for the source location in storage or displaying.
         reshape (bool, optional): if True (Default) reshapes receiving array into 2d arrays.
         """
-        Source.__init__(self, url=url, **kwargs)
         if zmq is None:
             raise Exception("pyzmq library not available")
         if not url.startswith("tcp://"):
             url = "tcp://" + url
+        Source.__init__(self, url=url, **kwargs)
         self.context = 0
         self.mode = mode
         self.ctx = None
