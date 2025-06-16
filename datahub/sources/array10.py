@@ -45,14 +45,13 @@ class Array10(Source):
                 data = self.receive()
                 if not data:
                     raise Exception("Received None message.")
-                pulse_id = data.data.pulse_id
+                pulse_id, array = data
                 if init:
                     init = False
                     self.range.set_init_id(pulse_id)
                 if self.range.has_ended(id=pulse_id):
                     break
                 if self.range.has_started(id=pulse_id):
-                    pulse_id, array = data
                     name = channel if channel else (self.source if self.source else "Array10")
                     metadata = {} if self.reshape else {"width": self.shape[1], "height": self.shape[1]}
                     self.receive_channel(name, array, None, pulse_id, check_changes=True, metadata=metadata)
