@@ -22,10 +22,13 @@ class Array10(Source):
         Source.__init__(self, url=url, path=path, **kwargs)
         if zmq is None:
             raise Exception("pyzmq library not available")
+        if not url.startswith("tcp://"):
+            url = "tcp://" + url
         self.context = 0
         self.mode = mode
         self.ctx = None
         self.receiver = None
+        self.generated_pid = -1
         self.pid = -1
         self.reshape = str_to_bool(str(reshape))
         self.generate_id = False
@@ -44,7 +47,7 @@ class Array10(Source):
                     pulse_id, array = data
                     name = channel if channel else (self.source if self.source else "Array10")
                     metadata = {} if self.reshape else {"width": self.shape[1], "height": self.shape[1]}
-                    self.receive_channel(name, array, None, pulse_id if self.generate_id else None, check_changes=True, metadata=metadata)
+                    self.receive_channel(name, array, None, pulse_id, check_changes=True, metadata=metadata)
         finally:
             self.close_channels()
             self.disconnect()
@@ -81,12 +84,17 @@ class Array10(Source):
             self.shape = header.get("shape")
             self.dtype = header.get("type", "int8")
             self.source = header.get("source", "")
+            self.frame = header.get("frame", None)
             data = self.receiver.recv()
             if data is not None:
                 array = numpy.frombuffer(data, dtype=self.dtype)
                 if self.reshape:
                     array = array.reshape(self.shape)
-                self.pid = self.pid + 1
+                self.generated_pid = self.generated_pid + 1
+                pid = self.frame
+                if pid is None and self.generate_id:
+                    pid = self.generated_pid
+                self.pid = pid
                 return self.pid, array
         except Exception as e:
             _logger.warning("Error processing Array10: %s" % (str(e),))
