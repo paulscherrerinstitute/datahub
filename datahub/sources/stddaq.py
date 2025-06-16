@@ -11,27 +11,37 @@ class Stddaq(Bsread):
     """
     DEFAULT_URL = os.environ.get("STDDAQ_DEFAULT_URL", "sf-daq-6.psi.ch:6379")
 
-    def __init__(self, url=DEFAULT_URL, name=None, mode="SUB", path=None, **kwargs):
+    def __init__(self, url=DEFAULT_URL, name=None, replay=False, path=None, **kwargs):
         """
         url (str, optional): URL for Stddaq Redis repo.
         name (str): device name
-        mode (str, optional): "SUB" or "PULL"
+        replay (str, optional): If True data is retrieved from the buffer (PULL).
+                                If False data is live streamed (SUB).
         path (str, optional): hint for the source location in storage or displaying.
         """
-        self.address = url
         if redis is None:
-            raise Exception("redis library not available")
+            raise Exception("Redis library not available")
         self.host, self.port = get_host_port_from_stream_address(url)
-        self.db='0'
+        self.address = url
+        self.name = name
+        self.replay = replay
+        self.db = '0'
+        mode = "PULL" if replay else "SUB"
         if name:
+            name = "REPLAY-" + self.name if replay else self.name
             url = self.get_instance_stream(name)
-        Bsread.__init__(self, url=url, mode=mode, path=path, name=name, **kwargs)
+        Bsread.__init__(self, url=url, mode=mode, path=path, name=self.name, **kwargs)
 
     def get_instance_stream(self, name):
         with redis.Redis(host=self.host, port=self.port, db=self.db) as r:
             ret = r.get(name)
-            return ret.decode('utf-8').strip()   if ret else ret
+            return ret.decode('utf-8').strip() if ret else ret
 
+    def run(self, query):
+        if self.replay:
+            #Start query
+            pass
+        Bsread.run(self, query=query)
 
     def search(self, regex=None, case_sensitive=True):
         redis_source = datahub.Redis(url=self.address, backend=self.db)

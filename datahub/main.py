@@ -136,7 +136,7 @@ def run_json(task):
                     try:
                         if type(query[arg]) != str or not is_null_str(query[arg]):
                             if query_by_id:
-                                query[arg] = int(query[arg])
+                                query[arg] = int(float(query[arg])) #Verbose to be able co convert "0.0"
                             elif query_by_time:
                                 query[arg] = float(query[arg])
                     except:
