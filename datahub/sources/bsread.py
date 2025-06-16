@@ -49,12 +49,12 @@ class Bsread(Source):
             init = True
             while not self.range.has_ended(id=pulse_id+1) and not self.aborted:
                 data = stream.receive()
+                if not data:
+                    raise Exception("Received None message.")
                 pulse_id = data.data.pulse_id
                 if init:
                     init = False
                     self.range.set_init_id(pulse_id)
-                if not data:
-                    raise Exception("Received None message.")
                 if self.range.has_ended(id=pulse_id):
                     break
                 if self.range.has_started(id = pulse_id):

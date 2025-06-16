@@ -39,11 +39,19 @@ class Array10(Source):
         self.generate_id = self.range.is_by_id()
         try:
             self.connect()
-            while not self.range.has_ended() and not self.aborted:
+            pulse_id = -1
+            init = True
+            while not self.range.has_ended(id=pulse_id+1) and not self.aborted:
                 data = self.receive()
                 if not data:
                     raise Exception("Received None message.")
-                if self.range.has_started():
+                pulse_id = data.data.pulse_id
+                if init:
+                    init = False
+                    self.range.set_init_id(pulse_id)
+                if self.range.has_ended(id=pulse_id):
+                    break
+                if self.range.has_started(id=pulse_id):
                     pulse_id, array = data
                     name = channel if channel else (self.source if self.source else "Array10")
                     metadata = {} if self.reshape else {"width": self.shape[1], "height": self.shape[1]}
