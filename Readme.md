@@ -146,28 +146,30 @@ Command line interface for DataHub
 optional arguments:
   -h, --help            show this help message and exit
   -j, --json JSON       Complete query defined as JSON
-  -f, --hdf5 [filename default_compression='gzip' auto_decompress=False path=None metadata_compression='gzip' ]
+  -f, --hdf5 [filename default_compression='gzip' auto_decompress=False path=None metadata_compression='gzip']
                         hdf5 options
-  -x, --txt [folder ]   txt options
+  -x, --txt [folder]    txt options
   -p, --print           print options
-  -m, --plot [channels=None colormap='viridis' color=None marker_size=None line_width=None max_count=None max_rate=None ]
+  -m, --plot [channels=None colormap='viridis' color=None marker_size=None line_width=None max_count=None max_rate=None]
                         plot options
-  -ps, --pshell [channels=None address='localhost' port=7777 timeout=3.0 layout='vertical' context=None style=None colormap='viridis' color=None marker_size=3 line_width=None max_count=None max_rate=None ]
+  -ps, --pshell [channels=None address='localhost' port=7777 timeout=3.0 layout='vertical' context=None style=None colormap='viridis' color=None marker_size=3 line_width=None max_count=None max_rate=None]
                         pshell options
   -s, --start START     Relative or absolute start time or ID
   -e, --end END         Relative or absolute end time or ID
   -r, --range RANGE     Range definitions: ['Last 1min', 'Last 10min', 'Last 1h', 'Last 12h', 'Last 24h', 'Last 7d', 'Yesterday', 'Today', 'Last Week', 'This Week', 'Last Month', 'This Month']
-  -i, --id              Force query by id
-  -t, --time            Force query by time
+  -i, --id ID           Force query by id - options: [maximum relative value]
+  -t, --time TIME       Force query by time - options: [maximum relative value]
   -c, --channels CHANNELS
                         Channel list (comma-separated)
   -n, --bins BINS       Number of data bins (integer) or bin width(ending with s, m, h or d)
   -l, --last            Include last value before range
-  -a, --align ALIGN     Merge sources aligning the message ids: complete(default) or partial
+  -a, --align ALIGN     Merge sources aligning the message ids - options: [complete(default) or partial]
   -u, --url URL         URL of default source
   -b, --backend BACKEND
                         Backend of default source (use "null" for all backends)
-  -fi, --filter FILTER  Sets a filter for data
+  -ll, --loglevel LOGLEVEL
+                        Set console log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  -fi, --filter FILTER  Set a filter for data
   -di, --interval INTERVAL
                         Downsampling interval between samples in seconds
   -dm, --modulo MODULO  Downsampling modulo of the samples
@@ -178,31 +180,31 @@ optional arguments:
   -dc, --decompress     Auto-decompress compressed images
   -px, --prefix         Add source ID to channel names
   -pt, --path PATH      Path to data in the file
-  -ap, --append         Appends data to existing files
+  -ap, --append         Append data to existing files
   -sr, --search         Search channel names given a pattern (instead of fetching data)
   -ic, --icase          Case-insensitive search
-  -v, --verbose         Displays complete search results, not just channels names
-  --epics [channels url=None path=None start=None end=None]
+  -v, --verbose         Display complete search results, not just channels names
+  --epics [channels url=Nonestart=None end=None]
                         epics query arguments
-  --bsread [channels url='https://dispatcher-api.psi.ch/sf-databuffer' mode='SUB' path=None start=None end=None]
+  --bsread [channels url='https://dispatcher-api.psi.ch/sf-databuffer' mode='SUB'start=None end=None]
                         bsread query arguments
-  --pipeline [channels url='http://sf-daqsync-01:8889' name=None config=None mode='SUB' path=None start=None end=None]
+  --pipeline [channels url='http://sf-daqsync-01:8889' name=None config=None mode='SUB'start=None end=None]
                         pipeline query arguments
-  --camera [channels url='http://sf-daqsync-01:8888' name=None mode='SUB' path=None start=None end=None]
+  --camera [channels url='http://sf-daqsync-01:8888' name=None mode='SUB'start=None end=None]
                         camera query arguments
-  --databuffer [channels url='https://data-api.psi.ch/sf-databuffer' backend='sf-databuffer' path=None delay=1.0 start=None end=None]
+  --databuffer [channels url='https://data-api.psi.ch/sf-databuffer' backend='sf-databuffer' delay=1.0start=None end=None]
                         databuffer query arguments
-  --retrieval [channels url='https://data-api.psi.ch/api/1' backend='sf-databuffer' path=None delay=1.0 start=None end=None]
+  --retrieval [channels url='https://data-api.psi.ch/api/1' backend='sf-databuffer' delay=1.0start=None end=None]
                         retrieval query arguments
-  --dispatcher [channels path=None start=None end=None]
+  --dispatcher [channels start=None end=None]
                         dispatcher query arguments
-  --daqbuf [channels url='https://data-api.psi.ch/api/4' backend='sf-archiver' path=None delay=1.0 cbor=True parallel=True streamed=True start=None end=None]
+  --daqbuf [channels url='https://data-api.psi.ch/api/4' backend='sf-databuffer' delay=1.0 cbor=True parallel=True streamed=Truestart=None end=None]
                         daqbuf query arguments
-  --array10 [channels url=None mode='SUB' path=None reshape=False start=None end=None]
+  --array10 [channels url=None mode='SUB' reshape=Truestart=None end=None]
                         array10 query arguments
-  --redis [channels url='sf-daqsync-18:6379' backend='0' path=None start=None end=None]
+  --redis [channels url='sf-daqsync-18:6379' backend='0'start=None end=None]
                         redis query arguments
-  --stddaq [channels url='sf-daq-6.psi.ch:6379' name=None mode='SUB' path=None start=None end=None]
+  --stddaq [channels url='sf-daq-6.psi.ch:6379' name=None replay=Falsestart=None end=None]
                         stddaq query arguments
 ```
 

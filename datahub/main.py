@@ -344,7 +344,8 @@ def parse_args():
     parser.add_argument("-a", "--align", help="Merge sources aligning the message ids - options: [complete(default) or partial]",required=False, nargs="?", const=True)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
-    parser.add_argument("-fi", "--filter", help="Sets a filter for data", required=False)
+    parser.add_argument("-ll", "--loglevel", help="Set console log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)", required=False)
+    parser.add_argument("-fi", "--filter", help="Set a filter for data", required=False)
     parser.add_argument("-di", "--interval", help="Downsampling interval between samples in seconds", required=False)
     parser.add_argument("-dm", "--modulo", help="Downsampling modulo of the samples", required=False)
     parser.add_argument("-tt", "--timetype", help="Timestamp type: nano/int (default), sec/float or str", required=False)
@@ -352,10 +353,10 @@ def parse_args():
     parser.add_argument("-dc", "--decompress", action='store_true', help="Auto-decompress compressed images", required=False)
     parser.add_argument("-px", "--prefix", action='store_true', help="Add source ID to channel names", required=False)
     parser.add_argument("-pt", "--path", help="Path to data in the file", required=False)
-    parser.add_argument("-ap", "--append", action='store_true', help="Appends data to existing files", required=False)
+    parser.add_argument("-ap", "--append", action='store_true', help="Append data to existing files", required=False)
     parser.add_argument("-sr", "--search", help="Search channel names given a pattern (instead of fetching data)", required=False , nargs="*")
     parser.add_argument("-ic", "--icase", action='store_true', help="Case-insensitive search", required=False)
-    parser.add_argument("-v", "--verbose", action='store_true', help="Displays complete search results, not just channels names", required=False)
+    parser.add_argument("-v", "--verbose", action='store_true', help="Display complete search results, not just channels names", required=False)
 
     for name, source in KNOWN_SOURCES.items():
         meta = eval("get_meta(" + source.__name__ + ")")
@@ -405,6 +406,13 @@ def main():
                     ret[arg] = val
         return ret
     try:
+        if args.loglevel is not None:
+            logging.basicConfig(
+                level=logging._nameToLevel[args.loglevel],  # Or DEBUG, WARNING, etc.
+                format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+                handlers=[logging.StreamHandler(sys.stdout)]
+            )
+
         #if args.action == 'search':
         #    return search(args)
         if args.json:
@@ -453,8 +461,6 @@ def main():
                 task["filter"] = args.filter
             if args.search is not None:
                 task["search"] = args.search
-            if args.verbose is not None:
-                task["verbose"] = args.verbose
             if args.icase is not None:
                 task["icase"] = args.icase
             if args.align is not None:
