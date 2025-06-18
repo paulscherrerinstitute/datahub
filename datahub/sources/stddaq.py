@@ -128,7 +128,7 @@ class WebSocketClient:
 
 class Stddaq(Array10):
     """
-    Retrieves data from CamServer cameras.
+    Retrieves data from Stddaq services, as live streams or replay.
     """
     DEFAULT_URL = os.environ.get("STDDAQ_DEFAULT_URL", "sf-daq-6.psi.ch:6379")
 
@@ -143,7 +143,6 @@ class Stddaq(Array10):
             raise Exception("Redis library not available")
         self.host, self.port = get_host_port_from_stream_address(url)
         self.address = url
-        self.name = name
         self.replay = replay
         self.db = '0'
         mode = "PULL" if replay else "SUB"

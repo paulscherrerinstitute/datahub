@@ -12,12 +12,13 @@ class Array10(Source):
     Retrieves data from an Array10 stream.
     """
     DEFAULT_URL = os.environ.get("ARRAY10_DEFAULT_URL", None)
-    def __init__(self, url=DEFAULT_URL, mode="SUB", reshape=True, **kwargs):
+    def __init__(self, url=DEFAULT_URL, mode="SUB", reshape=True, name=None, **kwargs):
         """
         url (str, optional): Stream URL. Default value can be set by the env var ARRAY10_DEFAULT_URL.
         mode (str, optional): "SUB" or "PULL"
         path (str, optional): hint for the source location in storage or displaying.
         reshape (bool, optional): if True (Default) reshapes receiving array into 2d arrays.
+        name (str, optional): channel name of the receiving data - if None, uses stream's "source" field.
         """
         if zmq is None:
             raise Exception("pyzmq library not available")
@@ -34,8 +35,6 @@ class Array10(Source):
         self.generate_id = False
 
     def run(self, query):
-        channels = query.get("channels", None)
-        channel = channels[0] if (channels and len(channels)>0) else None
         self.generate_id = self.range.is_by_id()
         try:
             self.connect()
@@ -52,7 +51,7 @@ class Array10(Source):
                 if self.range.has_ended(id=pulse_id):
                     break
                 if self.range.has_started(id=pulse_id):
-                    name = channel if channel else (self.source if self.source else "Array10")
+                    name = self.name if self.name else (self.source if self.source else "Array10")
                     metadata = {} if self.reshape else {"width": self.shape[1], "height": self.shape[1]}
                     self.receive_channel(name, array, None, pulse_id, check_changes=True, metadata=metadata)
         finally:
