@@ -147,8 +147,7 @@ class Stddaq(Array10):
         self.db = '0'
         mode = "PULL" if replay else "SUB"
         if name:
-            name = self.name + ":REPLAY-STREAM" if replay else self.name + ":LIVE-STREAM"
-            url = self.get_instance_stream(name)
+            url = self.get_instance_stream(name + ":REPLAY-STREAM" if replay else name + ":LIVE-STREAM")
         Array10.__init__(self, url=url, mode=mode, name=self.name, **kwargs)
 
     def get_instance_stream(self, name):
