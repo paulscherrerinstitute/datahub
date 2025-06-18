@@ -1,7 +1,7 @@
 from datahub import *
 
-start = "2024-06-14 09:00:00"
-end = "2024-06-14 09:01:00"
+start = "2025-06-14 09:00:00"
+end = "2025-06-14 09:01:00"
 backend = "sf-databuffer"
 
 
@@ -11,7 +11,7 @@ backend = "sf-databuffer"
 with Daqbuf(backend=backend, cbor=True, parallel=True, time_type="str") as stream1:
     with Daqbuf(backend=backend, cbor=True, parallel=True, time_type="str") as stream2:
         stdout =Stdout()
-        merger=Merger(filter = "S10BC01-DBPM010:X1>0")
+        merger=Merger(filter = "S10BC01-DBPM010:X1>0", partial_msg=False)
 
         stream1.add_listener(merger)
         stream2.add_listener(merger)
