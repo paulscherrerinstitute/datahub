@@ -148,7 +148,7 @@ class Stddaq(Array10):
         mode = "PULL" if replay else "SUB"
         if name:
             url = self.get_instance_stream(name + ":REPLAY-STREAM" if replay else name + ":LIVE-STREAM")
-        Array10.__init__(self, url=url, mode=mode, name=self.name, **kwargs)
+        Array10.__init__(self, url=url, mode=mode, name=name, **kwargs)
 
     def get_instance_stream(self, name):
         with redis.Redis(host=self.host, port=self.port, db=self.db) as r:
