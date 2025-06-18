@@ -24,7 +24,7 @@ class Array10(Source):
             raise Exception("pyzmq library not available")
         if not url.startswith("tcp://"):
             url = "tcp://" + url
-        Source.__init__(self, url=url, **kwargs)
+        Source.__init__(self, url=url, name=name, **kwargs)
         self.context = 0
         self.mode = mode
         self.ctx = None
