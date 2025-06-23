@@ -62,7 +62,7 @@ class Epics(Source):
             for channel in channels:
                 channel.start()
             if len(channels)>0:
-                while not self.range.has_ended(id=channels[0].get_id()) and not self.aborted:
+                while not self.has_stream_finished(id=channels[0].get_id()):
                     time.sleep(0.1)
             for channel in channels:
                 channel.stop()

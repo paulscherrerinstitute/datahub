@@ -71,7 +71,7 @@ class Daqbuf(Source):
 
     def read_cbor(self, stream, channel):
         try:
-            while True:
+            while not self.is_run_timeout():
                 bytes_read = stream.read(4)
                 if len(bytes_read) != 4:
                     break
@@ -130,7 +130,7 @@ class Daqbuf(Source):
 
     def read_json(self, stream, channel, bins=None):
         try:
-            while True:
+            while not self.is_run_timeout():
                 length = stream.readline()
                 if len(length) == 0:
                     break
@@ -213,7 +213,7 @@ class Daqbuf(Source):
                 ex = RuntimeError(f"Error retrieving data: {response.reason} [{status}]\nChannel: {channel}")
             raise ex
 
-    def run_channel(self, channel, backend, cbor, bins=None, last=None, conn=None):
+    def run_channel(self, channel, backend, cbor, bins=None, last=None,  conn=None):
         query = dict()
         if channel.isdigit():
             query["seriesId"] = channel
@@ -224,12 +224,13 @@ class Daqbuf(Source):
         query["backend"] = backend
         if last is not None:
             query["oneBeforeRange"] = "true" if last else "false"
+        if self.get_timeout() is not None:
+            query["contentTimeout"] = self.get_timeout()
         if bins:
             if (type(bins) == str) and len(bins)>1 and bins[-1].isalpha():
                 query["binWidth"] = bins
             else:
                 query["binCount"] = int(bins)
-
         streamed = self.streamed or cbor
         create_connection = streamed and (conn is None)
         url = self.binned_url if bins else self.url
@@ -237,7 +238,8 @@ class Daqbuf(Source):
             conn = http_data_query(query, url,method="GET",
                                    accept="application/cbor-framed" if cbor else "application/json-framed",
                                    conn=conn,
-                                   add_headers=self.add_headers)
+                                   add_headers=self.add_headers,
+                                   timeout=self.get_timeout())
         try:
             if cbor:
                 response = conn.getresponse()
@@ -259,7 +261,7 @@ class Daqbuf(Source):
                             raise
                     else:
                         import requests
-                        response = requests.get(url , query, headers=self.headers)
+                        response = requests.get(url , query, headers=self.headers, timeout=self.get_timeout())
                         # Check for successful return of data
                         self.check_response(response, channel)
                         data = response.json()
@@ -275,7 +277,7 @@ class Daqbuf(Source):
                             raise
                     else:
                         import requests
-                        response = requests.get(url , query, headers=self.headers)
+                        response = requests.get(url , query, headers=self.headers, timeout=self.get_timeout())
                         self.check_response(response, channel)
                         data = response.json()
                         self.read_json_single(data, channel)
@@ -308,7 +310,7 @@ class Daqbuf(Source):
                     thread.join()
             else:
                 if streamed:
-                    conn = create_http_conn(self.binned_url if bins else self.url)
+                    conn = create_http_conn(self.binned_url if bins else self.url,timeout =self.get_timeout())
                 for channel in channels:
                     self.run_channel(channel, backend, cbor, bins, last, conn)
         finally:

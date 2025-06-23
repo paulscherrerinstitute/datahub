@@ -110,14 +110,16 @@ class DataBufferTest(unittest.TestCase):
             source.add_listener(stdout)
             source.req(["S10CB05-RBOC-DCP10:REF-POWER-AVG"], -1000, 0, False)
 
-
+ #datahub -b sf-databuffer -c S10BC01-DBPM010:Q1  -s "2025-05-15T03:00:00" -e "2025-06-15T05:00:00" -n 100 -to 2.0 -p
     def test_binned(self):
-        with Daqbuf(backend=backend, cbor=False, parallel=True,  time_type="str") as source:
+        with Daqbuf(backend=backend, cbor=False, parallel=True) as source:
             #table = Table()
-            stout = Stdout()
+            stout = Stdout( timetype="str")
             source.add_listener(stout)
             #source.request(query)
-            source.req(["S10BC01-DBPM010:Q1","S10BC01-DBPM010:X1",],None, None, range="Last 1min",  bins=100)
+            #source.req(["S10BC01-DBPM010:Q1","S10BC01-DBPM010:X1",],None, None, range="Last 1min",  bins=100)
+            #source.req(["S10BC01-DBPM010:Q1" ], "2025-05-15T03:00:00", "2025-06-15T05:00:00" , bins=100, timeout=2.0)
+            source.req(["S10BC01-DBPM010:Q1"], "2025-06-01 03:00:00", "2025-06-15 05:00:00", bins=100)
             #source.req(["ARS05-RCIR-0060:Water-Flow",],"2024-09-15 09:00", "2024-09-15 10:00", bins=100, backend="sls-archiver")
             #source.req(["SARFE10-PSSS059:FIT-COM",],"2024-09-26 08:57:57.510", "2024-09-26 09:57:57.510", bins=100)
             #source.req(["SARFE10-PSSS059:FIT-COM", ], "2024-09-26 08:57:57.510", "2024-09-26 09:00:57.510")

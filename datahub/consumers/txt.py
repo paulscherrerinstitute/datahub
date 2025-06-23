@@ -14,7 +14,7 @@ class TextWriter(Consumer):
 
     def on_start(self, source):
         os.makedirs(self.folder, exist_ok=True)
-        self.files[source]={}
+        self.files[source] = {}
 
     def on_stop(self, source, exception):
         try:

@@ -48,6 +48,9 @@ class Source():
         self.name = name
         self.auto_decompress = str_to_bool(auto_decompress)
         self.prefix = ""
+        self.run_start_timestamp = None
+        self.run_stop_timestamp = None
+        self.run_exception = None
         Source.instances.add(self)
 
     def get_backends(self):
@@ -278,16 +281,62 @@ class Source():
 
     def do_run(self, query):
         self.running = True
+        self.run_start_timestamp = time.time()
         self.on_start()
         try:
-            exc = None
+            self.run_exception = None
             self.run(query)
         except Exception as e:
-            exc = e
+            self.run_exception = e
             raise
         finally:
-            self.on_stop(exc)
             self.running = False
+            self.run_stop_timestamp = time.time()
+            self.on_stop(self.run_exception)
+    def get_run_start_timestamp(self):
+        return self.run_start_timestamp
+
+    def get_run_stop_timestamp(self):
+        return self.run_stop_timestamp
+
+    def get_run_exception(self):
+        return self.run_exception
+
+    def get_run_status(self):
+        if self.query is None:
+            return "Init"
+        if self.running:
+            return "Running"
+        if self.is_aborted():
+            return "Aborted"
+        if self.is_run_timeout():
+            return "Timeout"
+        if self.run_exception:
+            return "Error"
+        return "Completed"
+
+
+    def get_timeout(self):
+        return self.query.get("timeout", None)
+
+    def is_run_timeout(self):
+        timeout = self.get_timeout()
+        if timeout:
+            try:
+                timeout = float(timeout)
+                if time.time() > (self.run_start_timestamp+timeout):
+                    return True
+            except:
+                pass
+        return False
+
+    def assert_run_timeout(self):
+        if self.is_run_timeout():
+            raise Exception("Run timeout")
+
+
+    def has_stream_finished (self, id=None):
+        return self.range.has_ended(id=id) or self.aborted or self.is_run_timeout()
 
     def add_listener(self, listener):
         self.listeners.append(listener)
@@ -390,7 +439,7 @@ class Source():
         if (self.__class__.__doc__):
             print("Description:")
             print (f"\t{self.__class__.__doc__.strip()}")
-        print(f"Arguments: \n\t[channels {meta}start=None end=None ...]")
+        print(f"Arguments: \n\t[channels {meta} start=None end=None ...]")
         if (self.__class__.__init__.__doc__):
             print(self.__class__.__init__.__doc__.rstrip())
             print(Source.__init__.__doc__.lstrip('\n'))

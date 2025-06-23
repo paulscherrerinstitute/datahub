@@ -35,6 +35,7 @@ def run_json(task):
         interval = task.get("interval", None)
         bins = task.get("bins", None)
         last = task.get("last", None)
+        timeout = task.get("timeout", None)
         modulo = task.get("modulo", None)
         filter = task.get("filter", None)
         search = task.get("search", None)
@@ -87,7 +88,7 @@ def run_json(task):
 
         #If does nt have query arg, construct based on channels arg and start/end
         def get_query(source):
-            nonlocal start, end, interval, modulo, prefix, channels, bins, last
+            nonlocal start, end, interval, modulo, prefix, channels, bins, last, timeout
             query = source.get("query", None)
             if query is None:
                 source_channels = source.pop("channels", None)
@@ -120,6 +121,9 @@ def run_json(task):
             if "last" not in query:
                 if last:
                     query["last"] = last
+            if "timeout" not in query:
+                if timeout:
+                    query["timeout"] = timeout
 
             force_id = False
             if type (query_id)== str:
@@ -169,6 +173,11 @@ def run_json(task):
             except Exception as ex:
                 del query["last"]
 
+            try:
+                if "timeout" in query.keys():
+                    query["timeout"] = float(query["timeout"])
+            except Exception as ex:
+                del query["timeout"]
 
 
             return query
@@ -344,6 +353,7 @@ def parse_args():
     parser.add_argument("-a", "--align", help="Merge sources aligning the message ids - options: [complete(default) or partial]",required=False, nargs="?", const=True)
     parser.add_argument("-u", "--url", help="URL of default source", required=False)
     parser.add_argument("-b", "--backend", help="Backend of default source (use \"null\" for all backends)", required=False)
+    parser.add_argument("-to", "--timeout",  help="Query timeout in seconds", required=False)
     parser.add_argument("-ll", "--loglevel", help="Set console log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)", required=False)
     parser.add_argument("-fi", "--filter", help="Set a filter for data", required=False)
     parser.add_argument("-di", "--interval", help="Downsampling interval between samples in seconds", required=False)
@@ -455,6 +465,8 @@ def main():
                 task["bins"] = args.bins
             if args.last:
                 task["last"] = bool(args.last)
+            if args.timeout:
+                task["timeout"] = float(args.timeout)
             if args.modulo:
                 task["modulo"] = args.modulo
             if args.filter:

@@ -40,7 +40,7 @@ class Array10(Source):
             self.connect()
             pulse_id = -1
             init = True
-            while not self.range.has_ended(id=pulse_id+1) and not self.aborted:
+            while not self.has_stream_finished(id=pulse_id+1):
                 data = self.receive()
                 if not data:
                     raise Exception("Received None message.")

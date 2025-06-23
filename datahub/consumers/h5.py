@@ -3,6 +3,7 @@ import h5py
 import numpy
 import datetime
 import threading
+from datahub.utils.timing import convert_timestamp
 from datahub import Consumer, Compression, bitshuffle_compression_lz4, decompress, str_to_bool
 
 _logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class HDF5Writer(Consumer):
 
 
     def on_stop(self, source, exception):
-        pass
+        self.file[self.get_path(source)].attrs["status"] = source.get_run_status()
 
     def get_path(self, source):
         if self.path and not source.path:

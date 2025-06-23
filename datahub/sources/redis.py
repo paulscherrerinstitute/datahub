@@ -43,7 +43,7 @@ class Redis(Source):
                 ID = "0-0" #from beggining of stream
                 #ID = "$"  # new messages
                 streams = {channel : ID for channel in channels}
-                while not self.range.has_ended() and not self.aborted:
+                while not self.has_stream_finished():
                     entries = r.xread(streams, count=1, block=10)
                     if entries:
                         for stream, messages in entries:

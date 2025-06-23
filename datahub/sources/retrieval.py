@@ -199,7 +199,7 @@ class Retrieval(Source):
         json["range"] = self._get_range()
         if self.backend is not None:
             json["defaultBackend"] = self.backend
-        conn = http_data_query(json, self.url)
+        conn = http_data_query(json, self.url, timeout=self.get_timeout())
         try:
             response = conn.getresponse()
             if response.status != 200:
@@ -234,7 +234,7 @@ class Retrieval(Source):
         current_channel_name = None
         header = None
 
-        while True:
+        while not self.is_run_timeout():
             bytes_read = stream.read(4)
             if len(bytes_read) != 4:
                 if current_channel_name is not None:

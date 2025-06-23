@@ -39,15 +39,15 @@ class Stdout(Consumer):
         pass
 
     def on_start(self, source):
-        now = timestamp_to_string(utc=False)
+        now = timestamp_to_string(source.get_run_start_timestamp(), utc=False)
         msg = self.center(f"Starting {source.get_desc()} at {now}")
         print(f"{self.color_sources}{msg}{TextColors.RESET}")
         msg = self.center(f"{source.query}")
         print(f"{self.color_sources}{msg}{TextColors.RESET}")
 
     def on_stop(self, source, exception):
-        now = timestamp_to_string(utc=False)
-        msg = self.center(f"Finished {source.get_desc()} at {now}")
+        now = timestamp_to_string(source.get_run_stop_timestamp(), utc=False)
+        msg = self.center(f"Finished {source.get_desc()} at {now} - status: {source.get_run_status()}")
         print(f"{self.color_sources}{msg}{TextColors.RESET}")
 
     def on_channel_header(self, source, name, typ, byteOrder, shape, channel_compression, metadata):

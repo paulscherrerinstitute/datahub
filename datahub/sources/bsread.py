@@ -46,7 +46,7 @@ class Bsread(Source):
             self.context = stream.stream.context
             pulse_id = -1
             init = True
-            while not self.range.has_ended(id=pulse_id+1) and not self.aborted:
+            while not self.has_stream_finished(id=pulse_id+1):
                 data = stream.receive()
                 if not data:
                     raise Exception("Received None message.")

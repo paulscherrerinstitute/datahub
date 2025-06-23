@@ -86,7 +86,7 @@ class DataBuffer(Source):
         if server_side_mapping:
             query["mapping"] = {"incomplete": server_side_mapping_strategy}
 
-        response = requests.post(self.url, json=query)
+        response = requests.post(self.url, json=query, timeout=self.get_timeout())
 
         # Check for successful return of data
         if response.status_code != 200:
