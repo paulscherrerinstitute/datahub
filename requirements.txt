@@ -10,4 +10,5 @@ bsread
 pytz
 pandas
 redis
+websockets
 matplotlib

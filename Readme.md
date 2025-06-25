@@ -33,6 +33,7 @@ The following can be needed accordingly to the data source:
   - pyzmq (required by array10 and bsread sources)
   - bsread (required for bsread, camserver, dispatcher and stdaq sources)
   - redis (required by redis and stddaq sources)
+  - websockets (stddaq sources)
 
  And these are other optional helper dependencies:
   - bitshuffle (saving compressed datasets)

@@ -28,6 +28,7 @@ requirements:
 #    - bitshuffle
 #    - dateutil
 #    - cbor2
+#    - websockets
 
 about:
   home: https://github.com/paulscherrerinstitute/datahub
