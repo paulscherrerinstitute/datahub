@@ -224,8 +224,9 @@ class Daqbuf(Source):
         query["backend"] = backend
         if last is not None:
             query["oneBeforeRange"] = "true" if last else "false"
-        if self.get_timeout() is not None:
-            query["contentTimeout"] = self.get_timeout()
+        #Timeout breing handled in client side
+        #if self.get_timeout() is not None:
+        #    query["contentTimeout"] = self.get_timeout()
         if bins:
             if (type(bins) == str) and len(bins)>1 and bins[-1].isalpha():
                 query["binWidth"] = bins
