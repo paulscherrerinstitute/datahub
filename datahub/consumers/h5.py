@@ -39,7 +39,9 @@ class HDF5Writer(Consumer):
 
 
     def on_stop(self, source, exception):
-        self.file[self.get_path(source)].attrs["status"] = source.get_run_status()
+        if self.file is not None:
+            if self.get_path(source) in self.file :
+                self.file[self.get_path(source)].attrs["status"] = source.get_run_status()
 
     def get_path(self, source):
         if self.path and not source.path:
