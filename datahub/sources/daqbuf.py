@@ -173,7 +173,7 @@ class Daqbuf(Source):
                 secs2 = tsAnchor + float(ts2Ms[i]) / 1000.0
                 timestamp1 = create_timestamp(secs1, 0.0 if (ts1Ns is None) else ts1Ns[i])
                 timestamp2 = create_timestamp(secs2, 0.0 if (ts2Ns is None) else ts2Ns[i])
-                avg = avgs[i]
+                avg = numpy.float64(avgs[i]) #If avgs[i]==None, translated to nan
                 max = self.adjust_type(maxs[i])
                 min = self.adjust_type(mins[i])
                 count = self.adjust_type(counts[i])

@@ -208,6 +208,21 @@ class DataBufferTest(unittest.TestCase):
             for query in queries:
                 source.request(query)
 
+    def test_felix(self):
+        with Daqbuf(backend="sls-archiver") as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.req(["ARS05-RCIR-0060:Water-Flow",],"2024-09-15 09:00", "2024-09-15 10:00", bins=0, backend="sls-archiver")
+
+    def test_tadej(self):
+        with Daqbuf(backend="sls-archiver") as source:
+            stdout = Stdout()
+            plot = Plot()
+            source.add_listener(plot)
+            source.add_listener(stdout)
+            source.req(["SARBD01-DICT030:INT-CHARGE-OP",],"2020-01-03 02:00:00.000" ,  "2020-06-03 02:00:00.000", bins=100, backend="sf-archiver")
+
+
     def test_search(self):
         with Daqbuf(backend="sf-archiver", cbor=True, parallel=False) as source:
             print (source.search("", case_sensitive=False))

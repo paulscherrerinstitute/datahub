@@ -61,6 +61,21 @@ class CamserverTest(unittest.TestCase):
         self.assertEqual(list(dataframe.keys()), ['width', 'height', 'image', 'x_axis', 'y_axis'])
         self.camera.close_listeners()
 
+    def test_screen_panel(self):
+        url = "http://sf-daqsync-01:8889"
+        camera = "SATBD02-DSCR050"
+        url = "http://localhost:8889"
+        camera = "simulation"
+        channel = "x_fit_standard_deviation"
+        sampling_time = 2.0
+        table = Table()
+        pipeline = Pipeline(url=url, name=camera+"_sp")
+        pipeline.add_listener(table)
+        pipeline.req(channels=[channel], start=0.0, end=sampling_time)
+        df = table.as_dataframe()
+        mean = df[channel].mean()
+        print(mean)
+
     def test_config(self):
         with Pipeline(url=url_pipeline_server, name="[simulation3_sp]", config = {"binning_x":2,"binning_y":2}) as source:
             stdout = Stdout()
