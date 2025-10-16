@@ -186,10 +186,12 @@ class Daqbuf(Source):
                                      metadata={"bins": bins}, **args)
         else:
             nelm = len(data['values'])
+            pulseAnchor = data.get('pulseAnchor', None)
+            timeAnchor = data.get('tsAnchor', None)
             for i in range(nelm):
-                secs = data['tsAnchor'] + float(data['tsMs'][i]) / 1000.0
+                secs = None if timeAnchor is None else timeAnchor + float(data['tsMs'][i]) / 1000.0
                 timestamp = create_timestamp(secs, data['tsNs'][i])
-                pulse_id = data['pulseAnchor'] + data['pulseOff'][i]
+                pulse_id = None if pulseAnchor is None else pulseAnchor + data['pulseOff'][i]
                 value = data['values'][i]
                 self.receive_channel(channel, value, timestamp, pulse_id, check_changes=False, check_types=True)
 
