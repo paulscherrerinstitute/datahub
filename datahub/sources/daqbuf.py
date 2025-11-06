@@ -13,20 +13,30 @@ class Daqbuf(Source):
     API_VERSION = "1.0"
     DEFAULT_URL = os.environ.get("DAQBUF_DEFAULT_URL", "https://data-api.psi.ch/api/4")
     DEFAULT_BACKEND = os.environ.get("DAQBUF_DEFAULT_BACKEND", "sf-databuffer")
+    DEFAULT_COMPRESSION = os.environ.get("DAQBUF_DEFAULT_COMPRESSION", "false")
 
-    def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, delay=1.0, cbor=True, parallel=True, streamed=True, **kwargs):
+    def __init__(self, url=DEFAULT_URL, backend=DEFAULT_BACKEND, delay=1.0, cbor=True, parallel=True, streamed=True, compressed=None, **kwargs):
         """
         url (str, optional): Daqbuf URL. Default value can be set by the env var DAQBUF_DEFAULT_URL.
         backend (str, optional): Daqbuf backend. Default value can be set by the env var DAQBUF_DEFAULT_BACKEND.
         delay (float, optional): Wait time for channels to be uploaded to storage before retrieval.
         cbor (bool, optional): if True (default) retrieves data as CBOR, otherwise as JSON.
         parallel (bool, optional): if True (default) performs the retrieval of multiple channels in differt threads.
+        streamed (bool, optional): if True (default) performs receives data as stream, forwarding events while receiving message.
+        compressed (bool or str, optional): Defines the supported stream compressions from server.
+                                            If True uses "gzip, deflate".
+                                            Default value can be set by the env var DAQBUF_DEFAULT_COMPRESSION.
         """
         if url is None:
             raise RuntimeError("Invalid URL")
         Source.__init__(self, url=url, backend=backend, query_path="/events",  search_path="/search/channel",
                         known_backends=None, **kwargs)
         self.base_url = url
+        self.accept_comppression = Daqbuf.DEFAULT_COMPRESSION if compressed is None else compressed
+        if str(self.accept_comppression).lower() == "true":
+            self.accept_comppression = True
+        elif str(self.accept_comppression).lower() == "false":
+            self.accept_comppression = False
         self.binned_url = self.base_url + "/binned"
         self.known_backends = self.get_backends()
         self.delay = delay
@@ -238,52 +248,38 @@ class Daqbuf(Source):
         create_connection = streamed and (conn is None)
         url = self.binned_url if bins else self.url
         if streamed:
-            conn = http_data_query(query, url,method="GET",
+            conn = http_data_query(query, url, method="GET",
                                    accept="application/cbor-framed" if cbor else "application/json-framed",
                                    conn=conn,
                                    add_headers=self.add_headers,
+                                   accept_comppression=self.accept_comppression,
                                    timeout=self.get_timeout())
+            response = conn.getresponse()
+            self.check_response(response, channel)
+            if self.accept_comppression:
+                response = check_compression(response)
+            reader = io.BufferedReader(response)
+        else:
+            import requests
+            response = requests.get(url, query, headers=self.headers, timeout=self.get_timeout())
+            self.check_response(response, channel)
+            data = response.json()
         try:
             if cbor:
-                response = conn.getresponse()
-                self.check_response(response, channel)
                 try:
-                    self.read_cbor(io.BufferedReader(response), channel)
+                    self.read_cbor(reader, channel)
                 except Exception as e:
                     _logger.exception(e)
                     raise
             else:
-                if bins:
-                    if self.streamed:
-                        response = conn.getresponse()
-                        self.check_response(response, channel)
-                        try:
-                            self.read_json(io.BufferedReader(response), channel, bins)
-                        except Exception as e:
-                            _logger.exception(e)
-                            raise
-                    else:
-                        import requests
-                        response = requests.get(url , query, headers=self.headers, timeout=self.get_timeout())
-                        # Check for successful return of data
-                        self.check_response(response, channel)
-                        data = response.json()
-                        self.read_json_single(data, channel, bins)
+                if self.streamed:
+                    try:
+                        self.read_json(reader, channel, bins if bins else None)
+                    except Exception as e:
+                        _logger.exception(e)
+                        raise
                 else:
-                    if self.streamed:
-                        response = conn.getresponse()
-                        self.check_response(response, channel)
-                        try:
-                            self.read_json(io.BufferedReader(response), channel)
-                        except Exception as e:
-                            _logger.exception(e)
-                            raise
-                    else:
-                        import requests
-                        response = requests.get(url , query, headers=self.headers, timeout=self.get_timeout())
-                        self.check_response(response, channel)
-                        data = response.json()
-                        self.read_json_single(data, channel)
+                    self.read_json_single(data, channel, bins if bins else None)
         finally:
             if self.receiving_channel(channel):
                 self.on_channel_completed(channel)

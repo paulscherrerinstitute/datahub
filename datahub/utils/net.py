@@ -11,6 +11,9 @@ import re
 import sys
 import logging
 import socket
+import io
+import zlib
+import gzip
 
 _logger = logging.getLogger(__name__)
 
@@ -58,19 +61,22 @@ def http_req(method, url, conn=None, timeout=None):
 
 
 
-def get_default_header():
-    return {   "User-Agent": datahub.package_name(),
-               "Accept-Encoding": "gzip, deflate, br",
+def get_default_header(compression=False):
+    ret = {   "User-Agent": datahub.package_name(),
                "Accept": "*/*",
                "Content-Type": "application/json",
                "Connection": "keep-alive",
             }
+    return ret
 
 
-def http_data_query(query, url, method = "POST", content_type="application/json", accept="application/octet-stream", add_headers={}, conn=None, timeout=None):
+def http_data_query(query, url, method = "POST", content_type="application/json", accept="application/octet-stream",
+                    add_headers={}, accept_comppression=None, conn=None, timeout=None):
     headers = get_default_header()
     headers["Content-Type"] = content_type
     headers["Accept"] = accept
+    if accept_comppression:
+        headers["Accept-Encoding"] = "gzip, deflate" if accept_comppression==True else accept_comppression
     headers.update(add_headers)
 
     up = urllib.parse.urlparse(url)
@@ -84,6 +90,17 @@ def http_data_query(query, url, method = "POST", content_type="application/json"
         body = json.dumps(query)
         conn.request(method, up.path, body, headers)
     return conn
+
+
+def check_compression(response):
+    encoding = response.getheader("Content-Encoding")
+    if encoding == "gzip":
+        return gzip.GzipFile(fileobj=response)
+    elif encoding == "deflate":
+        #return io.BytesIO(zlib.decompress(response.read())) #This reads all the stream upfront
+        return DeflateReader(response)
+    else:
+        return response
 
 def get_json(url, timeout=None):
     conn = http_req("GET", url, timeout=timeout)
@@ -115,3 +132,22 @@ def save_raw(query, url, fname, timeout=None):
     finally:
         conn.close()
 
+class DeflateReader(io.RawIOBase):
+    def __init__(self, stream):
+        self.stream = stream
+        self.decompressor = zlib.decompressobj()
+        self.buffer = b""
+
+    def read(self, size=-1):
+        while len(self.buffer) < size or size < 0:
+            chunk = self.stream.read(8192)
+            if not chunk:
+                self.buffer += self.decompressor.flush()
+                break
+            self.buffer += self.decompressor.decompress(chunk)
+
+        if size < 0:
+            data, self.buffer = self.buffer, b""
+        else:
+            data, self.buffer = self.buffer[:size], self.buffer[size:]
+        return data

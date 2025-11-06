@@ -227,7 +227,12 @@ class DataBufferTest(unittest.TestCase):
         with Daqbuf(backend="sf-archiver", cbor=True, parallel=False) as source:
             print (source.search("", case_sensitive=False))
 
-
+    def test_comp(self):
+        with Daqbuf(url="https://data-api.psi.ch/gzip/api/4/", backend="sf-archiver", cbor=True, compressed=True) as source:
+        #with Daqbuf(backend="sf-archiver", cbor=True) as source:
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.req(["SARUN20-DBPM070:X-TMP-FBI", ], -100.0, 0.0, binCount=10)
 
 if __name__ == '__main__':
     unittest.main()
