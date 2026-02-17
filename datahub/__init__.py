@@ -31,6 +31,9 @@ class Enum():
     def __str__(self):
         return f"{self.id}:{self.desc}"
 
+#Bitshuffle (and bsread) need  OMP_NUM_THREADS = 1, otherwise the CPU usage is huge.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+
 from datahub.utils.timing import *
 from datahub.utils.net import *
 from datahub.utils.compression import *

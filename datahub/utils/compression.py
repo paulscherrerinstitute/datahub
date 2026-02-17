@@ -15,15 +15,12 @@ class Endianness:
 try:
     import bitshuffle
     import bitshuffle.h5
-    bitshuffle_compression_filter =  bitshuffle.h5.H5FILTER
-    bitshuffle_compression_lz4 = bitshuffle.h5.H5_COMPRESS_LZ4
-
 except:
     _logger.error("bitshuffle not installed: BITSHUFFLE_LZ4 compression not supported")
-    #itshuffle does not need to be present to dump compressed channels
-    bitshuffle = None
-    bitshuffle_compression_filter =32008
-    bitshuffle_compression_lz4 = 2
+
+#Bitshuffle does not need to be present to dump compressed channels
+bitshuffle_compression_filter = 32008  # bitshuffle.h5.H5FILTER
+bitshuffle_compression_lz4 = 2  # bitshuffle.h5.H5_COMPRESS_LZ4
 
 class Compression:
     BITSHUFFLE_LZ4 = bitshuffle_compression_filter
@@ -34,7 +31,8 @@ class Compression:
 def decompress(blob, name, compression, shape, dtype, border=Endianness.LITTLE):
     if bitshuffle is None:
         raise Exception("Bitshuffle not available")
-    if compression == Compression.BITSHUFFLE_LZ4:
+
+    if (compression == Compression.BITSHUFFLE_LZ4) or (compression == "bitshuffle_lz4"):
         c_length = struct.unpack(">q", blob[0:8])[0]
         b_size = struct.unpack(">i", blob[8:12])[0]
         nbuf = numpy.frombuffer(blob[12:], dtype=numpy.uint8)

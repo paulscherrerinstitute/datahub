@@ -14,6 +14,8 @@ class HDF5Writer(Consumer):
         Consumer.__init__(self, **kwargs)
         self.nbytes_read = 0
         self.filename = filename
+        if default_compression == "bitshuffle_lz4":
+            default_compression = Compression.BITSHUFFLE_LZ4
         self.default_compression = default_compression
         self.auto_decompress = str_to_bool(auto_decompress)
         self.metadata_compression = metadata_compression
@@ -82,12 +84,14 @@ class HDF5Writer(Consumer):
         ts_ds.enum = enum
         id_ds = Dataset(prefix, channel, "id", self.file, dtype=numpy.int64, dataset_compression=self.metadata_compression) if has_id else None
         data_ds_name = "value"
+        dataset_compression = self.default_compression
         if channel_compression and (not self.auto_decompress):
             if shape is None or (len(shape) == 0):
                 raise RuntimeError(f"Compression not supported on scalars")
             if channel_compression != Compression.BITSHUFFLE_LZ4:
                 raise RuntimeError(f"Compression not supported: " + channel_compression)
             val_ds = DirectChunkWriteDataset(prefix, channel, data_ds_name, self.file,shape, dtype, channel_compression, dataset_compression=Compression.BITSHUFFLE_LZ4)
+            dataset_compression = Compression.BITSHUFFLE_LZ4
         else:
             val_ds = Dataset(prefix, channel, data_ds_name, self.file, shape, dtype, channel_compression, dataset_compression=self.default_compression)
             if metadata.get("bins", None):
@@ -116,7 +120,7 @@ class HDF5Writer(Consumer):
         self.file[f"{prefix}/{channel}"].attrs["type"] = str(typ)
         self.file[f"{prefix}/{channel}"].attrs["byteOrder"] = str(byteOrder)
         self.file[f"{prefix}/{channel}"].attrs["shape"] = str(shape)
-        self.file[f"{prefix}/{channel}"].attrs["compression"] = str(channel_compression)
+        self.file[f"{prefix}/{channel}"].attrs["compression"] = str(dataset_compression)
         for key in metadata.keys():
             self.file[f"{prefix}/{channel}"].attrs[key] = metadata[key]
 
@@ -278,7 +282,7 @@ class DirectChunkWriteDataset(Dataset):
         #k = struct.unpack(">qi", buf[:12])
         #uncompressed_size = k[0]
         #block_size = k[1]
-        #self.compression_opts = (block_size, bitshuffle.h5.H5_COMPRESS_LZ4)
+        #self.compression_opts = (block_size, bitshuffle_compression_lz4)
         off = (self.nwritten,) + (0,) * len(self.shape)
         self.dataset.id.write_direct_chunk(off, buf)
         self.nwritten += 1
