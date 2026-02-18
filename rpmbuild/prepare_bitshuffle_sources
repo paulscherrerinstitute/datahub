@@ -1,0 +1,9 @@
+wget https://github.com/kiyo-masui/bitshuffle/archive/refs/tags/0.5.2.tar.gz -O bitshuffle-0.5.2.tar.gz
+tar xf bitshuffle-0.5.2.tar.gz
+cd bitshuffle-0.5.2
+# Disable OpenMP
+printf "[build_ext]\nomp = 0\n" > setup.cfg
+cd ..
+tar czf bitshuffle-0.5.2-noomp.tar.gz bitshuffle-0.5.2
+rm -rf bitshuffle-0.5.2
+mv bitshuffle-0.5.2-noomp.tar.gz ./SOURCES

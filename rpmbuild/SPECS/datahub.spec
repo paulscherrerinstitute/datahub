@@ -1,5 +1,5 @@
 Name:           datahub
-Version:        1.1.9
+Version:        1.1.10
 Release:        1%{?dist}
 Summary:        PSI DataHub application
 
@@ -10,8 +10,8 @@ BuildArch:      noarch
 
 Requires:       python3
 Requires:       python3-pip
-Requires:       python3-devel
-#python3-devel needed to compile bitshuffle
+Requires:       bitshuffle-noomp
+#Requires:       python3-devel
 
 #BuildRequires:  python3
 #BuildRequires:  python3-pip

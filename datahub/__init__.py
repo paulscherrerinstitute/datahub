@@ -32,7 +32,8 @@ class Enum():
         return f"{self.id}:{self.desc}"
 
 #Bitshuffle (and bsread) need  OMP_NUM_THREADS = 1, otherwise the CPU usage is huge.
-os.environ.setdefault("OMP_NUM_THREADS", "1")
+#In case bitshuffle was compiled with OMP, it can be disabled with:
+#os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 from datahub.utils.timing import *
 from datahub.utils.net import *
