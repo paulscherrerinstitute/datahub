@@ -1,9 +1,8 @@
-from pkg_resources import resource_stream
 import os
+from ._version import __version__
 
 def version():
-    with resource_stream(__name__, "package_version.txt") as res:
-        return res.read()[:-1].decode().strip()
+    return __version__
 
 def package_name():
     return f"DataHub {datahub.version()}"
@@ -87,4 +86,3 @@ KNOWN_SOURCES = {
     }
 
 DEFAULT_SOURCE = os.environ.get("DEFAULT_DATA_SOURCE", "daqbuf")
-#from datahub.main import run_json

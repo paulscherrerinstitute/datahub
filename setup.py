@@ -1,19 +1,16 @@
 import os
-import pathlib
 from setuptools import setup, find_packages
+from datahub._version import __version__
 
 PACKAGE_PREFIX = "psi-"
 PACKAGE_NAME = "datahub"
-VERSION_FILE = "package_version.txt"
+
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 def version():
-    p = pathlib.Path(__file__).parent.joinpath(PACKAGE_NAME).joinpath(VERSION_FILE)
-    with open(p, "r") as f1:
-        return f1.read()[:-1]
-
+    return __version__
 
 setup(
     name=PACKAGE_PREFIX + PACKAGE_NAME,
@@ -33,11 +30,5 @@ setup(
         'console_scripts': [
             f'{PACKAGE_NAME} = {PACKAGE_NAME}.main:main',
         ],
-    },
-    # Include the non-code file (package_version.txt) in the package folder
-    include_package_data=True,
-    package_data={
-        # Include the text file in the package directory
-        PACKAGE_NAME: [VERSION_FILE],
     },
 )

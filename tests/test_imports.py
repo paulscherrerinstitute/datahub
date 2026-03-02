@@ -3,7 +3,6 @@ import time
 
 start = time.time()
 import os,time,logging,dateutil,json,ssl,urllib,re,numpy,struct,bitshuffle
-from pkg_resources import resource_stream
 print  (time.time() - start)
 
 
