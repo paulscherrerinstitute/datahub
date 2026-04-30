@@ -2,7 +2,7 @@ import time
 import unittest
 from datahub import *
 
-url = "tcp://localhost:8888"
+url = "tcp://localhost:9999"
 mode = "SUB"
 filename = "/Users/gobbo_a/dev/back/bsread.h5"
 channels = None

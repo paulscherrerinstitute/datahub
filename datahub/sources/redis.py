@@ -94,7 +94,8 @@ class RedisStream(Redis):
         Redis.__init__(self, **kwargs)
         self.message_buffer = collections.deque(maxlen=queue_size)
         self.condition = threading.Condition()
-        self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True, **kwargs)
+        now = time.time()
+        self.req(channels, now, now + 365 * 24 * 60 * 60, filter=filter, background=True, **kwargs)
 
     def close(self):
         Redis.close(self)

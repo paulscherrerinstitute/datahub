@@ -17,7 +17,7 @@ class Bsread(Source):
 
     DEFAULT_URL = os.environ.get("BSREAD_DEFAULT_URL", None if (bsread is None) else bsread.DEFAULT_DISPATCHER_URL)
 
-    def __init__(self, url=DEFAULT_URL, mode="SUB", **kwargs):
+    def __init__(self, url=DEFAULT_URL, mode="SUB", dispatcher_url=bsread.DEFAULT_DISPATCHER_URL, **kwargs):
         """
         url (str, optional): Stream URL. Default value can be set by the env var BSREAD_DEFAULT_URL.
         mode (str, optional): "SUB" or "PULL"
@@ -27,6 +27,7 @@ class Bsread(Source):
             raise Exception("bsread library not available")
         self.mode = mode
         self.context = 0
+        self.dispatcher_url = dispatcher_url
 
     def run(self, query):
         mode = bsread.PULL if self.mode == "PULL" else bsread.SUB
@@ -42,7 +43,7 @@ class Bsread(Source):
 
         self.context = None
 
-        with bsread.source(host=host, port=port, mode=mode, receive_timeout=receive_timeout, channels=stream_channels) as stream:
+        with bsread.source(host=host, port=port, mode=mode, receive_timeout=receive_timeout, channels=stream_channels, dispatcher_url=self.dispatcher_url) as stream:
             self.context = stream.stream.context
             pulse_id = -1
             init = True
@@ -103,7 +104,8 @@ class BsreadStream(Bsread):
         Bsread.__init__(self, **kwargs)
         self.message_buffer = collections.deque(maxlen=queue_size)
         self.condition = threading.Condition()
-        self.req(channels, 0.0, 365 * 24 * 60 * 60, filter=filter, background=True, **kwargs)
+        now = time.time()
+        self.req(channels, now, now + 365 * 24 * 60 * 60, filter=filter, background=True, **kwargs)
 
     def close(self):
         Bsread.close(self)
