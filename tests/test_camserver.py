@@ -51,12 +51,11 @@ class CamserverTest(unittest.TestCase):
         self.assertEqual(list(dataframe.keys()), channels)
 
     def test_camera(self):
-        query["channels"] = None
         hdf5 = HDF5Writer(filename)
         table = Table()
         self.camera.add_listener(hdf5)
         self.camera.add_listener(table)
-        self.camera.request(query)
+        self.camera.req(channels=None, start=None, end=1.0)
         dataframe = table.as_dataframe()
         self.assertEqual(list(dataframe.keys()), ['width', 'height', 'image', 'x_axis', 'y_axis'])
         self.camera.close_listeners()
@@ -112,6 +111,50 @@ class CamserverTest(unittest.TestCase):
         print ("---")
         with Camera(url=url_camera_server) as source:
                 print(source.search("SIMU", case_sensitive=False))
+
+    def test_camera_config(self):
+        with (Camera(url=url_camera_server, name=camera) as cam):
+            self.assertEqual(cam.is_camera_online(), True)
+            print (cam.get_cameras())
+            print (cam.get_instances())
+            print(cam.get_groups())
+            print(cam.get_aliases())
+            print(cam.get_config())
+
+    def test_pipeline_config(self):
+        with Pipeline( url=url_pipeline_server, name=pipeline) as pip:
+            print(pip.get_camera_name())
+            print (pip.get_pipelines())
+            print (pip.get_instances())
+            print(pip.get_groups())
+            cfg = pip.get_config()
+            cfg2 = cfg.copy()
+            cfg2["image_threshold"] = 100
+            pip.set_config(cfg2)
+            self.assertEqual(pip.get_config()["image_threshold"], 100)
+            pip.set_config_item("image_threshold", 200)
+            self.assertEqual(pip.get_config()["image_threshold"], 200)
+            pip.set_config(cfg)
+            self.assertEqual(pip.get_config(), cfg)
+
+            cfg = pip.get_saved_config()
+            cfg2 = cfg.copy()
+            cfg2["test"] = 1.0
+            pip.set_saved_config(cfg2)
+            self.assertEqual(pip.get_saved_config()["test"], 1.0)
+            pip.set_saved_config_item("test2", "2.0")
+            self.assertEqual(pip.get_saved_config()["test2"], "2.0")
+            pip.set_saved_config(cfg)
+            self.assertEqual(pip.get_saved_config(), cfg)
+
+    def test_pipeline_backgroung(self):
+        with Pipeline( url=url_pipeline_server, name=pipeline) as pip:
+            print (pip.get_background_name())
+            print(pip.get_backgrounds())
+            print(pip.get_latest_background())
+            print (pip.get_background(pip.get_latest_background()).shape)
+
+
 
 if __name__ == '__main__':
     unittest.main()
