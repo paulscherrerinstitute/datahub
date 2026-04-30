@@ -15,9 +15,10 @@ class Bsread(Source):
     Retrieves data from a Bsread source.
     """
 
-    DEFAULT_URL = os.environ.get("BSREAD_DEFAULT_URL", None if (bsread is None) else bsread.DEFAULT_DISPATCHER_URL)
+    DEFAULT_DISPATCHER_URL = None if (bsread is None) else bsread.DEFAULT_DISPATCHER_URL
+    DEFAULT_URL = os.environ.get("BSREAD_DEFAULT_URL", DEFAULT_DISPATCHER_URL)
 
-    def __init__(self, url=DEFAULT_URL, mode="SUB", dispatcher_url=bsread.DEFAULT_DISPATCHER_URL, **kwargs):
+    def __init__(self, url=DEFAULT_URL, mode="SUB", dispatcher_url=DEFAULT_DISPATCHER_URL, **kwargs):
         """
         url (str, optional): Stream URL. Default value can be set by the env var BSREAD_DEFAULT_URL.
         mode (str, optional): "SUB" or "PULL"
