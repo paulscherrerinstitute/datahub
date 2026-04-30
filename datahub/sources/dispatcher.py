@@ -10,4 +10,7 @@ class Dispatcher(Bsread):
     def __init__(self, url=DEFAULT_URL, **kwargs):
         """
         """
-        Bsread.__init__(self, url=None, mode="SUB", dispatcher_url=url, **kwargs)
+        #Parameter dispatcher_url of bsread.source is not working
+        if url and (url != bsread.DEFAULT_DISPATCHER_URL):
+            bsread.DEFAULT_DISPATCHER_URL = url
+        Bsread.__init__(self, url=None, mode="SUB", **kwargs)

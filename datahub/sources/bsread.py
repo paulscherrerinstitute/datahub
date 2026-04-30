@@ -14,11 +14,10 @@ class Bsread(Source):
     """
     Retrieves data from a Bsread source.
     """
-
     DEFAULT_DISPATCHER_URL = None if (bsread is None) else bsread.DEFAULT_DISPATCHER_URL
     DEFAULT_URL = os.environ.get("BSREAD_DEFAULT_URL", DEFAULT_DISPATCHER_URL)
 
-    def __init__(self, url=DEFAULT_URL, mode="SUB", dispatcher_url=DEFAULT_DISPATCHER_URL, **kwargs):
+    def __init__(self, url=DEFAULT_URL, mode="SUB", **kwargs):
         """
         url (str, optional): Stream URL. Default value can be set by the env var BSREAD_DEFAULT_URL.
         mode (str, optional): "SUB" or "PULL"
@@ -28,7 +27,6 @@ class Bsread(Source):
             raise Exception("bsread library not available")
         self.mode = mode
         self.context = 0
-        self.dispatcher_url = dispatcher_url
 
     def run(self, query):
         mode = bsread.PULL if self.mode == "PULL" else bsread.SUB
@@ -39,12 +37,15 @@ class Bsread(Source):
             host, port = None, 9999
             stream_channels = channels
         else:
-            host, port = get_host_port_from_stream_address(self.url)
+            if ":" in self.url:
+                host, port = get_host_port_from_stream_address(self.url)
+            else:
+                host, port = self.url, 9999
             stream_channels = None
 
         self.context = None
 
-        with bsread.source(host=host, port=port, mode=mode, receive_timeout=receive_timeout, channels=stream_channels, dispatcher_url=self.dispatcher_url) as stream:
+        with bsread.source(host=host, port=port, mode=mode, receive_timeout=receive_timeout, channels=stream_channels) as stream:
             self.context = stream.stream.context
             pulse_id = -1
             init = True

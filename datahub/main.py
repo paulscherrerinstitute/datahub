@@ -370,7 +370,7 @@ def parse_args():
 
     for name, source in KNOWN_SOURCES.items():
         meta = eval("get_meta(" + source.__name__ + ")")
-        meta = f"channels {meta}start=None end=None"
+        meta = f"channels {meta} start=None end=None"
         eval(f'parser.add_argument("--{name}", metavar="{meta}", help="{name} query arguments", action="append", required=False, nargs="*")')
     args = parser.parse_args()
     return parser, args
