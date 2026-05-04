@@ -25,6 +25,8 @@ class QueryRange():
     MAX_REL_TIME = 100000.0 # ~=1 day at 100Hz (s)
     MAX_REL_ID = 10000000 # ~=1 day  (100Hz)
 
+    FOREVER = 5.0e9
+
 
     def __init__(self, query, source=None):  #max_rel ~=1 day at 100Hz
         now = time.time()
@@ -68,12 +70,20 @@ class QueryRange():
             else:
                 self.start = 0.0
         if self.end is None:
-            if type(self.start) == int:
-                self.end = 0
-            elif type(self.start) == str:
-                self.end = self.seconds_to_string(now)
+            if source.is_streaming():
+                if type(self.start) == int:
+                    self.end = time_to_pulse_id(float(QueryRange.FOREVER))
+                elif type(self.start) == str:
+                    self.start = self.seconds_to_string(QueryRange.FOREVER)
+                else:
+                    self.end = float(QueryRange.FOREVER)
             else:
-                self.end = 0.0
+                if type(self.start) == int:
+                    self.end = 0
+                elif type(self.start) == str:
+                    self.end = self.seconds_to_string(now)
+                else:
+                    self.end = 0.0
         #import pytz
         #self.utc_tz = pytz.utc
         #self.local_tz = pytz.timezone('Europe/Zurich')
@@ -83,7 +93,6 @@ class QueryRange():
         self.relative_start= None
         self.relative_end = None
         self.init_id = 0
-
         #Seconds
         self.start_sec, self.start_str, self.start_id, self.start_type, self.relative_start = self._parse_par(self.start, now, True)
         self.end_sec, self.end_str, self.end_id, self.end_type, self.relative_end = self._parse_par(self.end, now, False)

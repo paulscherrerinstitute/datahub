@@ -48,6 +48,7 @@ class Epics(Source):
         url (str, optional): if defined sets the EPICS_CA_ADDR_LIST.
         """
         Source.__init__(self, url=url, **kwargs)
+        self.streaming = True
         if self.url:
             os.environ["EPICS_CA_ADDR_LIST"] = self.url
 

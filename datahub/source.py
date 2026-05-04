@@ -51,10 +51,18 @@ class Source():
         self.run_start_timestamp = None
         self.run_stop_timestamp = None
         self.run_exception = None
+        self.streaming = False
         Source.instances.add(self)
+
+    def is_streaming(self):
+        return self.streaming
+
+    def is_retrieval(self):
+        return not self.streaming
 
     def get_backends(self):
         return self.known_backends
+
     def __enter__(self):
         return self
 

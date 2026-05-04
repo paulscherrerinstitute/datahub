@@ -33,6 +33,7 @@ class Array10(Source):
         self.pid = -1
         self.reshape = str_to_bool(str(reshape))
         self.generate_id = False
+        self.streaming = True
 
     def run(self, query):
         self.generate_id = self.range.is_by_id()

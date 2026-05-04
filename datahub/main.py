@@ -158,7 +158,7 @@ def run_json(task):
                                 query[arg] = float(query[arg])
                     except:
                         pass
-            if (query["start"] is None) and (query["end"] is None):
+            if not is_valid(query):
                 return None
 
             try:
@@ -178,9 +178,12 @@ def run_json(task):
                     query["timeout"] = float(query["timeout"])
             except Exception as ex:
                 del query["timeout"]
-
-
             return query
+
+        def is_valid(query):
+            if query.get("channels"):
+                return True
+            return (query.get("start") is not None) or (query.get("end") is not None)
 
         def add_source(cfg, src):
             nonlocal channels
@@ -370,7 +373,7 @@ def parse_args():
 
     for name, source in KNOWN_SOURCES.items():
         meta = eval("get_meta(" + source.__name__ + ")")
-        meta = f"channels {meta} start=None end=None"
+        meta = f"channels {meta}start=None end=None"
         eval(f'parser.add_argument("--{name}", metavar="{meta}", help="{name} query arguments", action="append", required=False, nargs="*")')
     args = parser.parse_args()
     return parser, args

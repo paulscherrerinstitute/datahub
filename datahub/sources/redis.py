@@ -29,6 +29,7 @@ class Redis(Source):
         self.host, self.port = get_host_port_from_stream_address(self.url)
         self.db = self.backend
         self.messages = []
+        self.streaming = True
 
     def run(self, query):
         partial_msg = query.get("partial_msg", True)

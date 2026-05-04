@@ -27,6 +27,7 @@ class Bsread(Source):
             raise Exception("bsread library not available")
         self.mode = mode
         self.context = 0
+        self.streaming = True
 
     def run(self, query):
         mode = bsread.PULL if self.mode == "PULL" else bsread.SUB
