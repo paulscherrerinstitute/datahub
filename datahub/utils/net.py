@@ -151,3 +151,18 @@ class DeflateReader(io.RawIOBase):
         else:
             data, self.buffer = self.buffer[:size], self.buffer[size:]
         return data
+
+def validate_response( server_response):
+    if server_response["state"] != "ok":
+        raise ValueError(server_response.get("status", "Unknown error occurred."))
+    return server_response
+
+def get_response( url, post=None, params=None, delete=False, timeout=None):
+    import requests
+    if post:
+        server_response = requests.post(url, json=None if (post is True) else post, params=params,timeout=timeout).json()
+    elif delete:
+        server_response = requests.delete(url, timeout=timeout).json()
+    else:
+        server_response = requests.get(url, params=params, timeout=timeout).json()
+    return validate_response(server_response)
