@@ -1,9 +1,12 @@
 from datahub import *
+from threading import Thread
 
 _logger = logging.getLogger(__name__)
 
 class CamServerClient(Bsread):
     def __init__(self, api_prefix, name=None, config=None, mode="SUB", timeout=None, **kwargs):
+        if "://" not in api_prefix:
+            api_prefix = "http://" + api_prefix
         self.api_prefix = api_prefix
         self.timeout = timeout
         self.name = name
@@ -13,7 +16,7 @@ class CamServerClient(Bsread):
     def _get_name(self, name=None):
         name = name or self.name
         if not name:
-            raise ValueError ("Undefined instance name")
+            raise ValueError("Undefined instance name")
         return name
 
     def _get_config_name(self, config_name=None):
@@ -114,32 +117,40 @@ class Pipeline(CamServerClient):
                 name, self.pipeline = match.group(1), match.group(2)
         CamServerClient.__init__(self, api_prefix=url+"/api/v1/pipeline", name=name if name else None, config=config, mode=mode, timeout=timeout, **kwargs)
 
+    def run(self, query):
+        if str_to_bool(query.get("bg", None)):
+            if self.range.has_ended():
+                self._push_background_image_array()
+            else:
+                Thread(target=self._push_background_image_array, daemon=True).start()
+        Bsread.run(self, query)
+
     def _get_stream(self):
         if self.name or self.config:
             try:
-                return self._get_active_stream(self._get_name())
+                return self.get_active_stream(self._get_name())
             except:
                 if self.config:
                     if self.pipeline:
-                        return self._create_stream_from_name(name=self.pipeline, instance_id=self.name, additional_config=self.config)
+                        return self.create_stream_from_name(name=self.pipeline, instance_id=self.name, additional_config=self.config)
                     else:
                         self.pipeline = self.config.get("name", None)
-                        return self._create_stream_from_config(self.config, self.name)
+                        return self.create_stream_from_config(self.config, self.name)
 
                 else:
                     if self.pipeline:
-                        return self._create_stream_from_name(name=self.pipeline, instance_id=self.name)
+                        return self.create_stream_from_name(name=self.pipeline, instance_id=self.name)
 
-    def _get_active_stream(self, instance_id):
+    def get_active_stream(self, instance_id):
         return self.get_response("/instance/%s" % instance_id)["stream"]
 
-    def _create_stream_from_config(self, config, instance_id=None):
+    def create_stream_from_config(self, config, instance_id=None):
         if instance_id:
             return self.get_response("", post=config, params={"instance_id": instance_id} if instance_id else None)["stream"]
         else:
             return self.get_response("/instance/", post=config)["stream"]
 
-    def _create_stream_from_name(self, name, instance_id=None, additional_config=None):
+    def create_stream_from_name(self, name, instance_id=None, additional_config=None):
         params = {}
         if instance_id or additional_config:
             if instance_id:
@@ -159,6 +170,14 @@ class Pipeline(CamServerClient):
         if not camera_name:
             raise ValueError("Undefined camera name")
         return camera_name
+
+    def _push_background_image_array(self):
+        bg_name = self.get_background_name()
+        bg_array = self.get_background(bg_name)
+        if bg_array is not None:
+            tokens = bg_name.split("_")
+            ts = datetime.strptime(tokens[-3] + " " + tokens[-2], "%Y%m%d %H%M%S").timestamp()
+            self.receive_channel("background_image_array", bg_array, create_timestamp(ts), None, check_changes=True,check_types=True, metadata={"name": bg_name})
 
     def get_instance_config(self, instance_id=None):
         return self.get_response("/instance/%s/config" % self._get_name(instance_id))["config"]
@@ -189,6 +208,8 @@ class Pipeline(CamServerClient):
     def get_background(self, background_name=None):
         import base64
         background_name = background_name or self.get_background_name()
+        if not background_name:
+            return None
         image = self.get_response( "/background/%s/image_bytes" % background_name)["image"]
         dtype, shape, bytes = image["dtype"], image["shape"], base64.b64decode(image["bytes"].encode())
         return numpy.frombuffer(bytes, dtype=dtype).reshape(shape)

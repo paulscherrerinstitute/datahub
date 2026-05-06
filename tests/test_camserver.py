@@ -76,7 +76,7 @@ class CamserverTest(unittest.TestCase):
         mean = df[channel].mean()
         print(mean)
 
-    def test_config(self):
+    def test_connections(self):
         with Pipeline(url=url_pipeline_server, name="[simulation3_sp]", config = {"binning_x":2,"binning_y":2}) as source:
             stdout = Stdout()
             source.add_listener(stdout)
@@ -151,7 +151,7 @@ class CamserverTest(unittest.TestCase):
             self.assertEqual(cam.is_online(name), True)
             print(cam.get_groups())
             cfg = cam.get_config(name)
-            print(cfg)
+             print(cfg)
             cfg2 = cfg.copy()
             cfg2["mirror_x"] = True
             cam.set_config(cfg2, name)
@@ -192,6 +192,24 @@ class CamserverTest(unittest.TestCase):
             self.assertEqual(pip.get_instance_config()["image_threshold"], 200)
             pip.set_instance_config(cfg)
             self.assertEqual(pip.get_instance_config(), cfg)
+
+    def test_pipeline_static(self):
+        with Pipeline(url=url_pipeline_server) as pip:
+
+            config = {
+                "pipeline_type": "processing",
+                "camera_name": "simulation"
+            }
+            print(pip.create_stream_from_config(config))
+            stream = pip.create_stream_from_config(config, "Test")
+            print(stream)
+            self.assertEqual(stream, pip.get_active_stream("Test"))
+            pipeline = "simulation2_sp"
+            print (pip.create_stream_from_name(pipeline))
+            stream = pip.create_stream_from_name(pipeline, "Test2")
+            self.assertEqual(stream, pip.get_active_stream("Test2"))
+            print(pip.create_stream_from_name(pipeline, "Test3", {"test" : "a"}))
+            self.assertEqual(pip.get_instance_config("Test3")["test"], "a")
 
     def test_pipeline_config_static(self):
         with Pipeline( url=url_pipeline_server) as pip:
