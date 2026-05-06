@@ -52,6 +52,7 @@ class Source():
         self.run_stop_timestamp = None
         self.run_exception = None
         self.streaming = False
+        self.req_channels = True
         Source.instances.add(self)
 
     def is_streaming(self):
@@ -59,6 +60,9 @@ class Source():
 
     def is_retrieval(self):
         return not self.streaming
+
+    def requires_channels(self):
+        return self.req_channels
 
     def get_backends(self):
         return self.known_backends
@@ -80,6 +84,9 @@ class Source():
 
     def get_backend(self):
         return self.backend
+
+    def get_type(self):
+        return self.type
 
     def get_desc(self):
         return "%s[%s]" % (self.get_id(), (str(self.backend) if self.backend else self.url))

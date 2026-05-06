@@ -20,10 +20,12 @@ class Array10(Source):
         reshape (bool, optional): if True (Default) reshapes receiving array into 2d arrays.
         name (str, optional): channel name of the receiving data - if None, uses stream's "source" field.
         """
+
         if zmq is None:
             raise Exception("pyzmq library not available")
-        if not url.startswith("tcp://"):
-            url = "tcp://" + url
+        if url:
+            if not url.startswith("tcp://"):
+                url = "tcp://" + url
         Source.__init__(self, url=url, name=name, **kwargs)
         self.context = 0
         self.mode = mode
@@ -34,6 +36,7 @@ class Array10(Source):
         self.reshape = str_to_bool(str(reshape))
         self.generate_id = False
         self.streaming = True
+        self.req_channels = False
 
     def run(self, query):
         self.generate_id = self.range.is_by_id()

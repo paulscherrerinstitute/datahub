@@ -28,6 +28,7 @@ class Bsread(Source):
         self.mode = mode
         self.context = 0
         self.streaming = True
+        self.req_channels = not self.url or self.url == bsread.DEFAULT_DISPATCHER_URL
 
     def run(self, query):
         mode = bsread.PULL if self.mode == "PULL" else bsread.SUB
@@ -60,11 +61,10 @@ class Bsread(Source):
                     self.range.set_init_id(pulse_id)
                 if self.range.has_ended(id=pulse_id):
                     break
-                if self.range.has_started(id = pulse_id):
+                if self.range.has_started(id=pulse_id):
                     timestamp = create_timestamp(data.data.global_timestamp, data.data.global_timestamp_offset)
                     format_changed = data.data.format_changed
-                    data=data.data.data
-
+                    data = data.data.data
                     keys = channels if (channels and (len(channels)>0)) else data.keys()
                     msg = {channel: data[channel].value for channel in keys}
 

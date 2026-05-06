@@ -130,7 +130,7 @@ class Stddaq(Array10):
     """
     Retrieves data from Stddaq services, as live streams or replay.
     """
-    DEFAULT_URL = os.environ.get("STDDAQ_DEFAULT_URL", "sf-daq-6.psi.ch:6379")
+    DEFAULT_URL = os.environ.get("sf-daq-6.psi.ch:6379", "sf-daq-6.psi.ch:6379")
 
     def __init__(self, url=DEFAULT_URL, name=None, replay=False, **kwargs):
         """
@@ -146,8 +146,7 @@ class Stddaq(Array10):
         self.replay = replay
         self.db = '0'
         mode = "PULL" if replay else "SUB"
-        if name:
-            url = self.get_instance_stream(name + ":REPLAY-STREAM" if replay else name + ":LIVE-STREAM")
+        url = self.get_instance_stream(name + ":REPLAY-STREAM" if replay else name + ":LIVE-STREAM") if name else None
         Array10.__init__(self, url=url, mode=mode, name=name, **kwargs)
 
     def get_instance_stream(self, name):

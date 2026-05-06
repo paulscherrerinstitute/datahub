@@ -29,6 +29,9 @@ class Daqbuf(Source):
         """
         if url is None:
             raise RuntimeError("Invalid URL")
+        if "://" not in url:
+            url = "https://" + url
+
         Source.__init__(self, url=url, backend=backend, query_path="/events",  search_path="/search/channel",
                         known_backends=None, **kwargs)
         self.base_url = url

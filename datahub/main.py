@@ -87,18 +87,18 @@ def run_json(task):
         sources = []
 
         #If does nt have query arg, construct based on channels arg and start/end
-        def get_query(source):
+        def get_query(config, source):
             nonlocal start, end, interval, modulo, prefix, channels, bins, last, timeout
-            query = source.get("query", None)
+            query = config.get("query", None)
             if query is None:
-                source_channels = source.pop("channels", None)
+                source_channels = config.pop("channels", None)
                 if source_channels is None:
                     source_channels =  [] if channels is None else channels
                 if type(source_channels) == str:
                     source_channels = source_channels.split(CHANNEL_SEPARATOR)
                     source_channels = [s.lstrip("'\"").rstrip("'\"") for s in source_channels]
                 query = {"channels": source_channels}
-                query.update(source)
+                query.update(config)
             if "start" not in query:
                 query["start"] = start
             if "end" not in query:
@@ -158,7 +158,8 @@ def run_json(task):
                                 query[arg] = float(query[arg])
                     except:
                         pass
-            if not is_valid(query):
+
+            if not is_valid(source, query):
                 return None
 
             try:
@@ -180,14 +181,14 @@ def run_json(task):
                 del query["timeout"]
             return query
 
-        def is_valid(query):
-            if query.get("channels"):
-                return True
-            return (query.get("start") is not None) or (query.get("end") is not None)
+        def is_valid(source, query):
+            source.valid_channels = not source.requires_channels() or query.get("channels")
+            source.valid_range = source.is_streaming() or (query.get("start") is not None) or (query.get("end") is not None)
+            return source.valid_channels and source.valid_range
 
         def add_source(cfg, src):
             nonlocal channels
-            src.query = get_query(cfg)
+            src.query = get_query(cfg, src)
             sources.append(src)
 
         #Create source removing constructor parameters from the query dictionary
@@ -231,7 +232,7 @@ def run_json(task):
             return ret
 
         if len(valid_sources)==0:
-            if channels or (search!=None):
+            if channels or start or end or search:
                 # Add default source
                 valid_sources[DEFAULT_SOURCE+ "_0"] = ({}, KNOWN_SOURCES[DEFAULT_SOURCE])
 
@@ -280,7 +281,10 @@ def run_json(task):
             for source in sources:
                 if source is not None:
                     if source.query is None:
-                        source.print_help()
+                        if not source.valid_range:
+                           raise ValueError("Invalid range for source: " + source.get_type())
+                        if not source.valid_channels:
+                           raise ValueError("Undefined channels for source: " + source.get_type())
                     else:
                         source.request(source.query, background=True)
 
@@ -404,6 +408,11 @@ def main():
     if len(sys.argv) <= 1:
         print_help()
         return
+    if len(sys.argv) == 2:
+        for name, source in KNOWN_SOURCES.items():
+            if sys.argv[1] == f"--{name}":
+                source().print_help()
+                return
     parser, args = parse_args()
 
     def parse_arg_dict(parser, val):

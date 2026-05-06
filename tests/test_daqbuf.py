@@ -10,9 +10,11 @@ channels = ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"]
 start = "2024-02-15T12:41:00Z"
 end = "2024-02-15T12:42:00Z"
 
+backend = "sf-archiver"
 channels = ["S10BC01-DBPM010:Q1", "S10BC01-DBPM010:X1"]
-start = "2024-09-15 09:00:00"
-end = "2024-09-15 10:00:00"
+channels=["SINEG01-RSYS:GET-ACC-VOLT-STAB"]
+start = "2026-01-12 09:00:00"
+end = "2026-01-12 10:00:00"
 
 query = {
     "channels": channels,
@@ -84,6 +86,8 @@ class DataBufferTest(unittest.TestCase):
 
 
         s = time.time()
+        print (backend)
+        print (query)
         with Daqbuf(backend=backend, cbor=True, parallel=True) as source:
             source.add_listener(Listener())
             source.request(query)
@@ -228,7 +232,7 @@ class DataBufferTest(unittest.TestCase):
             print (source.search("", case_sensitive=False))
 
     def test_comp(self):
-        with Daqbuf(url="https://data-api.psi.ch/gzip/api/4/", backend="sf-archiver", cbor=True, compressed=True) as source:
+        with Daqbuf(url="https://data-api.psi.ch/gzip/api/4/", backend="sf-archiver", cbor=True, compressed="gzip") as source:
         #with Daqbuf(backend="sf-archiver", cbor=True) as source:
             stdout = Stdout()
             source.add_listener(stdout)
