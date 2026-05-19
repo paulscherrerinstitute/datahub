@@ -1,5 +1,5 @@
 Name:           datahub
-Version:        1.1.12
+Version:        1.1.13
 Release:        1%{?dist}
 Summary:        PSI DataHub application
 
