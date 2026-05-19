@@ -3,6 +3,7 @@ import h5py
 import numpy
 import datetime
 import threading
+import sys
 from datahub.utils.timing import convert_timestamp
 from datahub import Consumer, Compression, bitshuffle_compression_lz4, decompress, str_to_bool
 
@@ -129,7 +130,8 @@ class HDF5Writer(Consumer):
         if ts_ds:
             ts_ds.append(timestamp)
         if id_ds:
-            id_ds.append(pulse_id)
+            if 0 <= pulse_id <= sys.maxsize:
+                id_ds.append(pulse_id)
         if kwargs.get("bins", None):
             val_ds, min_ds, max_ds, cnt_ds, start_ds, end_ds = val_ds
             min_ds.append(kwargs.get("min"))
