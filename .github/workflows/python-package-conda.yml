@@ -20,7 +20,11 @@ jobs:
       
       - name: Build package
         run: |
-          ~/.local/bin/micromamba run -n build rattler-build build --recipe conda-recipe/meta.yaml
+          VERSION=${GITHUB_REF_NAME#v}
+          ~/.local/bin/micromamba run -n build \
+            rattler-build build \
+            --recipe conda-recipe/meta.yaml \
+            --set version=$VERSION
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
