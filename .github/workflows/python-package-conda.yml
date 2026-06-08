@@ -20,7 +20,7 @@ jobs:
       
       - name: Build package
         run: |
-          ~/.local/bin/micromamba run -n build rattler-build build conda-recipe/meta.yaml
+          ~/.local/bin/micromamba run -n build rattler-build build --recipe conda-recipe/meta.yaml
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
