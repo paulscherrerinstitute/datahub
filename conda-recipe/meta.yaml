@@ -19,16 +19,17 @@ requirements:
     - h5py
     - python-dateutil
     - numpy
+    - pytz
 
 #Optional requirements
 #    - pyepics
 #    - bsread
-#    - pytz
-#    - pandas
 #    - bitshuffle
-#    - dateutil
+#    - pandas
 #    - cbor2
+#    - redis
 #    - websockets
+#    - matplotlib
 
 about:
   home: https://github.com/paulscherrerinstitute/datahub
