@@ -1,0 +1,29 @@
+name: Build Conda Package
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install rattler-build
+        run: |
+          curl -Ls https://micro.mamba.pm/install.sh | bash
+          ~/.local/bin/micromamba install -y -n base -c conda-forge rattler-build
+
+      - name: Build package
+        run: |
+          ~/.local/bin/rattler-build build conda-recipe/meta.yaml
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-packages
+          path: output/
