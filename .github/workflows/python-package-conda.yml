@@ -6,28 +6,13 @@ on:
       - "v*"
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install micromamba + rattler-build
-        run: |
-          curl -Ls https://micro.mamba.pm/install.sh | bash
-          ~/.local/bin/micromamba create -n build -c conda-forge rattler-build -y
-      
-      - name: Build package
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          ~/.local/bin/micromamba run -n build \
-            rattler-build build \
-            --recipe conda-recipe/meta.yaml \
-            --set version=$VERSION
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: conda-packages
-          path: output/
+    - uses: actions/checkout@v2
+    - name: publish-to-conda
+      uses: paulscherrerinstitute/conda-publish-action@master
+      with:
+        subdir: 'conda-recipe'
+        anacondatoken: ${{ secrets.ANACONDA_TOKEN }}
+        channel_opts: '-c paulscherrerinstitute'

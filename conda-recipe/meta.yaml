@@ -1,6 +1,6 @@
 package:
   name: datahub
-  version: "${version}"
+  version: "{{ load_setup_py_data().version }}"
 
 source:
   path: ../
