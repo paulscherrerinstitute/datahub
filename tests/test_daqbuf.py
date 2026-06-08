@@ -238,5 +238,30 @@ class DataBufferTest(unittest.TestCase):
             source.add_listener(stdout)
             source.req(["SARUN20-DBPM070:X-TMP-FBI", ], -100.0, 0.0, binCount=10)
 
+    def test_hipa(self):
+        with Daqbuf(url="https://data-api.psi.ch/gzip/api/4/", backend="hipa-archive") as source:
+            stdout = Stdout()
+            hdf5 = HDF5Writer("/Users/gobbo_a/tst.h5")
+            #plot = Plot()
+            #table = Table()
+            #ps = PShell()
+            source.add_listener(hdf5)
+            source.add_listener(stdout)
+            #source.add_listener(plot)
+            #source.add_listener(table)
+            #source.add_listener(ps)
+            source.req(["EWBRI:IST:2", ], "18/05/2026 13:12:00", "18/05/2026 13:12:02")
+            #print (table.as_dataframe())
+
+    def test_db(self):
+        s = time.time()
+        with Daqbuf(backend="sf-databuffer", cbor=True, parallel=True) as source:
+            hdf5 = HDF5Writer("/Users/gobbo_a/tst.h5")
+            stdout = Stdout()
+            source.add_listener(stdout)
+            source.add_listener(hdf5)
+            source.req("S10BC01-DBPM010:Q1", -20.0, -19.0)
+        print (time.time()-s)
+
 if __name__ == '__main__':
     unittest.main()

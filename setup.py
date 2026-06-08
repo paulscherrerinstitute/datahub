@@ -25,6 +25,7 @@ setup(
     long_description=read('Readme.md'),
     long_description_content_type="text/markdown",
     install_requires=[
+        "numpy", "h5py", "requests", "python-dateutil", "pytz"
     ],
     entry_points={
         'console_scripts': [

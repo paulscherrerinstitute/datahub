@@ -25,20 +25,18 @@ in installation.
 The only mandatory dependencies are:
   - numpy
   - h5py
+  - python-dateutil
+  - pytz
+  - requests
 
 The following can be needed accordingly to the data source:
-  - requests (required by daqbuf, retrieval, databuffer, retrieval and camserver sources)
   - cbor2 (required by daqbuf source)
   - pyepics (required by EPICS source)
   - pyzmq (required by array10 and bsread sources)
   - bsread (required for bsread, camserver, dispatcher and stdaq sources)
   - redis (required by redis and stddaq sources)
   - websockets (stddaq sources)
-
- And these are other optional helper dependencies:
   - bitshuffle (saving compressed datasets)
-  - python-dateutil (support more formats for date/time parsing)
-  - pytz (time localization)
   - pandas (delivering data as dataframes and formatting printing to stdout)
   - matplotlib (data plotting)
 
