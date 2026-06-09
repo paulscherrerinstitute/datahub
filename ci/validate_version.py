@@ -3,16 +3,20 @@ import sys
 import datahub
 
 ref = os.environ["GITHUB_REF"]
+is_manual = os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
 
-if not ref.startswith("refs/tags/"):
-    print(f"Skipping version check for {ref}")
-    sys.exit(0)
+if is_manual:
+    tag = os.environ.get("TEST_VERSION").lstrip("v")
+    if not tag:
+        print(f"Skipping version check")
+        sys.exit(0)
+else:
+    tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
 
-tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
 pkg = datahub.__version__
 
 if tag != pkg:
     print(f"ERROR: tag ({tag}) != package version ({pkg})")
     sys.exit(1)
 
-print("Version match OK")
+print(f"Version match OK: {tag}")
