@@ -23,9 +23,9 @@ jobs:
         with:
           python-version: "3.11"
 
-- name: Validate version
-  run: |
-    python -c "
+      - name: Validate version
+        run: |
+          python -c "
 import datahub
 import os
 import sys
