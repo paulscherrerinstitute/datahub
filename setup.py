@@ -1,10 +1,13 @@
 import os
 from setuptools import setup, find_packages
-from datahub._version import __version__
+from pathlib import Path
 
 PACKAGE_PREFIX = "psi-"
 PACKAGE_NAME = "datahub"
 
+version_ns = {}
+exec(Path("datahub/_version.py").read_text(), version_ns)
+__version__ = version_ns["__version__"]
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
