@@ -6,18 +6,21 @@ source:
   path: ../
 
 build:
+  noarch: python
+  script: python -m pip install --no-deps --ignore-installed .
   entry_points:
     - main = datahub.main:main
-  noarch: python
 
 requirements:
   build:
-    - python
+    - python >=3.6
+    - setuptools
+    - pip
     - numpy
     - h5py
     - python-dateutil
   run:
-    - python
+    - python  >=3.6
     - requests
     - h5py
     - python-dateutil
