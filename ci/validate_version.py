@@ -6,7 +6,7 @@ ref = os.environ["GITHUB_REF"]
 is_manual = os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
 
 if is_manual:
-    tag = os.environ.get("TEST_VERSION").lstrip("v")
+    tag = os.environ.get("VERSION_TAG").lstrip("v")
     if not tag:
         print(f"Skipping version check")
         sys.exit(0)
