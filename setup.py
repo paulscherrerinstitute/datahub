@@ -25,7 +25,7 @@ setup(
     license="GPLv3",
     keywords="",
     url="https://github.com/paulscherrerinstitute/" + PACKAGE_NAME,
-    long_description=read('Readme.md'),
+    long_description=read('README.md'),
     long_description_content_type="text/markdown",
     install_requires=[
         "numpy", "h5py", "requests", "python-dateutil", "pytz", "cbor2"
