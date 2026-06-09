@@ -23,23 +23,23 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate version
-        run: |
-          python - << 'EOF'
+- name: Validate version
+  run: |
+    python -c "
 import datahub
 import os
 import sys
-ref = os.environ["GITHUB_REF"]
-if not ref.startswith("refs/tags/"):
-  print(f"Testing: Skipping version check for {ref}")
-else:
-  tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
-  pkg = datahub.__version__
-  if tag != pkg:
-      print(f"ERROR: tag ({tag}) != package version ({pkg})")
-      sys.exit(1)
-  print("Version match OK")
-EOF
+ref = os.environ['GITHUB_REF']
+if not ref.startswith('refs/tags/'):
+    print(f'Testing: Skipping version check for {ref}')
+    sys.exit(0)
+tag = os.environ['GITHUB_REF_NAME'].lstrip('v')
+pkg = datahub.__version__
+if tag != pkg:
+    print(f'ERROR: tag ({tag}) != package version ({pkg})')
+    sys.exit(1)
+print('Version match OK')
+"
 
       - name: Install build tools
         run: |
