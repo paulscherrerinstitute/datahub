@@ -8,7 +8,7 @@ on:
         default: "1.1.13"
   push:
     tags:
-      - "t*"
+      - "v*"
 
 jobs:
   build-and-publish:
@@ -24,22 +24,7 @@ jobs:
           python-version: "3.11"
 
       - name: Validate version
-        run: |
-          python -c "
-import datahub
-import os
-import sys
-ref = os.environ['GITHUB_REF']
-if not ref.startswith('refs/tags/'):
-    print(f'Testing: Skipping version check for {ref}')
-    sys.exit(0)
-tag = os.environ['GITHUB_REF_NAME'].lstrip('v')
-pkg = datahub.__version__
-if tag != pkg:
-    print(f'ERROR: tag ({tag}) != package version ({pkg})')
-    sys.exit(1)
-print('Version match OK')
-"
+        run: python ci/validate_version.py
 
       - name: Install build tools
         run: |
