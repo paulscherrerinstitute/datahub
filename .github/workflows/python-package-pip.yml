@@ -23,9 +23,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate version
-        run: python ci/validate_version.py
-
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
@@ -34,6 +31,16 @@ jobs:
       - name: Build package
         run: |
           python -m build
+
+      - name: Install package
+        run: |
+          pip install -e .      
+
+      - name: Import test
+        run: python -c "import datahub; print(datahub.__version__)"
+
+      - name: Validate version
+        run: python ci/validate_version.py
 
       - name: Check distribution
         run: |
