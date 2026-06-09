@@ -3,12 +3,7 @@ name: Build Pip Package
 on:
   push:
     tags:
-      - "v*"
-  workflow_dispatch:
-    inputs:
-      version:
-        description: Version to test
-        default: "1.1.13"
+      - "t*"
 
 jobs:
   build-and-publish:
