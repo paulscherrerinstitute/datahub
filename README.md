@@ -22,15 +22,15 @@ conda install -c paulscherrerinstitute -c conda-forge  datahub
 Depending on the usage not all dependencies may be needed, so they are not enforced 
 in installation.
 
-The only mandatory dependencies are:
+The mandatory dependencies are:
   - numpy
   - h5py
   - python-dateutil
   - pytz
   - requests
+  - cbor2
 
 The following can be needed accordingly to the data source:
-  - cbor2 (required by daqbuf source)
   - pyepics (required by EPICS source)
   - pyzmq (required by array10 and bsread sources)
   - bsread (required for bsread, camserver, dispatcher and stdaq sources)

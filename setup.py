@@ -6,7 +6,7 @@ PACKAGE_PREFIX = "psi-"
 PACKAGE_NAME = "datahub"
 
 version_ns = {}
-exec(Path("datahub/_version.py").read_text(), version_ns)
+exec(Path(f"{PACKAGE_NAME}/_version.py").read_text(), version_ns)
 __version__ = version_ns["__version__"]
 
 def read(fname):
